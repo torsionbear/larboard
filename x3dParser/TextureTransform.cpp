@@ -4,7 +4,7 @@ using std::string;
 using std::stof;
 
 namespace x3dParser {
-auto TextureTransform::SetAttribute(const string& attribute, string&& value) -> void {
+auto TextureTransform::SetAttribute(string const& attribute, string&& value) -> void {
     if(attribute.compare("translation") == 0) {
         SetTranslation(move(value));
     } else if (attribute.compare("scale") == 0) {

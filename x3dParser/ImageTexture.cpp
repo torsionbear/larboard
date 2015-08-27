@@ -6,7 +6,7 @@ using std::string;
 
 namespace x3dParser {
 
-auto ImageTexture::SetAttribute(const string& attribute, string&& value) -> void {
+auto ImageTexture::SetAttribute(string const& attribute, string&& value) -> void {
     if(attribute.compare("url") == 0) {
         SetUrl(move(value));
     } else if (attribute.compare("DEF") == 0) {

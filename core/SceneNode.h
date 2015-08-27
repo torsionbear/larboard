@@ -15,7 +15,7 @@ public:
 public:
 	SceneNode();
 	SceneNode(SceneNode const&) = delete;
-	SceneNode& operator=(const SceneNode&) = delete;
+	SceneNode& operator=(SceneNode const&) = delete;
 	~SceneNode();
 
 private:

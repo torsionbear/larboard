@@ -5,7 +5,7 @@ using std::vector;
 
 namespace x3dParser {
     
-auto Group::SetAttribute(const std::string& attribute, std::string&& value) -> void {
+auto Group::SetAttribute(std::string const& attribute, std::string&& value) -> void {
     if (attribute.compare("DEF") == 0) {
         SetDef(move(value));
     }

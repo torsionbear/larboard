@@ -49,7 +49,7 @@ TEST_F(X3dParserTest, parse) {
 
 	ASSERT_EQ(typeid(X3d), typeid(*result));
 
-	const auto& scene = static_cast<X3d&>(*result).GetScene();
+	auto const& scene = static_cast<X3d&>(*result).GetScene();
 	ASSERT_EQ(typeid(Scene), typeid(*scene));
 
 	auto& transform0 = *scene->GetTransform()[0];

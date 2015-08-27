@@ -12,7 +12,7 @@ public:
 
 public:
 	Movable() = default;
-	Movable(Movable const &)
+	Movable(Movable const&)
 		: _sceneNode(std::make_unique<SceneNode>()) {
 	}
 	Movable(Movable && other) 

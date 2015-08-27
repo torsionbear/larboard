@@ -15,7 +15,7 @@ public:
 public:
 	friend void swap(Mesh&, Mesh&);
 	Mesh();
-	Mesh(const Mesh&);
+	Mesh(Mesh const&);
 	Mesh(Mesh&& other);
 	~Mesh();
 	Mesh& operator=(Mesh);

@@ -29,7 +29,7 @@ namespace x3dParser {
 auto X3dParser::Parse(istream& is) -> unique_ptr<X3dNode> {
     auto tags = SplitToTags(is);
     
-    auto shouldSkip = [](const string& s) -> bool {
+    auto shouldSkip = [](string const& s) -> bool {
         return starts_with(s, "<?xml") || starts_with(s, "<!DOCTYPE");
     };
     tags.erase(remove_if(tags.begin(), tags.end(), shouldSkip), tags.end());

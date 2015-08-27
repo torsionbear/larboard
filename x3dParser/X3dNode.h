@@ -12,14 +12,14 @@ public:
 
 public:
     X3dNode();
-    X3dNode(const X3dNode&) = delete;
+    X3dNode(X3dNode const&) = delete;
     virtual ~X3dNode() = default;
-    X3dNode& operator=(const X3dNode&) = delete;
+    X3dNode& operator=(X3dNode const&) = delete;
 
 public:
     virtual auto AddChild(pNode) -> void = 0;
-    virtual auto SetAttribute(const std::string&, std::string&&) -> void = 0;
-    auto GetDef() const -> const std::string&;
+    virtual auto SetAttribute(std::string const&, std::string&&) -> void = 0;
+    auto GetDef() const -> std::string const&;
 
 protected:
     auto SetDef(std::string&&) -> void;

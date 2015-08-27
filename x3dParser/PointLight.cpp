@@ -4,7 +4,7 @@ using std::string;
 
 namespace x3dParser {
 
-auto PointLight::SetAttribute(const string& attribute, string&& value) -> void {
+auto PointLight::SetAttribute(string const& attribute, string&& value) -> void {
 	if (attribute.compare("ambientIntensity") == 0) {
 		SetAmbientIntensity(move(value));
 	} else if (attribute.compare("color") == 0) {

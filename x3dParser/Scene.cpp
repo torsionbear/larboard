@@ -2,7 +2,7 @@
 
 namespace x3dParser {
     
-auto Scene::SetAttribute(const std::string&, std::string&&) -> void {
+auto Scene::SetAttribute(std::string const&, std::string&&) -> void {
 }
 
 auto Scene::AddChild(pNode child) -> void {

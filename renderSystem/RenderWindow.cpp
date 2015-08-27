@@ -1,6 +1,6 @@
 #include "RenderWindow.h"
 
-const wstring RenderWindow::windowClassName = L"RenderWindowClass";
+wstring const RenderWindow::windowClassName = L"RenderWindowClass";
 
 LRESULT CALLBACK RenderWindow::RenderWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {

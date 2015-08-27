@@ -43,7 +43,7 @@ auto X3dNode::BuildNode(string&& s) -> unique_ptr<X3dNode> {
     auto ss = stringstream{move(s)};
     auto nodeType = string{};
     ss >> nodeType;
-    const auto m = unordered_map<string, unique_ptr<X3dNode>(*)()>{
+    auto const m = unordered_map<string, unique_ptr<X3dNode>(*)()>{
         {"X3D", []()->unique_ptr<X3dNode>{return make_unique<X3d>();}},
         {"Scene", []()->unique_ptr<X3dNode>{return make_unique<Scene>();}},
         {"Transform", []()->unique_ptr<X3dNode>{return make_unique<Transform>();}},

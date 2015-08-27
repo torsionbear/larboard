@@ -33,7 +33,7 @@ auto Movable::GetMatrix() const -> Matrix4x4f const& {
 
 auto Movable::GetRigidBodyMatrixInverse() const -> Matrix4x4f {
 	using std::swap;
-	auto const & matrix = _sceneNode->_transform;
+	auto const& matrix = _sceneNode->_transform;
 
 	// rigid body matrix inverse: 
 	// 1. transpose rotation part (left-upper 3x3 submatrix)

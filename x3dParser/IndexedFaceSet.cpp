@@ -13,7 +13,7 @@ using std::move;
 
 namespace x3dParser {
 
-auto IndexedFaceSet::SetAttribute(const string& attribute, string&& value) -> void {
+auto IndexedFaceSet::SetAttribute(string const& attribute, string&& value) -> void {
     if(attribute.compare("solid") == 0) {
         SetSolid(move(value));
     } else if(attribute.compare("creaseAngle") == 0) {

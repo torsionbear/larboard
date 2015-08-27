@@ -16,7 +16,7 @@ Float2::Float2(string&& s) {
     y = stof(s.substr(pos));
 }
 
-auto Float2::operator==(const Float2& rhs) const -> bool {
+auto Float2::operator==(Float2 const& rhs) const -> bool {
     return equal(x, rhs.x) && equal(y, rhs.y);
 }
     
@@ -31,7 +31,7 @@ Float3::Float3(string&& s) {
     z = stof(s.substr(pos));
 }
 
-auto Float3::operator==(const Float3& rhs) const -> bool {
+auto Float3::operator==(Float3 const& rhs) const -> bool {
     return equal(x, rhs.x) && equal(y, rhs.y) && equal(z, rhs.z);
 }
     
@@ -47,7 +47,7 @@ Float4::Float4(string&& s) {
     a = stof(s.substr(pos));
 }
 
-auto Float4::operator==(const Float4& rhs) const -> bool {
+auto Float4::operator==(Float4 const& rhs) const -> bool {
     return equal(x, rhs.x) && equal(y, rhs.y) && equal(z, rhs.z) & equal(a, rhs.a);
 }
 
@@ -55,7 +55,7 @@ ULong3::ULong3(ULong a, ULong b, ULong c)
     : a(a), b(b), c(c) {
 }
 
-auto ULong3::operator==(const ULong3& rhs) const -> bool {
+auto ULong3::operator==(ULong3 const& rhs) const -> bool {
     return equal(a, rhs.a) && equal(b, rhs.b) && equal(c, rhs.c);
 }
 

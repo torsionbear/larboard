@@ -8,7 +8,7 @@ using std::vector;
 
 namespace x3dParser {
 
-auto Coordinate::SetAttribute(const string& attribute, string&& value) -> void {
+auto Coordinate::SetAttribute(string const& attribute, string&& value) -> void {
     if(attribute.compare("point") == 0) {
         SetPoint(move(value));
     } else if (attribute.compare("DEF") == 0) {

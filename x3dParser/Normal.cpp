@@ -9,7 +9,7 @@ using std::vector;
 
 namespace x3dParser {
 
-auto Normal::SetAttribute(const string& attribute, string&& value) -> void {
+auto Normal::SetAttribute(string const& attribute, string&& value) -> void {
     if(attribute.compare("vector") == 0) {
         SetVector(move(value));
     } else if (attribute.compare("DEF") == 0) {

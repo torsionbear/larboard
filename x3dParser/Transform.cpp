@@ -5,7 +5,7 @@ using std::unique_ptr;
 
 namespace x3dParser {
 
-auto Transform::SetAttribute(const string& attribute, string&& value) -> void {
+auto Transform::SetAttribute(string const& attribute, string&& value) -> void {
     if(attribute.compare("translation") == 0) {
         SetTranslation(move(value));
     } else if (attribute.compare("scale") == 0) {

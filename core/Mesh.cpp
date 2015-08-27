@@ -13,7 +13,7 @@ void swap(Mesh& first, Mesh& second) {
 
 Mesh::Mesh() = default;
 
-Mesh::Mesh(const Mesh&) = default;
+Mesh::Mesh(Mesh const&) = default;
 
 Mesh::Mesh(Mesh&& other)
 	: Mesh() {

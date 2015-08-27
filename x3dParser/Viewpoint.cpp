@@ -4,7 +4,7 @@ using std::string;
 
 namespace x3dParser {
 
-auto Viewpoint::SetAttribute(const string& attribute, string&& value) -> void {
+auto Viewpoint::SetAttribute(string const& attribute, string&& value) -> void {
     if(attribute.compare("centerOfRotation") == 0) {
         SetCenterOfRotation(move(value));
     } else if (attribute.compare("position") == 0) {

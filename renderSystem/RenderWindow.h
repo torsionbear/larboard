@@ -10,8 +10,8 @@ class RenderWindow
 {
 public:
     RenderWindow();
-    RenderWindow(const RenderWindow&) = delete;
-    RenderWindow& operator= (const RenderWindow&) = delete;
+    RenderWindow(RenderWindow const&) = delete;
+    RenderWindow& operator= (RenderWindow const&) = delete;
     ~RenderWindow();
 
     void Create(int width, int height, wstring name);
@@ -28,7 +28,7 @@ private:
     void DeinitializeGl();
 
 private:
-    static const wstring windowClassName;
+    static wstring const windowClassName;
 
     int m_Width;
     int m_Height;

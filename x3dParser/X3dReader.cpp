@@ -22,11 +22,11 @@ using core::Movable;
 
 namespace x3dParser {
 
-auto inline ToPoint3(const Float3& in) -> Vector3f {
+auto inline ToPoint3(Float3 const& in) -> Vector3f {
     return {in.x, in.y, in.z};
 }
 
-auto inline ToPoint2(const Float2& in) -> Vector2f {
+auto inline ToPoint2(Float2 const& in) -> Vector2f {
     return {in.x, in.y};
 }
 

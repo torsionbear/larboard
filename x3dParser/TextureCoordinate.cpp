@@ -9,7 +9,7 @@ using std::vector;
 
 namespace x3dParser {
 
-auto TextureCoordinate::SetAttribute(const string& attribute, string&& value) -> void {
+auto TextureCoordinate::SetAttribute(string const& attribute, string&& value) -> void {
     if(attribute.compare("point") == 0) {
         SetPoint(move(value));
     }

@@ -7,7 +7,7 @@ using std::stof;
 
 namespace x3dParser {
 
-auto Material::SetAttribute(const string& attribute, string&& value) -> void {
+auto Material::SetAttribute(string const& attribute, string&& value) -> void {
     if(attribute.compare("diffuseColor") == 0) {
         SetDiffuseColor(move(value));
     } else if(attribute.compare("specularColor") == 0) {

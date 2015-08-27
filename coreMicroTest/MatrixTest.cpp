@@ -17,7 +17,7 @@ auto equal(Float32 v1, Float32 v2) -> bool {
 }
 
 template<typename T, size_type ROW, size_type COL>
-auto equal(const Matrix<T, ROW, COL>& lhs, const Matrix<T, ROW, COL>& rhs) -> bool {
+auto equal(Matrix<T, ROW, COL> const& lhs, Matrix<T, ROW, COL> const& rhs) -> bool {
 	if (lhs.RowCount() != rhs.RowCount() || lhs.ColumnCount() != rhs.ColumnCount()) {
 		return false;
 	}

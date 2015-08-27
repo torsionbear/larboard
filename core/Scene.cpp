@@ -81,7 +81,7 @@ auto Scene::SendToCard() -> void {
 	glBindVertexArray(_vao);
 	glGenBuffers(1, &_vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
-	for (auto const & m : _meshes) {
+	for (auto const& m : _meshes) {
 		_vertexCount += m._vertex.size();
 	}
 	glBufferData(GL_ARRAY_BUFFER, _vertexCount * sizeof(Vertex), nullptr, GL_STATIC_DRAW);
@@ -113,7 +113,7 @@ auto Scene::Draw() -> void {
 	Matrix4x4f viewTransform = camera.GetProjectionTransform() * camera.GetRigidBodyMatrixInverse();
 
 	auto currentShaderProgram = static_cast<ShaderProgram*>(nullptr);
-	for (auto const & s : _shapes) {
+	for (auto const& s : _shapes) {
 		if (currentShaderProgram != s._shaderProgram) {
 			s._shaderProgram->Use();
 			currentShaderProgram = s._shaderProgram;

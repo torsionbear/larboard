@@ -20,7 +20,7 @@ struct Float2 {
     Float2() = default;
     Float2(Float, Float);
     explicit Float2(std::string&&);
-    auto operator==(const Float2&) const -> bool;
+    auto operator==(Float2 const&) const -> bool;
 
     Float x = 0.0f;
     Float y = 0.0f;
@@ -30,7 +30,7 @@ struct Float3 {
     Float3() = default;
     Float3(Float, Float, Float);
     explicit Float3(std::string&&);
-    auto operator==(const Float3&) const -> bool;
+    auto operator==(Float3 const&) const -> bool;
 
     Float x = 0.0f;
     Float y = 0.0f;
@@ -41,7 +41,7 @@ struct Float4 {
     Float4() = default;
     Float4(Float, Float, Float, Float);
     explicit Float4(std::string&&);
-    auto operator==(const Float4&) const -> bool;
+    auto operator==(Float4 const&) const -> bool;
 
     Float x = 0.0f;
     Float y = 0.0f;
@@ -54,7 +54,7 @@ using ULong = unsigned long;
 struct ULong3 {
     ULong3() = default;
     ULong3(ULong, ULong, ULong);
-    auto operator==(const ULong3&) const -> bool;
+    auto operator==(ULong3 const&) const -> bool;
 
     ULong a = 0u;
     ULong b = 0u;

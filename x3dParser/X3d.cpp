@@ -4,7 +4,7 @@ using std::unique_ptr;
 
 namespace x3dParser {
         
-auto X3d::SetAttribute(const std::string&, std::string&&) -> void {
+auto X3d::SetAttribute(std::string const&, std::string&&) -> void {
 }
     
 auto X3d::AddChild(pNode child) -> void {
