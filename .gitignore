@@ -1,0 +1,8 @@
+.vs
+Debug
+Release
+boost_1_57_0
+glew-1.11.0
+gtest-1.7.0
+zlib128-dll
+*.sdf
