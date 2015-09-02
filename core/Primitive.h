@@ -81,7 +81,7 @@ public:
 		_data.reserve(ROW * COL);
 		for (auto i = 0u; i < ROW; ++i) {
 			for (auto j = 0u; j < COL; ++j) {
-				_data.emplace_back(i == j ? 1.0f : 0.0f);
+				_data.push_back(i == j ? 1.0f : 0.0f);
 			}
 		}
 	}
@@ -93,7 +93,7 @@ public:
 		_data.reserve(e.RowCount() * e.ColumnCount());
 		for (auto i = 0u; i < e.RowCount(); ++i) {
 			for (auto j = 0u; j < e.ColumnCount(); ++j) {
-				_data.emplace_back(e(i, j));
+				_data.push_back(e(i, j));
 			}
 		}
 	}

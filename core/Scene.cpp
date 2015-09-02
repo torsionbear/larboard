@@ -89,6 +89,7 @@ auto Scene::GetDefaultShaderProgram() -> ShaderProgram * {
 }
 
 auto Scene::SendToCard() -> void {
+	glEnable(GL_DEPTH_TEST);
 	for (auto & s : _shaderProgram) {
 		s->SendToCard();
 	}
@@ -106,12 +107,12 @@ auto Scene::SendToCard() -> void {
 	}
 	glBufferData(GL_ARRAY_BUFFER, _vertexCount * sizeof(Vertex), nullptr, GL_STATIC_DRAW);
 
-	auto offset = 0;
+	auto vertexCount = 0;
 	for (auto & m : _meshes) {
 		m->_vao = _vao;
-		m->_offset = offset * sizeof(Vertex);
-		glBufferSubData(GL_ARRAY_BUFFER, m->_offset, m->_size, m->_vertex.data());
-		offset += m->_vertex.size();
+		m->_startingIndex = vertexCount;
+		glBufferSubData(GL_ARRAY_BUFFER, m->_startingIndex * sizeof(Vertex), m->_vertex.size() * sizeof(Vertex), m->_vertex.data());
+		vertexCount += m->_vertex.size();
 	}
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0);
@@ -141,22 +142,19 @@ auto Scene::Draw() -> void {
 				1, GL_TRUE, viewTransform.data());
 		}
 
-		error = glGetError();
 		auto & worldTransform = s->_model->GetMatrix();
 		// opengl expect column major matrix, so we pass GL_TRUE to transpose our matrix.
 		// another solution is to always multiply vector to matrix in shader (e.g. v_transformed = v * M)
 		glUniformMatrix4fv(glGetUniformLocation(s->_shaderProgram->GetHandler(), "worldTransform"),
 			1, GL_TRUE, worldTransform.data());
 
-		error = glGetError();
 		for (auto i = 0u; i < s->_textures.size(); ++i) {
 			s->_textures[i]->Use(i);
 			auto variable = string("texture").append({ static_cast<char>('0' + i) });
-			glUniform1i(glGetUniformLocation(currentShaderProgram->GetHandler(), "texture0"), i);
+			glUniform1i(glGetUniformLocation(currentShaderProgram->GetHandler(), variable.c_str()), i);
 		}
-		glDrawArrays(GL_TRIANGLES, s->_mesh->_offset, s->_mesh->_size);
+		glDrawArrays(GL_TRIANGLES, s->_mesh->_startingIndex, s->_mesh->_vertex.size());
 	}
-
 	error = glGetError();
 }
 

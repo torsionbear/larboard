@@ -15,7 +15,7 @@ auto Group::SetAttribute(std::string const& attribute, std::string&& value) -> v
 
 auto Group::AddChild(X3dNode * child) -> void {
     if(typeid(*child) == typeid(Shape)) {
-        _shape.emplace_back(static_cast<Shape*>(child));
+        _shape.push_back(static_cast<Shape*>(child));
     }
 }
 

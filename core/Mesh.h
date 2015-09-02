@@ -27,8 +27,7 @@ public:
 private:
 	std::vector<Vertex> _vertex;
 	openglUint _vao;
-	openglInt _offset;
-	openglSizei _size;
+	openglInt _startingIndex;
 };
 
 }

@@ -34,7 +34,6 @@ Mesh& Mesh::operator=(Mesh && rhs) {
 
 auto Mesh::SetVertexData(std::vector<Vertex>&& vertexData) -> void {
 	_vertex = move(vertexData);
-	_size = _vertex.size() * sizeof(Vertex);
 }
 
 }

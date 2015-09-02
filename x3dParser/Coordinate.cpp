@@ -30,7 +30,7 @@ auto Coordinate::SetPoint(string&& s) -> void{
 
     auto point = Float3{};
     while(ss >> point.x >> point.y >> point.z) {
-        _point.emplace_back(point);
+        _point.push_back(point);
     }
 }
 

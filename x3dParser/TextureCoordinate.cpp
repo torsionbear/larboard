@@ -33,7 +33,7 @@ auto TextureCoordinate::SetPoint(string&& s) -> void {
 
     auto point = Float2{};
     while(ss >> point.x >> point.y) {
-        _point.emplace_back(point);
+        _point.push_back(point);
     }
 }
 

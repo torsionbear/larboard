@@ -97,7 +97,7 @@ auto IndexedFaceSet::ReadIndex(string&& s) -> vector<ULong3> {
         auto separator = 0;
         ss >> separator;
         assert(separator == -1);
-        ret.emplace_back(index);
+        ret.push_back(index);
     }
     return ret;
 }

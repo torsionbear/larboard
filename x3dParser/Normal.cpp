@@ -31,7 +31,7 @@ auto Normal::SetVector(string&& s) -> void {
 
     auto point = Float3{};
     while(ss >> point.x >> point.y >> point.z) {
-        _vector.emplace_back(point);
+        _vector.push_back(point);
     }
 }
 

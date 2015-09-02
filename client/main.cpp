@@ -46,7 +46,7 @@ void Init(core::Scene & scene)
 
 void DrawOneFrame(core::Scene & scene)
 {
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	scene.Draw();
     glFlush();
 }
@@ -62,7 +62,7 @@ int main()
         exit(EXIT_FAILURE);
     }
 
-	auto scene= x3dParser::X3dReader::Read("D:/torsionbear/working/larboard/Modeling/square/square.x3d");
+	auto scene= x3dParser::X3dReader::Read("D:/torsionbear/working/larboard/Modeling/8/8.x3d");
 	//auto scene = std::make_unique<core::Scene>();
 	//Init(*scene);
 	scene->SendToCard();
