@@ -8,7 +8,6 @@
 #include "core/ShaderProgram.h"
 #include "core/PngReader.h"
 #include "core/MessageLogger.h"
-#include "core/ResourceManager.h"
 #include "core/Mesh.h"
 #include "x3dParser/X3dReader.h"
 
@@ -24,7 +23,7 @@ void Init(core::Scene & scene)
 	auto v = glGetString(GL_VERSION);
 
 	// texture
-	auto * texture = scene.CreateTexture("D:\\torsionbear\\working\\larboard\\Modeling\\square\\pedobear.png");
+	auto * texture = scene.CreateTexture("texture0", "D:\\torsionbear\\working\\larboard\\Modeling\\square\\pedobear.png");
 	//core::Texture texture{ "D:\\torsionbear\\working\\larboard\\Modeling\\square\\pedobear.png" };
 	shape->AddTexture(texture);
 
@@ -63,7 +62,7 @@ int main()
         exit(EXIT_FAILURE);
     }
 
-	auto scene= x3dParser::X3dReader::Read("D:/torsionbear/working/larboard/Modeling/8/8.x3d");
+	auto scene= x3dParser::X3dReader::Read("D:/torsionbear/working/larboard/Modeling/square/square.x3d");
 	//auto scene = std::make_unique<core::Scene>();
 	//Init(*scene);
 	scene->SendToCard();

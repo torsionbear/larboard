@@ -7,26 +7,26 @@ namespace x3dParser {
 auto Appearance::SetAttribute(std::string const&, std::string&&) -> void {
 }
     
-auto Appearance::AddChild(pNode child) -> void {
+auto Appearance::AddChild(X3dNode * child) -> void {
     
     if(typeid(*child) == typeid(ImageTexture)) {
-        _imageTexture.reset(static_cast<ImageTexture*>(child.release()));
+        _imageTexture = static_cast<ImageTexture*>(child);
     } else if(typeid(*child) == typeid(TextureTransform)) {
-        _textureTransform.reset(static_cast<TextureTransform*>(child.release()));
+        _textureTransform = static_cast<TextureTransform*>(child);
     } else if(typeid(*child) == typeid(Material)) {
-        _material.reset(static_cast<Material*>(child.release()));
+        _material = static_cast<Material*>(child);
     }
 }
 
-auto Appearance::GetImageTexture() -> unique_ptr<ImageTexture>& {
+auto Appearance::GetImageTexture() const -> ImageTexture const* {
     return _imageTexture;
 }
 
-auto Appearance::GetTextureTransform() -> unique_ptr<TextureTransform>& {
+auto Appearance::GetTextureTransform() const -> TextureTransform const* {
     return _textureTransform;
 }
 
-auto Appearance::GetMaterial() -> unique_ptr<Material>& {
+auto Appearance::GetMaterial() const -> Material const* {
     return _material;
 }
 

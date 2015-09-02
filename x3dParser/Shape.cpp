@@ -7,19 +7,19 @@ namespace x3dParser {
 auto Shape::SetAttribute(std::string const&, std::string&&) -> void {
 }
     
-auto Shape::AddChild(pNode child) -> void {
+auto Shape::AddChild(X3dNode * child) -> void {
     if(typeid(*child) == typeid(Appearance)) {
-        _appearance.reset(static_cast<Appearance*>(child.release()));
+        _appearance = static_cast<Appearance*>(child);
     } else if(typeid(*child) == typeid(IndexedFaceSet)) {
-        _indexedFaceSet.reset(static_cast<IndexedFaceSet*>(child.release()));
+        _indexedFaceSet = static_cast<IndexedFaceSet*>(child);
     }
 }
 
-auto Shape::GetAppearance() -> unique_ptr<Appearance>& {
+auto Shape::GetAppearance() const -> Appearance const* {
     return _appearance;
 }
 
-auto Shape::GetIndexedFaceSet() -> unique_ptr<IndexedFaceSet>& {
+auto Shape::GetIndexedFaceSet() const -> IndexedFaceSet const* {
     return _indexedFaceSet;
 }
 

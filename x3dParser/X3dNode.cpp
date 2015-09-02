@@ -36,46 +36,39 @@ using boost::algorithm::trim_right_if;
 
 namespace x3dParser {
 
-auto X3dNode::BuildNode(string&& s) -> unique_ptr<X3dNode> {
-    trim_left_if(s, is_any_of("<"));
-    trim_right_if(s, is_any_of("/> \r\n\t"));
-
-    auto ss = stringstream{move(s)};
-    auto nodeType = string{};
-    ss >> nodeType;
-    auto const m = unordered_map<string, unique_ptr<X3dNode>(*)()>{
-        {"X3D", []()->unique_ptr<X3dNode>{return make_unique<X3d>();}},
-        {"Scene", []()->unique_ptr<X3dNode>{return make_unique<Scene>();}},
-        {"Transform", []()->unique_ptr<X3dNode>{return make_unique<Transform>();}},
-        {"Group", []()->unique_ptr<X3dNode>{return make_unique<Group>();}},
-        {"Shape", []()->unique_ptr<X3dNode>{return make_unique<Shape>();}},
-        {"Appearance", []()->unique_ptr<X3dNode>{return make_unique<Appearance>();}},
-        {"ImageTexture", []()->unique_ptr<X3dNode>{return make_unique<ImageTexture>();}},
-        {"TextureTransform", []()->unique_ptr<X3dNode>{return make_unique<TextureTransform>();}},
-        {"Material", []()->unique_ptr<X3dNode>{return make_unique<Material>();}},
-        {"IndexedFaceSet", []()->unique_ptr<X3dNode>{return make_unique<IndexedFaceSet>();}},
-        {"Coordinate", []()->unique_ptr<X3dNode>{return make_unique<Coordinate>();}},
-        {"Normal", []()->unique_ptr<X3dNode>{return make_unique<Normal>();}},
-        {"TextureCoordinate", []()->unique_ptr<X3dNode>{return make_unique<TextureCoordinate>();}},
-        {"Viewpoint", []()->unique_ptr<X3dNode>{return make_unique<Viewpoint>();}},
-		{"PointLight", []()->unique_ptr<X3dNode> {return make_unique<PointLight>(); }},
-    };
-    
-    if(m.find(nodeType) == m.end()) {
-        return make_unique<NullNode>();    
-    }
-    auto node = m.at(nodeType)();
-    auto attributeName = string{};
-    auto attributeValue = string{};
-    while(getline(ss, attributeName, '=')) {
-        trim_left_if(attributeName, is_any_of(" \r\n\t"));
-        auto quote = char{};
-        ss.get(quote);
-        getline(ss, attributeValue, quote);
-
-        node->SetAttribute(attributeName, move(attributeValue));
-    }
-    return node;    
+auto X3dNode::BuildNode(string const& nodeType) -> unique_ptr<X3dNode> {
+	if (nodeType == "X3D") {
+		return make_unique<X3d>();
+	} else if (nodeType == "Scene") {
+		return make_unique<Scene>();
+	} else if (nodeType == "Transform") {
+		return make_unique<Transform>();
+	} else if (nodeType == "Group") {
+		return make_unique<Group>();
+	} else if (nodeType == "Shape") {
+		return make_unique<Shape>();
+	} else if (nodeType == "Appearance") {
+		return make_unique<Appearance>();
+	} else if (nodeType == "ImageTexture") {
+		return make_unique<ImageTexture>();
+	} else if (nodeType == "TextureTransform") {
+		return make_unique<TextureTransform>();
+	} else if (nodeType == "Material") {
+		return make_unique<Material>();
+	} else if (nodeType == "IndexedFaceSet") {
+		return make_unique<IndexedFaceSet>();
+	} else if (nodeType == "Coordinate") {
+		return make_unique<Coordinate>();
+	} else if (nodeType == "Normal") {
+		return make_unique<Normal>();
+	} else if (nodeType == "TextureCoordinate") {
+		return make_unique<TextureCoordinate>();
+	} else if (nodeType == "Viewpoint") {
+		return make_unique<Viewpoint>();
+	} else if (nodeType == "PointLight") {
+		return make_unique<PointLight>();
+	} 
+	return make_unique<NullNode>();
 }
 
 X3dNode::X3dNode() = default;
@@ -83,9 +76,17 @@ X3dNode::X3dNode() = default;
 auto X3dNode::SetDef(string&& def) -> void {
     _def = move(def);
 }
+
+auto X3dNode::SetUse(std::string && use) -> void {
+	_use = move(use);
+}
     
 auto X3dNode::GetDef() const -> const string& {
     return _def;
+}
+
+auto X3dNode::GetUse() const -> std::string const & {
+	return _use;
 }
 
 }

@@ -7,7 +7,7 @@ namespace x3dParser {
 class ImageTexture : public X3dNode {
 public:
     auto SetAttribute(std::string const&, std::string&&) -> void override;
-    auto AddChild(pNode) -> void override;
+    auto AddChild(X3dNode *) -> void override;
 
     auto GetUrl() const -> std::vector<std::string>;
 

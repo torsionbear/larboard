@@ -8,10 +8,9 @@ namespace x3dParser {
 class Normal : public X3dNode {
 public:
     auto SetAttribute(std::string const&, std::string&&) -> void override;
-    auto AddChild(pNode) -> void override;
+    auto AddChild(X3dNode *) -> void override;
 
-    auto GetVector() -> std::vector<Float3>&;
-    auto StealVector() -> std::vector<Float3>;
+    auto GetVector() const -> std::vector<Float3> const&;
 
 private:
     auto SetVector(std::string&&) -> void;

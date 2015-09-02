@@ -13,15 +13,15 @@ namespace x3dParser {
 class Transform : public X3dNode {
 public:
     auto SetAttribute(std::string const&, std::string&&) -> void override;
-    auto AddChild(pNode) -> void override;
+    auto AddChild(X3dNode * child) -> void override;
 
     auto GetTranslation() const -> Float3;
     auto GetScale() const -> Float3;
     auto GetRotation() const -> Float4;
-    auto GetTransform() -> std::vector<std::unique_ptr<Transform>>&;
-    auto GetGroup() -> std::unique_ptr<Group>&;
-    auto GetViewpoint() -> std::unique_ptr<Viewpoint>&;
-	auto GetPointLight()->std::unique_ptr<PointLight>&;
+    auto GetTransform() const -> std::vector<Transform *> const&;
+    auto GetGroup() const-> Group const*;
+    auto GetViewpoint() const -> Viewpoint const*;
+	auto GetPointLight() const -> PointLight const*;
 
 private:
     auto SetTranslation(std::string&&) -> void;
@@ -32,10 +32,10 @@ private:
     Float3 _translation;
     Float3 _scale;
     Float4 _rotation;
-    std::vector<std::unique_ptr<Transform>> _transform;
-    std::unique_ptr<Group> _group = nullptr;
-    std::unique_ptr<Viewpoint> _viewpoint = nullptr;
-	std::unique_ptr<PointLight> _pointLight = nullptr;
+    std::vector<Transform *> _transform;
+    Group * _group = nullptr;
+    Viewpoint * _viewpoint = nullptr;
+	PointLight * _pointLight = nullptr;
 };
 
 }

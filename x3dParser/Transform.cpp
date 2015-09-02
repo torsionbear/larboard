@@ -14,18 +14,20 @@ auto Transform::SetAttribute(string const& attribute, string&& value) -> void {
         SetRotation(move(value));
     } else if (attribute.compare("DEF") == 0) {
         SetDef(move(value));
-    }
+    } else if (attribute.compare("USE") == 0) {
+		SetUse(move(value));
+	}
 }
   
-auto Transform::AddChild(pNode child) -> void {
+auto Transform::AddChild(X3dNode * child) -> void {
     if(typeid(*child) == typeid(Transform)) {
-        _transform.emplace_back(static_cast<Transform*>(child.release()));
+        _transform.push_back(static_cast<Transform*>(child));
     } else if(typeid(*child) == typeid(Group)) {
-        _group.reset(static_cast<Group*>(child.release()));
+        _group = static_cast<Group*>(child);
     } else if(typeid(*child) == typeid(Viewpoint)) {
-        _viewpoint.reset(static_cast<Viewpoint*>(child.release()));
+        _viewpoint = static_cast<Viewpoint*>(child);
 	} else if (typeid(*child) == typeid(PointLight)) {
-		_pointLight.reset(static_cast<PointLight*>(child.release()));
+		_pointLight = static_cast<PointLight*>(child);
 	}
 }
 
@@ -41,19 +43,19 @@ auto Transform::GetRotation() const -> Float4 {
     return _rotation;
 }
 
-auto Transform::GetTransform() -> std::vector<std::unique_ptr<Transform>>& {
+auto Transform::GetTransform() const -> std::vector<Transform *> const& {
     return _transform;
 }
 
-auto Transform::GetGroup() -> unique_ptr<Group>& {
+auto Transform::GetGroup() const -> Group const* {
     return _group;
 }
     
-auto Transform::GetViewpoint() -> unique_ptr<Viewpoint>& {
+auto Transform::GetViewpoint() const -> Viewpoint const* {
     return _viewpoint;
 }
 
-auto Transform::GetPointLight() -> std::unique_ptr<PointLight>& {
+auto Transform::GetPointLight() const -> PointLight const* {
 	return _pointLight;
 }
 

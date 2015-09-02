@@ -4,18 +4,23 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <unordered_map>
 
 #include "X3dNode.h"
 
 namespace x3dParser {
 
 class X3dParser {
-public:
-    static auto Parse(std::istream& is) -> std::unique_ptr<X3dNode>;
+public: 
+    auto Parse(std::istream& is) ->std::vector<std::unique_ptr<X3dNode>>;
     
 private:
-    static auto SplitToTags(std::istream& is) -> std::vector<std::string>;
-    static auto BuildTree(std::vector<std::string>& vec) -> std::unique_ptr<X3dNode>;
+    auto SplitToTags(std::istream& is) -> std::vector<std::string>;
+	auto ParseTag(std::string &&) -> X3dNode *;
+    auto BuildTree(std::vector<std::string>& vec) -> std::vector<std::unique_ptr<X3dNode>>;
+
+private:
+	std::vector<std::unique_ptr<X3dNode>> _nodes;
 };
 
 }

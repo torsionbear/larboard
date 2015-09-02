@@ -11,13 +11,13 @@ class PointLight : public X3dNode {
 public:
 public:
 	auto SetAttribute(std::string const&, std::string&&) -> void override;
-	auto AddChild(pNode) -> void override;
+	auto AddChild(X3dNode *) -> void override;
 
-	auto GetAmbientIntensity() -> Float;
-	auto GetColor()->Float3;
-	auto GetIntensity()->Float;
-	auto GetRadius()->Float;
-	auto GetLocation() -> Float3;
+	auto GetAmbientIntensity() const -> Float;
+	auto GetColor() const -> Float3;
+	auto GetIntensity() const ->Float;
+	auto GetRadius() const ->Float;
+	auto GetLocation() const -> Float3;
 
 private:
 	auto SetAmbientIntensity(std::string &&) -> void;

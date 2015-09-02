@@ -14,7 +14,7 @@ auto TextureTransform::SetAttribute(string const& attribute, string&& value) -> 
     }
 }
     
-auto TextureTransform::AddChild(pNode) -> void {
+auto TextureTransform::AddChild(X3dNode * child) -> void {
 }
 
 auto TextureTransform::GetTranslation() const -> Float2 {

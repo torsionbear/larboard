@@ -15,8 +15,10 @@ using std::istream;
 using std::remove_if;
 using std::getline;
 using std::stack;
+using std::unordered_map;
 using std::string;
 using std::unique_ptr;
+using std::make_unique;
 
 using boost::algorithm::starts_with;
 using boost::algorithm::ends_with;
@@ -26,7 +28,7 @@ using boost::algorithm::trim_right_if;
 
 namespace x3dParser {
 
-auto X3dParser::Parse(istream& is) -> unique_ptr<X3dNode> {
+auto X3dParser::Parse(istream& is) -> vector<unique_ptr<X3dNode>> {
     auto tags = SplitToTags(is);
     
     auto shouldSkip = [](string const& s) -> bool {
@@ -48,23 +50,45 @@ auto X3dParser::SplitToTags(istream& is) -> vector<string> {
     return vec;
 }
 
-auto X3dParser::BuildTree(vector<string>& tags) -> unique_ptr<X3dNode> {
-    auto nodeStack = stack<unique_ptr<X3dNode>>();
+auto X3dParser::ParseTag(std::string && s) -> X3dNode * {
+	trim_left_if(s, is_any_of("<"));
+	trim_right_if(s, is_any_of("/> \r\n\t"));
+
+	auto ss = stringstream{ move(s) };
+	auto nodeType = string{};
+	ss >> nodeType;
+	auto node = X3dNode::BuildNode(nodeType);
+	auto attributeName = string{};
+	auto attributeValue = string{};
+	while (getline(ss, attributeName, '=')) {
+		trim_left_if(attributeName, is_any_of(" \r\n\t"));
+		auto quote = char{};
+		ss.get(quote);
+
+		getline(ss, attributeValue, quote);
+		node->SetAttribute(attributeName, move(attributeValue));
+	}
+	_nodes.push_back(move(node));
+	return _nodes.back().get();
+}
+
+auto X3dParser::BuildTree(vector<string>& tags) -> vector<unique_ptr<X3dNode>> {
+    auto nodeStack = stack<X3dNode *>();
     for(auto& s : tags) {
         if(starts_with(s, "</")) {
-            auto node = move(nodeStack.top());
             nodeStack.pop();
-            if(nodeStack.empty()) {
-                return node;
-            }
-            nodeStack.top()->AddChild(move(node));
-        } else if(ends_with(s, "/>")) {
-            nodeStack.top()->AddChild(X3dNode::BuildNode(move(s)));
-        } else {
-            nodeStack.push(X3dNode::BuildNode(move(s)));
+		} else {
+			auto isSelfClosed = ends_with(s, "/>");
+			auto * node = ParseTag(move(s));
+			if (!nodeStack.empty()) {
+				nodeStack.top()->AddChild(node);
+			}
+			if (!isSelfClosed) {
+				nodeStack.push(node);
+			}
         }
     }
-    return nullptr;
+    return move(_nodes);
 }
 
 }

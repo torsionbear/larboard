@@ -28,28 +28,22 @@ using namespace x3dParser;
 
 class X3dParserTest : public ::testing::Test {
 public:
-	X3dParserTest() {
-		// Turn off sync to improve stream performance. See http://stackoverflow.com/questions/9747419/which-is-the-fastest-method-of-input-in-c
-		std::ios_base::sync_with_stdio(false);
-	}
-	~X3dParserTest() {
-		_x3dFile.close();
-	}
 protected:
-	ifstream _x3dFile{ "D:/torsionbear/working/larboard/larboard/x3dParserMicroTest/square.x3d" };
+	X3dParser _sut;
 };
 
-TEST_F(X3dParserTest, read) {
-	auto result1 = X3dParser::Parse(_x3dFile);
-	//auto result = X3dReader::Read(*static_cast<X3d*>(result1.release()));
-}
+//TEST_F(X3dParserTest, read) {
+//	auto result = X3dReader::Read("D:/torsionbear/working/larboard/larboard/x3dParserMicroTest/square.x3d");
+//}
 
 TEST_F(X3dParserTest, parse) {
-	auto result = X3dParser::Parse(_x3dFile);
+	ifstream x3dFile{ "D:/torsionbear/working/larboard/larboard/x3dParserMicroTest/square.x3d" };
+	auto result = _sut.Parse(x3dFile);
+	auto x3d = result.front().get();
 
-	ASSERT_EQ(typeid(X3d), typeid(*result));
+	ASSERT_EQ(typeid(X3d), typeid(*x3d));
 
-	auto const& scene = static_cast<X3d&>(*result).GetScene();
+	auto const& scene = static_cast<X3d*>(x3d)->GetScene();
 	ASSERT_EQ(typeid(Scene), typeid(*scene));
 
 	auto& transform0 = *scene->GetTransform()[0];
@@ -66,17 +60,17 @@ TEST_F(X3dParserTest, parse) {
 	ASSERT_EQ(Float3(1, 1, 1), transform01.GetScale());
 	ASSERT_EQ(Float4(1, 0, 0, 0), transform01.GetRotation());
 
-	auto& group = transform01.GetGroup();
+	auto group = transform01.GetGroup();
 	ASSERT_EQ(typeid(Group), typeid(*group));
 	ASSERT_EQ("group_ME_Plane", group->GetDef());
 
 	auto& shape = *group->GetShape()[0];
 	ASSERT_EQ(typeid(Shape), typeid(shape));
 
-	auto& appearance = shape.GetAppearance();
+	auto appearance = shape.GetAppearance();
 	ASSERT_EQ(typeid(Appearance), typeid(*appearance));
 
-	auto& imageTexture = appearance->GetImageTexture();
+	auto imageTexture = appearance->GetImageTexture();
 	ASSERT_EQ(typeid(ImageTexture), typeid(*imageTexture));
 	ASSERT_EQ("IM_Pedobear_png", imageTexture->GetDef());
 	auto urls = imageTexture->GetUrl();
@@ -84,13 +78,13 @@ TEST_F(X3dParserTest, parse) {
 	ASSERT_EQ("Pedobear.png", urls[0]);
 	ASSERT_EQ("D:/torsionbear/working/larboard/Modeling/square/Pedobear.png", urls[1]);
 
-	auto& textureTransform = appearance->GetTextureTransform();
+	auto textureTransform = appearance->GetTextureTransform();
 	ASSERT_EQ(typeid(TextureTransform), typeid(*textureTransform));
 	ASSERT_EQ(Float2(0, 0), textureTransform->GetTranslation());
 	ASSERT_EQ(Float2(1, 1), textureTransform->GetScale());
 	ASSERT_EQ(0, textureTransform->GetRotation());
 
-	auto& material = appearance->GetMaterial();
+	auto material = appearance->GetMaterial();
 	ASSERT_EQ(typeid(Material), typeid(*material));
 	ASSERT_EQ("MA_Material_001", material->GetDef());
 	ASSERT_EQ(Float3(.8f, .8f, .8f), material->GetDiffuseColor());
@@ -100,24 +94,24 @@ TEST_F(X3dParserTest, parse) {
 	ASSERT_EQ(0.098f, material->GetShininess());
 	ASSERT_EQ(0.0f, material->GetTransparency());
 
-	auto& indexedFaceSet = shape.GetIndexedFaceSet();
+	auto indexedFaceSet = shape.GetIndexedFaceSet();
 	ASSERT_EQ(typeid(IndexedFaceSet), typeid(*indexedFaceSet));
 	ASSERT_TRUE(indexedFaceSet->GetSolid());
 	ASSERT_TRUE(indexedFaceSet->GetNormalPerVertex());
 	ASSERT_EQ(vector<ULong3>({ { 0, 1, 2 },{ 3, 4, 5 } }), indexedFaceSet->GetTexCoordIndex());
 	ASSERT_EQ(vector<ULong3>({ { 1, 3, 2 },{ 0, 1, 2 } }), indexedFaceSet->GetCoordIndex());
 
-	auto& coordinate = indexedFaceSet->GetCoordinate();
+	auto coordinate = indexedFaceSet->GetCoordinate();
 	ASSERT_EQ(typeid(Coordinate), typeid(*coordinate));
 	ASSERT_EQ("coords_ME_Plane", coordinate->GetDef());
 	ASSERT_EQ(vector<Float3>({ { -1, -1, 0 },{ 1, -1, 0 },{ -1, 1, 0 },{ 1, 1, 0 } }), coordinate->GetPoint());
 
-	auto& normal = indexedFaceSet->GetNormal();
+	auto normal = indexedFaceSet->GetNormal();
 	ASSERT_EQ(typeid(Normal), typeid(*normal));
 	ASSERT_EQ("normals_ME_Plane", normal->GetDef());
 	ASSERT_EQ(vector<Float3>({ { 0, 0, 1 },{ 0, 0, 1 },{ 0, 0, 1 },{ 0, 0, 1 } }), normal->GetVector());
 
-	auto& textureCoordinate = indexedFaceSet->GetTextureCoordinate();
+	auto textureCoordinate = indexedFaceSet->GetTextureCoordinate();
 	ASSERT_EQ(typeid(TextureCoordinate), typeid(*textureCoordinate));
 	ASSERT_EQ(vector<Float2>({ { 1, 0 },{ 1, 1 },{ 0, 1 },{ 0, 0 },{ 1, 0 },{ 0, 1 } }), textureCoordinate->GetPoint());
 
@@ -128,7 +122,7 @@ TEST_F(X3dParserTest, parse) {
 	ASSERT_EQ(Float3(1.0f, 1.0f, 1.0f), transform1.GetScale());
 	ASSERT_EQ(Float4(0.205942f, 0.331517f, 0.920698f, 1.926274f), transform1.GetRotation());
 
-	auto& pointLight = transform1.GetPointLight();
+	auto pointLight = transform1.GetPointLight();
 	ASSERT_EQ(typeid(PointLight), typeid(*pointLight));
 	ASSERT_EQ("LA_Lamp", pointLight->GetDef());
 	ASSERT_DOUBLE_EQ(0.0000f, pointLight->GetAmbientIntensity());
@@ -145,7 +139,7 @@ TEST_F(X3dParserTest, parse) {
 	ASSERT_EQ(Float3(1.0f, 1.0f, 1.0f), transform2.GetScale());
 	ASSERT_EQ(Float4(0.678598f, 0.281084f, 0.678599f, 1.096056f), transform2.GetRotation());
 
-	auto& viewpoint = transform2.GetViewpoint();
+	auto viewpoint = transform2.GetViewpoint();
 	ASSERT_EQ(typeid(Viewpoint), typeid(*viewpoint));
 	ASSERT_EQ("CA_Camera", viewpoint->GetDef());
 	ASSERT_EQ(Float3(0, 0, 0), viewpoint->GetCenterOfRotation());

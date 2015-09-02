@@ -7,13 +7,13 @@ namespace x3dParser {
 auto X3d::SetAttribute(std::string const&, std::string&&) -> void {
 }
     
-auto X3d::AddChild(pNode child) -> void {
+auto X3d::AddChild(X3dNode * child) -> void {
     if(typeid(*child) == typeid(Scene)) {
-        _scene.reset(static_cast<Scene*>(child.release()));
+        _scene = static_cast<Scene*>(child);
     }
 }
     
-auto X3d::GetScene() -> unique_ptr<Scene>& {
+auto X3d::GetScene() const -> Scene const* {
     return _scene;
 }
 

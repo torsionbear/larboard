@@ -14,20 +14,16 @@ auto Normal::SetAttribute(string const& attribute, string&& value) -> void {
         SetVector(move(value));
     } else if (attribute.compare("DEF") == 0) {
         SetDef(move(value));
-    }
+    } else if (attribute.compare("USE") == 0) {
+		SetUse(move(value));
+	}
 }
     
-auto Normal::AddChild(pNode) -> void {
+auto Normal::AddChild(X3dNode *) -> void {
 }
 
-auto Normal::GetVector() -> vector<Float3>& {
+auto Normal::GetVector() const -> vector<Float3> const& {
     return _vector;
-}
-
-auto Normal::StealVector() -> vector<Float3> {
-    auto ret = vector<Float3>{};
-    ret.swap(_vector);
-    return ret;
 }
 
 auto Normal::SetVector(string&& s) -> void {

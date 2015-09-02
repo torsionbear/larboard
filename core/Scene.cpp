@@ -5,6 +5,7 @@
 #include <GL/glew.h>
 
 using std::string;
+using std::make_unique;
 
 namespace core {
 
@@ -16,23 +17,23 @@ Scene::~Scene() {
 }
 
 auto Scene::CreateMovable() -> Movable * {
-	_movables.emplace_back();
-	return &_movables.back();
+	_movables.push_back(make_unique<Movable>());
+	return _movables.back().get();
 }
 
 auto Scene::CreateModel() -> Model * {
-	_models.emplace_back();
-	return &_models.back();
+	_models.push_back(make_unique<Model>());
+	return _models.back().get();
 }
 
 auto Scene::CreateCamera() -> Camera * {
-	_cameras.emplace_back();
-	return &_cameras.back();
+	_cameras.push_back(make_unique<Camera>());
+	return _cameras.back().get();
 }
 
 auto Scene::CreatePointLight() -> PointLight * {
-	_pointLights.emplace_back();
-	return &_pointLights.back();
+	_pointLights.push_back(make_unique<PointLight>());
+	return _pointLights.back().get();
 }
 
 auto Scene::Stage(Movable * movable) -> void {
@@ -44,36 +45,55 @@ auto Scene::Unstage(Movable * movable) -> void {
 }
 
 auto Scene::CreateShape(Model* model) -> Shape * {
-	_shapes.emplace_back(model);
-	return &_shapes.back();
+	_shapes.push_back(make_unique<Shape>(model));
+	return _shapes.back().get();
 }
 
-auto Scene::CreateTexture(string const& filename) -> Texture* {
-	// todo: make this factory method creating different textures according to different file type.
-	_textures.emplace_back(filename);
-	return &_textures.back();
+auto Scene::CreateMaterial(std::string const & materialName) -> Material * {
+	auto newMaterial = make_unique<Material>();
+	auto ret = newMaterial.get();
+	_materials[materialName] = move(newMaterial);
+	return ret;
+}
+
+auto Scene::CreateTexture(string const& textureName, string const& filename) -> Texture * {
+	auto newTexture = make_unique<Texture>(filename);
+	auto ret = newTexture.get();
+	_textures[textureName] = move(newTexture);
+	return ret;
 }
 
 auto Scene::CreateMesh() -> Mesh * {
-	_meshes.emplace_back();
-	return &_meshes.back();
+	_meshes.push_back(make_unique<Mesh>());
+	return _meshes.back().get();
 }
 
 auto Scene::CreateShaderProgram(string const& vertexShaderFile, string const& fragmentShaderFile) -> ShaderProgram * {
-	_shaderProgram.emplace_back(vertexShaderFile, fragmentShaderFile);
-	return &_shaderProgram.back();
+	_shaderProgram.push_back(make_unique<ShaderProgram>(vertexShaderFile, fragmentShaderFile));
+	return _shaderProgram.back().get();
 }
 
-auto Scene::CreateDefaultShaderProgram() -> ShaderProgram * {
-	return CreateShaderProgram("default.vert", "default.frag");
+auto Scene::GetMaterial(std::string const & materialName) const -> Material * {
+	return _materials.at(materialName).get();
+}
+
+auto Scene::GetTexture(std::string const & textureName) const -> Texture * {
+	return _textures.at(textureName).get();
+}
+
+auto Scene::GetDefaultShaderProgram() -> ShaderProgram * {
+	if (_defaultShaderProgram == nullptr) {
+		_defaultShaderProgram = CreateShaderProgram("default.vert", "default.frag");
+	}
+	return _defaultShaderProgram;
 }
 
 auto Scene::SendToCard() -> void {
 	for (auto & s : _shaderProgram) {
-		s.SendToCard();
+		s->SendToCard();
 	}
 	for (auto & t : _textures) {
-		t.SendToCard();
+		t.second->SendToCard();
 	}
 
 	// currently we use only 1 vao & vbo for a scene.
@@ -82,16 +102,16 @@ auto Scene::SendToCard() -> void {
 	glGenBuffers(1, &_vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
 	for (auto const& m : _meshes) {
-		_vertexCount += m._vertex.size();
+		_vertexCount += m->_vertex.size();
 	}
 	glBufferData(GL_ARRAY_BUFFER, _vertexCount * sizeof(Vertex), nullptr, GL_STATIC_DRAW);
 
 	auto offset = 0;
 	for (auto & m : _meshes) {
-		m._vao = _vao;
-		m._offset = offset * sizeof(Vertex);
-		glBufferSubData(GL_ARRAY_BUFFER, m._offset, m._size, m._vertex.data());
-		offset += m._vertex.size();
+		m->_vao = _vao;
+		m->_offset = offset * sizeof(Vertex);
+		glBufferSubData(GL_ARRAY_BUFFER, m->_offset, m->_size, m->_vertex.data());
+		offset += m->_vertex.size();
 	}
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0);
@@ -110,31 +130,31 @@ auto Scene::Draw() -> void {
 	glBindVertexArray(_vao);
 
 	auto & camera = _cameras.front();	
-	Matrix4x4f viewTransform = camera.GetProjectionTransform() * camera.GetRigidBodyMatrixInverse();
+	Matrix4x4f viewTransform = camera->GetProjectionTransform() * camera->GetRigidBodyMatrixInverse();
 
 	auto currentShaderProgram = static_cast<ShaderProgram*>(nullptr);
 	for (auto const& s : _shapes) {
-		if (currentShaderProgram != s._shaderProgram) {
-			s._shaderProgram->Use();
-			currentShaderProgram = s._shaderProgram;
-			glUniformMatrix4fv(glGetUniformLocation(s._shaderProgram->GetHandler(), "viewTransform"),
+		if (currentShaderProgram != s->_shaderProgram) {
+			s->_shaderProgram->Use();
+			currentShaderProgram = s->_shaderProgram;
+			glUniformMatrix4fv(glGetUniformLocation(s->_shaderProgram->GetHandler(), "viewTransform"),
 				1, GL_TRUE, viewTransform.data());
 		}
 
 		error = glGetError();
-		auto & worldTransform = s._model->GetMatrix();
+		auto & worldTransform = s->_model->GetMatrix();
 		// opengl expect column major matrix, so we pass GL_TRUE to transpose our matrix.
 		// another solution is to always multiply vector to matrix in shader (e.g. v_transformed = v * M)
-		glUniformMatrix4fv(glGetUniformLocation(s._shaderProgram->GetHandler(), "worldTransform"), 
+		glUniformMatrix4fv(glGetUniformLocation(s->_shaderProgram->GetHandler(), "worldTransform"),
 			1, GL_TRUE, worldTransform.data());
 
 		error = glGetError();
-		for (auto i = 0u; i < s._textures.size(); ++i) {
-			s._textures[i]->Use(i);
+		for (auto i = 0u; i < s->_textures.size(); ++i) {
+			s->_textures[i]->Use(i);
 			auto variable = string("texture").append({ static_cast<char>('0' + i) });
 			glUniform1i(glGetUniformLocation(currentShaderProgram->GetHandler(), "texture0"), i);
 		}
-		glDrawArrays(GL_TRIANGLES, s._mesh->_offset, s._mesh->_size);
+		glDrawArrays(GL_TRIANGLES, s->_mesh->_offset, s->_mesh->_size);
 	}
 
 	error = glGetError();

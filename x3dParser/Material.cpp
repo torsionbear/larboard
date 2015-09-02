@@ -22,10 +22,12 @@ auto Material::SetAttribute(string const& attribute, string&& value) -> void {
         SetTransparency(move(value));
     } else if (attribute.compare("DEF") == 0) {
         SetDef(move(value));
-    }
+    } else if (attribute.compare("USE") == 0) {
+		SetUse(move(value));
+	}
 }
     
-auto Material::AddChild(pNode) -> void {
+auto Material::AddChild(X3dNode *) -> void {
 }
 
 auto Material::GetDiffuseColor() const -> Float3 {

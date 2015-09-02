@@ -23,14 +23,15 @@ public:
 		_scene = make_unique<core::Scene>();
 	}
 private:
-	auto Read(IndexedFaceSet&) -> core::Mesh *;
-    auto Read(Transform&) -> core::Movable *;
-	auto Read(Scene & scene) ->std::unique_ptr<core::Scene>;
-	auto Read(X3d&) ->std::unique_ptr<core::Scene>;
-	auto Read(Shape&) -> core::Model *;
-	auto Read(ImageTexture&) -> vector<core::Texture*>;
-	auto Read(Viewpoint&)->core::Camera *;
-	auto Read(PointLight&) -> core::PointLight *;
+	auto Read(IndexedFaceSet const&) -> core::Mesh *;
+    auto Read(Transform const&) -> core::Movable *;
+	auto Read(Scene const& scene) ->std::unique_ptr<core::Scene>;
+	auto Read(X3d const&) ->std::unique_ptr<core::Scene>;
+	auto Read(Shape const&) -> core::Model *;
+	auto Read(Material const& material) -> core::Material *;
+	auto Read(ImageTexture const&) -> core::Texture*;
+	auto Read(Viewpoint const&)->core::Camera *;
+	auto Read(PointLight const&) -> core::PointLight *;
 
 private:
 	std::unique_ptr<core::Scene> _scene;

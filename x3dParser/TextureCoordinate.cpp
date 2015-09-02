@@ -15,7 +15,7 @@ auto TextureCoordinate::SetAttribute(string const& attribute, string&& value) ->
     }
 }
     
-auto TextureCoordinate::AddChild(pNode) -> void {
+auto TextureCoordinate::AddChild(X3dNode * child) -> void {
 }
 
 auto TextureCoordinate::GetPoint() const -> const vector<Float2>& {

@@ -13,13 +13,15 @@ auto Coordinate::SetAttribute(string const& attribute, string&& value) -> void {
         SetPoint(move(value));
     } else if (attribute.compare("DEF") == 0) {
         SetDef(move(value));
-    }
+    } else if (attribute.compare("USE") == 0) {
+		SetUse(move(value));
+	}
 }
     
-auto Coordinate::AddChild(pNode) -> void {
+auto Coordinate::AddChild(X3dNode *) -> void {
 }
 
-auto Coordinate::GetPoint() -> vector<Float3>& {
+auto Coordinate::GetPoint() const -> vector<Float3> const& {
     return _point;
 }
 

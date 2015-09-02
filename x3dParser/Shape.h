@@ -9,14 +9,14 @@ namespace x3dParser {
 class Shape : public X3dNode {
 public:
     auto SetAttribute(std::string const&, std::string&&) -> void override;
-    auto AddChild(pNode) -> void override;
+    auto AddChild(X3dNode *) -> void override;
     
-    auto GetAppearance() -> std::unique_ptr<Appearance>&;
-    auto GetIndexedFaceSet() -> std::unique_ptr<IndexedFaceSet>&;
+    auto GetAppearance() const -> Appearance const*;
+    auto GetIndexedFaceSet() const -> IndexedFaceSet const*;
 
 private:
-    std::unique_ptr<Appearance> _appearance = nullptr;
-    std::unique_ptr<IndexedFaceSet> _indexedFaceSet = nullptr;
+    Appearance * _appearance = nullptr;
+    IndexedFaceSet * _indexedFaceSet = nullptr;
 };
 
 }

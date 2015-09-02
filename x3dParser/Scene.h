@@ -8,12 +8,12 @@ namespace x3dParser {
 class Scene : public X3dNode {
 public:
     auto SetAttribute(std::string const&, std::string&&) -> void override;
-    auto AddChild(pNode) -> void override;
+    auto AddChild(X3dNode *) -> void override;
 
-    auto GetTransform() -> std::vector<std::unique_ptr<Transform>>&;
+    auto GetTransform() const -> std::vector<Transform*> const&;
 
 private:
-    std::vector<std::unique_ptr<Transform>> _transform;
+    std::vector<Transform *> _transform;
 };
 
 }

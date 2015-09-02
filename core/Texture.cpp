@@ -20,7 +20,7 @@ void swap(Texture& first, Texture& second) {
 }
 
 auto core::Texture::LoadImpl() -> bool {
-	// only support png yet
+	// todo: load image file according to file extension. Currently only png is supported
 	PngReader pngReader{_filename};
 	pngReader.ReadPng();
 	_width = pngReader.Width();

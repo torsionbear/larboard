@@ -17,30 +17,32 @@ auto PointLight::SetAttribute(string const& attribute, string&& value) -> void {
 		SetLocation(move(value));
 	} else if (attribute.compare("DEF") == 0) {
 		SetDef(move(value));
+	} else if (attribute.compare("USE") == 0) {
+		SetUse(move(value));
 	}
 }
 
-auto PointLight::AddChild(pNode) -> void {
+auto PointLight::AddChild(X3dNode *) -> void {
 	return;
 }
 
-auto PointLight::GetAmbientIntensity() -> Float {
+auto PointLight::GetAmbientIntensity() const -> Float {
 	return _ambientIntensity;
 }
 
-auto PointLight::GetColor() -> Float3 {
+auto PointLight::GetColor() const -> Float3 {
 	return _color;
 }
 
-auto PointLight::GetIntensity() -> Float {
+auto PointLight::GetIntensity() const -> Float {
 	return _intensity;
 }
 
-auto PointLight::GetRadius() -> Float {
+auto PointLight::GetRadius() const -> Float {
 	return _radius;
 }
 
-auto PointLight::GetLocation() -> Float3 {
+auto PointLight::GetLocation() const -> Float3 {
 	return _location;
 }
 

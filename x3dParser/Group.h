@@ -8,12 +8,12 @@ namespace x3dParser {
 class Group : public X3dNode {
 public:
     auto SetAttribute(std::string const&, std::string&&) -> void override;
-    auto AddChild(pNode) -> void override;
+    auto AddChild(X3dNode *) -> void override;
 
-    auto GetShape() -> std::vector<std::unique_ptr<Shape>>&;
+    auto GetShape() const -> std::vector<Shape *> const&;
 
 private:
-    std::vector<std::unique_ptr<Shape>> _shape;
+    std::vector<Shape *> _shape;
 };
 
 }

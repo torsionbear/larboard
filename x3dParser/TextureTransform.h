@@ -9,7 +9,7 @@ namespace x3dParser {
 class TextureTransform : public X3dNode {
 public:
     auto SetAttribute(std::string const&, std::string&&) -> void override;
-    auto AddChild(pNode) -> void override;
+    auto AddChild(X3dNode * child) -> void override;
 
     auto GetTranslation() const -> Float2;
     auto GetScale() const -> Float2;

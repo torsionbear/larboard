@@ -15,10 +15,12 @@ auto Viewpoint::SetAttribute(string const& attribute, string&& value) -> void {
         SetFieldOfView(move(value));
     } else if (attribute.compare("DEF") == 0) {
         SetDef(move(value));
-    }
+    } else if (attribute.compare("USE") == 0) {
+		SetUse(move(value));
+	}
 }
     
-auto Viewpoint::AddChild(pNode) -> void {
+auto Viewpoint::AddChild(X3dNode *) -> void {
 }
 
 auto Viewpoint::GetCenterOfRotation() const -> Float3 {

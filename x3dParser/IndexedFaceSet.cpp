@@ -27,13 +27,13 @@ auto IndexedFaceSet::SetAttribute(string const& attribute, string&& value) -> vo
     }
 }
 
-auto IndexedFaceSet::AddChild(pNode child) -> void {
+auto IndexedFaceSet::AddChild(X3dNode * child) -> void {
     if(typeid(*child) == typeid(Coordinate)) {
-        _coordinate.reset(static_cast<Coordinate*>(child.release()));
+        _coordinate = static_cast<Coordinate*>(child);
     } else if (typeid(*child) == typeid(Normal)) {
-        _normal.reset(static_cast<Normal*>(child.release()));
+        _normal = static_cast<Normal*>(child);
     } else if (typeid(*child) == typeid(TextureCoordinate)) {
-        _textureCoordinate.reset(static_cast<TextureCoordinate*>(child.release()));
+        _textureCoordinate = static_cast<TextureCoordinate*>(child);
     }
 }
 
@@ -49,23 +49,23 @@ auto IndexedFaceSet::GetNormalPerVertex() const -> bool {
     return _normalPerVertex;
 }
 
-auto IndexedFaceSet::GetTexCoordIndex() -> vector<ULong3>& {
+auto IndexedFaceSet::GetTexCoordIndex() const -> vector<ULong3> const& {
     return _texCoordIndex;
 }
 
-auto IndexedFaceSet::GetCoordIndex() -> vector<ULong3>& {
+auto IndexedFaceSet::GetCoordIndex() const -> vector<ULong3> const& {
     return _coordIndex;
 }
     
-auto IndexedFaceSet::GetCoordinate() -> unique_ptr<Coordinate>& {
+auto IndexedFaceSet::GetCoordinate() const -> Coordinate const* {
     return _coordinate;
 }
 
-auto IndexedFaceSet::GetNormal() -> unique_ptr<Normal>& {
+auto IndexedFaceSet::GetNormal() const ->  Normal const* {
     return _normal;
 }
 
-auto IndexedFaceSet::GetTextureCoordinate() -> unique_ptr<TextureCoordinate>& {
+auto IndexedFaceSet::GetTextureCoordinate() const -> TextureCoordinate const * {
     return _textureCoordinate;
 }
 

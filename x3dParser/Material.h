@@ -8,7 +8,7 @@ namespace x3dParser {
 class Material : public X3dNode {
 public:
     auto SetAttribute(std::string const&, std::string&&) -> void override;
-    auto AddChild(pNode) -> void override;
+    auto AddChild(X3dNode *) -> void override;
 
     auto GetDiffuseColor() const -> Float3;
     auto GetSpecularColor() const -> Float3;

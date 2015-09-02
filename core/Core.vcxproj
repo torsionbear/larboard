@@ -83,6 +83,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Movable.cpp" />
     <ClCompile Include="PointLight.cpp" />
@@ -98,6 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Endian.h" />
+    <ClInclude Include="Material.h" />
     <ClInclude Include="MessageLogger.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Movable.h" />

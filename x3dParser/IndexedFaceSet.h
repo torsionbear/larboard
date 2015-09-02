@@ -11,16 +11,16 @@ namespace x3dParser {
 class IndexedFaceSet : public X3dNode {
 public:
     auto SetAttribute(std::string const&, std::string&&) -> void override;
-    auto AddChild(pNode) -> void override;
+    auto AddChild(X3dNode *) -> void override;
 
     auto GetSolid() const -> bool;
     auto GetCreaseAngle() const -> Float;
     auto GetNormalPerVertex() const -> bool;
-    auto GetTexCoordIndex() -> std::vector<ULong3>&;
-    auto GetCoordIndex() -> std::vector<ULong3>&;
-    auto GetCoordinate() -> std::unique_ptr<Coordinate>&;
-    auto GetNormal() -> std::unique_ptr<Normal>&;
-    auto GetTextureCoordinate() -> std::unique_ptr<TextureCoordinate>&;
+    auto GetTexCoordIndex() const -> std::vector<ULong3> const&;
+    auto GetCoordIndex() const -> std::vector<ULong3> const&;
+    auto GetCoordinate() const -> Coordinate const*;
+    auto GetNormal() const -> Normal const*;
+    auto GetTextureCoordinate() const -> TextureCoordinate const*;
 
 private:
     auto SetSolid(std::string&&) -> void;
@@ -37,9 +37,9 @@ private:
     bool _normalPerVertex;
     std::vector<ULong3> _texCoordIndex;
     std::vector<ULong3> _coordIndex;
-    std::unique_ptr<Coordinate> _coordinate = nullptr;
-    std::unique_ptr<Normal> _normal = nullptr;
-    std::unique_ptr<TextureCoordinate> _textureCoordinate = nullptr;
+    Coordinate * _coordinate = nullptr;
+    Normal * _normal = nullptr;
+    TextureCoordinate * _textureCoordinate = nullptr;
 };
 
 }

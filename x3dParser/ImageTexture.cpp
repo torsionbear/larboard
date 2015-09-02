@@ -11,10 +11,12 @@ auto ImageTexture::SetAttribute(string const& attribute, string&& value) -> void
         SetUrl(move(value));
     } else if (attribute.compare("DEF") == 0) {
         SetDef(move(value));
-    }
+    } else if (attribute.compare("USE") == 0) {
+		SetUse(move(value));
+	}
 }
     
-auto ImageTexture::AddChild(pNode) -> void {
+auto ImageTexture::AddChild(X3dNode *) -> void {
 }
     
 auto ImageTexture::GetUrl() const -> std::vector<std::string> {
