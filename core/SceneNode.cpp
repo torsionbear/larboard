@@ -9,6 +9,15 @@ namespace core {
 SceneNode::SceneNode() = default;
 SceneNode::~SceneNode() = default;
 
+auto SceneNode::MoveAlong(Vector3f const& forwardDirection, Float32 length) -> void {
+	_transform = _transform * Matrix4x4f{
+		1, 0, 0, forwardDirection.x * length,
+		0, 1, 0, forwardDirection.y * length,
+		0, 0, 1, forwardDirection.z * length,
+		0, 0, 0, 1
+	};
+}
+
 auto SceneNode::Translate(Float32 x, Float32 y, Float32 z) -> void {
 	_transform = Matrix4x4f{
 		1, 0, 0, x,

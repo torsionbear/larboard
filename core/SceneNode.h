@@ -19,6 +19,7 @@ public:
 	~SceneNode();
 
 private:
+	auto MoveAlong(Vector3f const& forwardDirection, Float32 length) -> void;
 	auto Translate(Float32, Float32, Float32) -> void;
 	auto Rotate(Float32, Float32, Float32, Float32) -> void;
 

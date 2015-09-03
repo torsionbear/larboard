@@ -77,7 +77,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="MatrixTest.cpp" />
+    <ClCompile Include="PrimitiveTest.cpp" />
     <ClCompile Include="EndianTest.cpp" />
     <ClCompile Include="PngReaderTest.cpp" />
   </ItemGroup>

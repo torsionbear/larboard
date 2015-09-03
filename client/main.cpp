@@ -16,8 +16,7 @@ using core::MessageLogger;
 
 using std::max;
 
-void Init(core::Scene & scene)
-{	
+auto Init(core::Scene & scene) -> void {	
 	auto model = scene.CreateModel();
 	auto * shape = scene.CreateShape(model);
 	auto v = glGetString(GL_VERSION);
@@ -44,16 +43,19 @@ void Init(core::Scene & scene)
 	shape->SetShaderProgram(shaderProgram);
 }
 
-void DrawOneFrame(core::Scene & scene)
-{
+auto DrawOneFrame(core::Scene & scene) -> void {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	scene.Draw();
     glFlush();
 }
 
+auto UpdateScene(core::Scene & scene) -> void {
+
+}
+
 int main()
 {
-    RenderWindow rw;
+	RenderWindow rw{};
     rw.Create(800, 600, L"RenderWindow");
 
     if (glewInit())
@@ -66,10 +68,40 @@ int main()
 	//auto scene = std::make_unique<core::Scene>();
 	//Init(*scene);
 	scene->SendToCard();
+
+	rw.RegisterKeyHandler([&scene](int keyCode) {
+		switch (keyCode) {
+		case VK_ESCAPE:
+			break;
+		case VK_F2:
+			break;
+		case 0x57:	// W key
+			scene->GetActiveCamera()->Forward(0.2);
+			break;
+		case 0x41:	// A key
+			scene->GetActiveCamera()->Leftward(0.2);
+			break;
+		case 0x53:	// S key
+			scene->GetActiveCamera()->Backward(0.2);
+			break;
+		case 0x44:	// D key
+			scene->GetActiveCamera()->Rightward(0.2);
+			break;
+		case VK_SPACE:
+			break;
+		case 0x49:	// I key
+			break;
+		case 0x4B:	// K key
+			break;
+		default:
+			break;
+		}
+	});
 	
 
     while (rw.Step())
     {
+		UpdateScene(*scene);
         DrawOneFrame(*scene);
     }
 

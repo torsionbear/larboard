@@ -25,6 +25,9 @@ struct Vector4 {
 
 template <typename T>
 struct Vector3 {
+	Vector3<T> operator*(Vector3 const& rhs) {
+		return Vector3<T>{y * rhs.z - z * rhs.y, z * rhs.x - x * rhs.z, x * rhs.y - y * rhs.x};
+	}
 	T x;
 	T y;
 	T z;

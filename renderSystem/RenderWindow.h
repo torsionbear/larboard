@@ -3,6 +3,7 @@
 #include <Windows.h>
 
 #include <string>
+#include <functional>
 
 using std::wstring;
 
@@ -14,6 +15,8 @@ public:
     RenderWindow& operator= (RenderWindow const&) = delete;
     ~RenderWindow();
 
+public:
+	void RegisterKeyHandler(std::function<void(int)> keyHandler);
     void Create(int width, int height, wstring name);
     bool Step();
 
@@ -37,5 +40,5 @@ private:
     HWND m_RenderWindowHandle;
     HDC m_DeviceContextHandle;
     HGLRC m_GlRenderContextHandle;
-
+	std::function<void(int)> _keyHandler;
 };

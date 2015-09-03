@@ -18,10 +18,10 @@
     <ClCompile Include="EndianTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MatrixTest.cpp">
+    <ClCompile Include="PngReaderTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PngReaderTest.cpp">
+    <ClCompile Include="PrimitiveTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

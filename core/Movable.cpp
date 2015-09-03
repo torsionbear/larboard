@@ -8,6 +8,30 @@ auto swap(Movable & first, Movable & second) -> void {
 	swap(first._sceneNode, second._sceneNode);
 }
 
+auto Movable::Forward(Float32 length) -> void {
+	_sceneNode->MoveAlong(_forwardDirection, length);
+}
+
+auto Movable::Backward(Float32 length) -> void {
+	_sceneNode->MoveAlong(_forwardDirection, -length);
+}
+
+auto Movable::Leftward(Float32 length) -> void {
+	_sceneNode->MoveAlong(_rightwardDirection, -length);
+}
+
+auto Movable::Rightward(Float32 length) -> void {
+	_sceneNode->MoveAlong(_rightwardDirection, length);
+}
+
+auto Movable::Upward(Float32 length) -> void {
+	_sceneNode->MoveAlong(_upwardDirection, length);
+}
+
+auto Movable::Downward(Float32 length) -> void {
+	_sceneNode->MoveAlong(_upwardDirection, -length);
+}
+
 auto Movable::Translate(Float32 x, Float32 y, Float32 z) -> void {
 	assert(nullptr != _sceneNode);
 	_sceneNode->Translate(x, y, z);

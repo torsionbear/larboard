@@ -81,6 +81,10 @@ auto Scene::GetTexture(std::string const & textureName) const -> Texture * {
 	return _textures.at(textureName).get();
 }
 
+auto Scene::GetActiveCamera() const -> Camera * {
+	return _cameras.front().get();
+}
+
 auto Scene::GetDefaultShaderProgram() -> ShaderProgram * {
 	if (_defaultShaderProgram == nullptr) {
 		_defaultShaderProgram = CreateShaderProgram("default.vert", "default.frag");

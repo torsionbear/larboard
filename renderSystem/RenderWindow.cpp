@@ -1,9 +1,12 @@
 #include "RenderWindow.h"
 
+#include <functional>
+
 wstring const RenderWindow::windowClassName = L"RenderWindowClass";
 
 LRESULT CALLBACK RenderWindow::RenderWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	auto *currentRenderWindow = reinterpret_cast<RenderWindow*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
     switch (uMsg)
     {
     case WM_LBUTTONDOWN:
@@ -20,30 +23,10 @@ LRESULT CALLBACK RenderWindow::RenderWindowProc(HWND hWnd, UINT uMsg, WPARAM wPa
         PostQuitMessage(0);
         break;
     case WM_KEYDOWN:
-        switch ((int)wParam)
-        {
-        case VK_ESCAPE:
-            break;
-        case VK_F2:
-            break;
-        case 0x57:	// W key
-            break;
-        case 0x41:	// A key
-            break;
-        case 0x53:	// S key
-            break;
-        case 0x44:	// D key
-            break;
-        case VK_SPACE:
-            break;
-        case 0x49:	// I key
-            break;
-        case 0x4B:	// K key
-            break;
-        default:
-            break;
-        }
-        break;
+		if (currentRenderWindow->_keyHandler) {
+			currentRenderWindow->_keyHandler((int)wParam);
+		}
+		break;
     }
 
     return DefWindowProc(hWnd, uMsg, wParam, lParam);
@@ -53,7 +36,8 @@ void RenderWindow::RegisterRenderWindowClass()
 {
     WNDCLASSEX renderWindowClass = {};
     renderWindowClass.cbSize = sizeof(WNDCLASSEX);
-    renderWindowClass.lpfnWndProc = RenderWindowProc;
+	renderWindowClass.lpfnWndProc = RenderWindowProc;
+
     renderWindowClass.hInstance = nullptr;
     renderWindowClass.lpszClassName = windowClassName.c_str();
     if (!RegisterClassEx(&renderWindowClass))
@@ -88,6 +72,12 @@ void RenderWindow::CreateRenderWindow()
         nullptr,
         nullptr
         );
+
+	// Use SetWIndowLongPtr to store a pointer to our class, 
+	// so our (static) message handle function RenderWindowProc() can
+	// retrieve this pointer by GetWindowsLongPtr and call input handle function
+	// (which is a non-static member function)
+	SetWindowLongPtr(m_RenderWindowHandle, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
     if (!m_RenderWindowHandle)
     {
         DWORD errorCode = GetLastError(); // log this error
@@ -156,6 +146,10 @@ RenderWindow::RenderWindow()
     , m_Height(0)
 {
     RegisterRenderWindowClass();
+}
+
+void RenderWindow::RegisterKeyHandler(std::function<void(int)> keyHandler) {
+	_keyHandler = keyHandler;
 }
 
 void RenderWindow::Create(int width, int height, wstring name)

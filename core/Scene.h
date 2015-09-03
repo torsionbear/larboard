@@ -37,6 +37,7 @@ public:
 
 	auto GetMaterial(std::string const& materialName) const->Material *;
 	auto GetTexture(std::string const& textureName) const -> Texture *;
+	auto GetActiveCamera() const -> Camera *;
 	auto GetDefaultShaderProgram()->ShaderProgram *;
 
 	auto SendToCard() -> void;

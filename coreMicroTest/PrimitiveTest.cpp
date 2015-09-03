@@ -4,7 +4,7 @@
 
 using namespace core;
 
-class MatrixTest : public ::testing::Test {
+class PrimitiveTest : public ::testing::Test {
 
 };
 
@@ -31,7 +31,7 @@ auto equal(Matrix<T, ROW, COL> const& lhs, Matrix<T, ROW, COL> const& rhs) -> bo
 	return true;
 }
 
-TEST_F(MatrixTest, Matrix_multiplification) {
+TEST_F(PrimitiveTest, Matrix_multiplification) {
 	auto identity = Matrix4x4f{};
 	auto ones = Matrix4x4f{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, };
 
@@ -45,4 +45,13 @@ TEST_F(MatrixTest, Matrix_multiplification) {
 	auto antiDiagonal = Matrix4x4f{ 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, };
 	auto result = static_cast<Matrix4x4f>(m*antiDiagonal*identity);
 	ASSERT_TRUE(equal(result, Matrix4x4f{ 4, 3, 2, 1, 1, 2, 3, 4, 2, 1, 4, 3, 3, 4, 1, 2 }));
+}
+
+TEST_F(PrimitiveTest, Vector3_cross_multiplification) {
+	auto lhs = Vector3f{ 0, 1, 0 };
+	auto rhs = Vector3f{ 0, 0, 1 };
+	auto result = lhs * rhs;
+	ASSERT_DOUBLE_EQ(result.x, 1.0f);
+	ASSERT_DOUBLE_EQ(result.y, 0.0f);
+	ASSERT_DOUBLE_EQ(result.z, 0.0f);
 }
