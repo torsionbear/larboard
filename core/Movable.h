@@ -15,7 +15,7 @@ public:
 	Movable(Vector3f const& forwardDirection, Vector3f const& upwardDirection)
 		: _forwardDirection(forwardDirection) 
 		, _upwardDirection(upwardDirection) 
-		, _rightwardDirection(_forwardDirection * _upwardDirection) {		
+		, _rightDirection(_forwardDirection * _upwardDirection) {		
 	}
 	Movable(Movable const&)
 		: _sceneNode(std::make_unique<SceneNode>()) {
@@ -42,6 +42,9 @@ public:
 	auto Rightward(Float32 length) -> void;
 	auto Upward(Float32 length) -> void;
 	auto Downward(Float32 length) -> void;
+	auto Head(Float32 radius) -> void;
+	auto Pitch(Float32 radius) -> void;
+	auto Roll(Float32 radius) -> void;
 
 	auto Translate(Float32, Float32, Float32) -> void;
 	auto Rotate(Float32, Float32, Float32, Float32) -> void;
@@ -54,7 +57,7 @@ protected:
 	std::unique_ptr<SceneNode> _sceneNode = std::make_unique<SceneNode>();
 	Vector3f _forwardDirection = Vector3f{ 0.0f, 1.0f, 0.0f };
 	Vector3f _upwardDirection = Vector3f{ 0.0f, 0.0f, 1.0f };
-	Vector3f _rightwardDirection = Vector3f{ 1.0f, 0.0f, 0.0f };
+	Vector3f _rightDirection = Vector3f{ 1.0f, 0.0f, 0.0f };
 };
 
 }

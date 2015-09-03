@@ -7,28 +7,26 @@ wstring const RenderWindow::windowClassName = L"RenderWindowClass";
 LRESULT CALLBACK RenderWindow::RenderWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	auto *currentRenderWindow = reinterpret_cast<RenderWindow*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
-    switch (uMsg)
-    {
-    case WM_LBUTTONDOWN:
-        break;
-    case WM_CREATE:
-        break;
-    case WM_SIZE:
-        break;
-    case WM_CLOSE:
-        //MessageBox(nullptr, L"close", L"close?", 0);
-        // todo: prompt for confirmation
-        break;
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
-    case WM_KEYDOWN:
-		if (currentRenderWindow->_keyHandler) {
-			currentRenderWindow->_keyHandler((int)wParam);
-		}
+	switch (uMsg) {
+	case WM_CREATE:
 		break;
-    }
-
+	case WM_CLOSE:
+		//MessageBox(nullptr, L"close", L"close?", 0);
+		// todo: prompt for confirmation
+		break;
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		break;
+	case WM_LBUTTONDOWN:
+	case WM_SIZE:
+	case WM_MOUSEWHEEL:
+	case WM_MOUSEMOVE:
+	case WM_KEYDOWN:
+		if (currentRenderWindow->_inputHandler) {
+			currentRenderWindow->_inputHandler(hWnd, uMsg, wParam, lParam);
+		}
+	}
+	
     return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
@@ -148,8 +146,8 @@ RenderWindow::RenderWindow()
     RegisterRenderWindowClass();
 }
 
-void RenderWindow::RegisterKeyHandler(std::function<void(int)> keyHandler) {
-	_keyHandler = keyHandler;
+void RenderWindow::RegisterInputHandler(std::function<void(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)> inputHandler) {
+	_inputHandler = inputHandler;
 }
 
 void RenderWindow::Create(int width, int height, wstring name)

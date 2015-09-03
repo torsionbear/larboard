@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Windows.h>
+#include <Windowsx.h>
 
 #include <string>
 #include <functional>
@@ -16,7 +17,7 @@ public:
     ~RenderWindow();
 
 public:
-	void RegisterKeyHandler(std::function<void(int)> keyHandler);
+	void RegisterInputHandler(std::function<void(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)> inputHandler);
     void Create(int width, int height, wstring name);
     bool Step();
 
@@ -40,5 +41,5 @@ private:
     HWND m_RenderWindowHandle;
     HDC m_DeviceContextHandle;
     HGLRC m_GlRenderContextHandle;
-	std::function<void(int)> _keyHandler;
+	std::function<void(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)> _inputHandler;
 };

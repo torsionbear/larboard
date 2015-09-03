@@ -17,11 +17,11 @@ auto Movable::Backward(Float32 length) -> void {
 }
 
 auto Movable::Leftward(Float32 length) -> void {
-	_sceneNode->MoveAlong(_rightwardDirection, -length);
+	_sceneNode->MoveAlong(_rightDirection, -length);
 }
 
 auto Movable::Rightward(Float32 length) -> void {
-	_sceneNode->MoveAlong(_rightwardDirection, length);
+	_sceneNode->MoveAlong(_rightDirection, length);
 }
 
 auto Movable::Upward(Float32 length) -> void {
@@ -30,6 +30,18 @@ auto Movable::Upward(Float32 length) -> void {
 
 auto Movable::Downward(Float32 length) -> void {
 	_sceneNode->MoveAlong(_upwardDirection, -length);
+}
+
+auto Movable::Head(Float32 radius) -> void {
+	_sceneNode->Rotate(_upwardDirection.x, _upwardDirection.y, _upwardDirection.z, radius);
+}
+
+auto Movable::Pitch(Float32 radius) -> void {
+	_sceneNode->Rotate(_rightDirection.x, _rightDirection.y, _rightDirection.z, radius);
+}
+
+auto Movable::Roll(Float32 radius) -> void {
+	_sceneNode->Rotate(_forwardDirection.x, _forwardDirection.y, _forwardDirection.z, radius);
 }
 
 auto Movable::Translate(Float32 x, Float32 y, Float32 z) -> void {
