@@ -49,9 +49,16 @@ auto Movable::Translate(Float32 x, Float32 y, Float32 z) -> void {
 	_sceneNode->Translate(x, y, z);
 }
 
+auto Movable::Translate(Vector3f v) -> void {
+	Translate(v.x, v.y, v.z);
+}
+
 auto Movable::Rotate(Float32 x, Float32 y, Float32 z, Float32 r) -> void {
 	assert(nullptr != _sceneNode);
 	_sceneNode->Rotate(x, y, z, r);
+}
+
+auto Movable::Rotate(Vector3f center, Vector3f pivot, Float32 angle) -> void {
 }
 
 auto Movable::AttachTo(Movable & node) -> void {

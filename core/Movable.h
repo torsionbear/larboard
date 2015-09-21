@@ -2,6 +2,8 @@
 
 #include <memory>
 
+#include "Vector.h"
+#include "Matrix.h"
 #include "SceneNode.h"
 
 namespace core {
@@ -47,7 +49,9 @@ public:
 	auto Roll(Float32 radius) -> void;
 
 	auto Translate(Float32, Float32, Float32) -> void;
+	auto Translate(Vector3f) -> void;
 	auto Rotate(Float32, Float32, Float32, Float32) -> void;
+	auto Rotate(Vector3f center, Vector3f pivot, Float32 angle) -> void;
 	auto AttachTo(Movable &) -> void;
 	auto DetachFrom() -> void;
 	auto GetMatrix() const->Matrix4x4f const&;

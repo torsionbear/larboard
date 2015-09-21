@@ -9,7 +9,6 @@
 #include "Shader.h"
 #include "MessageLogger.h"
 #include "Resource.h"
-#include "Primitive.h"
 
 namespace core {
 

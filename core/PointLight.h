@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Primitive.h"
+#include "Vector.h"
 #include "Movable.h"
 
 namespace core {

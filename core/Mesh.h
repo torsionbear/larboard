@@ -2,7 +2,6 @@
 
 #include <vector>
 
-#include "Primitive.h"
 #include "Vertex.h"
 #include "Resource.h"
 

@@ -100,6 +100,7 @@
   <ItemGroup>
     <ClInclude Include="Endian.h" />
     <ClInclude Include="Material.h" />
+    <ClInclude Include="Matrix.h" />
     <ClInclude Include="MessageLogger.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Movable.h" />
@@ -115,6 +116,7 @@
     <ClInclude Include="Shape.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="Vector.h" />
     <ClInclude Include="Vertex.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

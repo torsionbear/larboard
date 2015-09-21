@@ -34,12 +34,12 @@ auto SceneNode::Rotate(Float32 x, Float32 y, Float32 z, Float32 r) -> void {
 	auto a = cos(r);
 	auto b = sin(r);
 	auto c = 1 - a;
-	_transform = _transform * Matrix4x4f{
+	_transform = Matrix4x4f{
 		a + c*x*x,		c*x*y - b*z,	c*x*z + b*y,	0,
 		c*x*y + b*z,	a + c*y*y,		c*y*z - b*x,	0,
 		c*x*z - b*y,	c*y*z + b*x,	a + c*z*z,		0,
 		0,				0,				0,				1
-	};
+	} * _transform;
 	for (auto c : _children) {
 		c->Rotate(x, y, z, r);
 	}

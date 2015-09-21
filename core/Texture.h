@@ -5,7 +5,7 @@
 #include <memory>
 #include <utility>
 
-#include "Primitive.h"
+#include "Vector.h"
 #include "Resource.h"
 
 using std::vector;

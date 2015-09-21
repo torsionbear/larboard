@@ -4,7 +4,8 @@
 #include <memory>
 #include <forward_list>
 
-#include "Primitive.h"
+#include "Vector.h"
+#include "Matrix.h"
 
 namespace core {
 

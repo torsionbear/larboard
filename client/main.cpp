@@ -88,8 +88,8 @@ int main()
 			auto y = GET_Y_LPARAM(lParam);
 			if (wParam == MK_MBUTTON) {	// middle mouse button: rotate
 				if (status == 1) {
-					scene->GetActiveCamera()->Head(static_cast<float>(-(x - lastX)) / 100.0f);
-					//scene->GetActiveCamera()->Rotate(0.0f, 1.0f, 0.0f, static_cast<float>(x - lastX) / 100.0f);
+					//scene->GetActiveCamera()->Head(static_cast<float>(-(x - lastX)) / 100.0f);
+					scene->GetActiveCamera()->Rotate(0.0f, 0.0f, 1.0f, static_cast<float>(-(x - lastX)) / 100.0f);
 					scene->GetActiveCamera()->Pitch(static_cast<float>(-(y - lastY)) / 100.0f);
 				}
 				lastX = x;

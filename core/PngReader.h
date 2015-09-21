@@ -5,7 +5,7 @@
 #include <fstream>
 #include <vector>
 
-#include "Primitive.h"
+#include "Vector.h"
 
 namespace core {
 

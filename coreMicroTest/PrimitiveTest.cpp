@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
-#include "core/primitive.h"
+#include "core/Vector.h"
+#include "core/Matrix.h"
 
 using namespace core;
 

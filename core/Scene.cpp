@@ -149,6 +149,7 @@ auto Scene::Draw() -> void {
 		auto & worldTransform = s->_model->GetMatrix();
 		// opengl expect column major matrix, so we pass GL_TRUE to transpose our matrix.
 		// another solution is to always multiply vector to matrix in shader (e.g. v_transformed = v * M)
+		// see http://stackoverflow.com/questions/17717600/confusion-between-c-and-opengl-matrix-order-row-major-vs-column-major#
 		glUniformMatrix4fv(glGetUniformLocation(s->_shaderProgram->GetHandler(), "worldTransform"),
 			1, GL_TRUE, worldTransform.data());
 
