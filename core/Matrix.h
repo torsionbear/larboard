@@ -4,13 +4,8 @@
 
 namespace core {
 
-template<typename T, size_type ROW, size_type COL>
-class Matrix;
-
 template<typename T>
-struct Matrix_traits {
-	using value_type = typename T::value_type;
-};
+struct Matrix_traits;
 
 template<typename T>
 class MatrixExpression {
@@ -42,36 +37,38 @@ public:
 	using value_type = T;
 public:
 	Matrix() {
-		_data.reserve(ROW * COL);
-		for (auto i = 0u; i < ROW; ++i) {
+		for (auto i = 0u; i < COL; ++i) {
 			for (auto j = 0u; j < COL; ++j) {
-				_data.push_back(i == j ? 1.0f : 0.0f);
+				_data[i * COL + j] = i == j ? 1.0f : 0.0f;
 			}
 		}
 	}
 	Matrix(std::initializer_list<value_type> list) {
-		_data = std::vector<value_type>{ list };
+		assert(list.size() == ROW * COL);
+		auto i = 0u;
+		for (auto v : list) {
+			_data[i++] = v;
+		}
 	}
 	template<typename Expression>
 	Matrix(Expression const& e) {
-		_data.reserve(e.RowCount() * e.ColumnCount());
 		for (auto i = 0u; i < e.RowCount(); ++i) {
 			for (auto j = 0u; j < e.ColumnCount(); ++j) {
-				_data.push_back(e(i, j));
+				_data[i * COL + j] = e(i, j);
 			}
 		}
 	}
 
 public:
 	auto operator()(size_type r, size_type c) const -> value_type {
-		assert(r < RowCount());
-		assert(c < ColumnCount());
-		return _data[r * ColumnCount() + c];
+		assert(r < ROW);
+		assert(c < COL);
+		return _data[r * COL + c];
 	}
 	auto operator()(size_type r, size_type c) -> value_type& {
-		assert(r < RowCount());
-		assert(c < ColumnCount());
-		return _data[r * ColumnCount() + c];
+		assert(r < ROW);
+		assert(c < COL);
+		return _data[r * COL + c];
 	}
 	auto constexpr RowCount() const -> size_type {
 		return ROW;
@@ -87,7 +84,7 @@ public:
 	}
 
 private:
-	std::vector<value_type> _data;
+	std::array<value_type, ROW * COL> _data;
 };
 using Matrix4x4f = Matrix<Float32, 4, 4>;
 

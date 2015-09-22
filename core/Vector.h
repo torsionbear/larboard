@@ -6,13 +6,8 @@
 
 namespace core {
 
-template <typename T, size_type LENGTH>
-class Vector;
-
-template <typename T>
-struct Vector_traits {
-	using value_type = typename T::value_type;
-};
+template<typename T>
+struct Vector_traits;
 
 template <typename T>
 class VectorExpression {
