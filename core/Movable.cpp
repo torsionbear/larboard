@@ -33,15 +33,15 @@ auto Movable::Downward(Float32 length) -> void {
 }
 
 auto Movable::Head(Float32 radius) -> void {
-	_sceneNode->Rotate(_upwardDirection.x, _upwardDirection.y, _upwardDirection.z, radius);
+	_sceneNode->Rotate(_upwardDirection(0), _upwardDirection(1), _upwardDirection(2), radius, true);
 }
 
 auto Movable::Pitch(Float32 radius) -> void {
-	_sceneNode->Rotate(_rightDirection.x, _rightDirection.y, _rightDirection.z, radius);
+	_sceneNode->Rotate(_rightDirection(0), _rightDirection(1), _rightDirection(2), radius, true);
 }
 
 auto Movable::Roll(Float32 radius) -> void {
-	_sceneNode->Rotate(_forwardDirection.x, _forwardDirection.y, _forwardDirection.z, radius);
+	_sceneNode->Rotate(_forwardDirection(0), _forwardDirection(1), _forwardDirection(2), radius, true);
 }
 
 auto Movable::Translate(Float32 x, Float32 y, Float32 z) -> void {
@@ -49,16 +49,36 @@ auto Movable::Translate(Float32 x, Float32 y, Float32 z) -> void {
 	_sceneNode->Translate(x, y, z);
 }
 
-auto Movable::Translate(Vector3f v) -> void {
-	Translate(v.x, v.y, v.z);
+auto Movable::Translate(Vector3f const& v) -> void {
+	Translate(v(0), v(1), v(2));
 }
 
 auto Movable::Rotate(Float32 x, Float32 y, Float32 z, Float32 r) -> void {
 	assert(nullptr != _sceneNode);
-	_sceneNode->Rotate(x, y, z, r);
+	_sceneNode->Rotate(x, y, z, r, false);
 }
 
-auto Movable::Rotate(Vector3f center, Vector3f pivot, Float32 angle) -> void {
+auto Movable::Rotate(Vector3f const& pivot, Float32 angle) -> void {
+	Rotate(pivot(0), pivot(1), pivot(2), angle);
+}
+
+auto Movable::Rotate(Vector3f const& center, Vector3f const& pivot, Float32 angle) -> void {
+	Translate(-center);
+	Rotate(pivot, angle);
+	Translate(center);
+}
+
+auto Movable::GetRightDirection() -> Vector3f const& {
+	//return _sceneNode->_transform * _rightDirection;
+	return _rightDirection;
+}
+
+auto Movable::GetForwardDirection() -> Vector3f const& {
+	return _forwardDirection;
+}
+
+auto Movable::GetUpwardDirection() -> Vector3f const& {
+	return _upwardDirection;
 }
 
 auto Movable::AttachTo(Movable & node) -> void {

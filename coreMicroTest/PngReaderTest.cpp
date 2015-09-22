@@ -22,22 +22,22 @@ TEST_F(PngReaderTest, tmpCase) {
 			auto pixelPos = i * 20 + j;
 			switch (j % 3) {
 			case 0:	// red				
-				ASSERT_FLOAT_EQ(1, data[pixelPos].x);
-				ASSERT_FLOAT_EQ(0, data[pixelPos].y);
-				ASSERT_FLOAT_EQ(0, data[pixelPos].z);
-				ASSERT_FLOAT_EQ(1, data[pixelPos].w);
+				ASSERT_FLOAT_EQ(1, data[pixelPos](0));
+				ASSERT_FLOAT_EQ(0, data[pixelPos](1));
+				ASSERT_FLOAT_EQ(0, data[pixelPos](2));
+				ASSERT_FLOAT_EQ(1, data[pixelPos](3));
 				break;
 			case 1:	// green
-				ASSERT_FLOAT_EQ(0, data[pixelPos].x);
-				ASSERT_FLOAT_EQ(1, data[pixelPos].y);
-				ASSERT_FLOAT_EQ(0, data[pixelPos].z);
-				ASSERT_FLOAT_EQ(1, data[pixelPos].w);
+				ASSERT_FLOAT_EQ(0, data[pixelPos](0));
+				ASSERT_FLOAT_EQ(1, data[pixelPos](1));
+				ASSERT_FLOAT_EQ(0, data[pixelPos](2));
+				ASSERT_FLOAT_EQ(1, data[pixelPos](3));
 				break;
 			case 2: // blue
-				ASSERT_FLOAT_EQ(0, data[pixelPos].x);
-				ASSERT_FLOAT_EQ(0, data[pixelPos].y);
-				ASSERT_FLOAT_EQ(1, data[pixelPos].z);
-				ASSERT_FLOAT_EQ(1, data[pixelPos].w);
+				ASSERT_FLOAT_EQ(0, data[pixelPos](0));
+				ASSERT_FLOAT_EQ(0, data[pixelPos](1));
+				ASSERT_FLOAT_EQ(1, data[pixelPos](2));
+				ASSERT_FLOAT_EQ(1, data[pixelPos](3));
 				break;
 			}
 		}

@@ -22,7 +22,7 @@ public:
 private:
 	auto MoveAlong(Vector3f const& forwardDirection, Float32 length) -> void;
 	auto Translate(Float32, Float32, Float32) -> void;
-	auto Rotate(Float32, Float32, Float32, Float32) -> void;
+	auto Rotate(Float32 x, Float32 y, Float32 z, Float32 r, bool rotateSelf) -> void;
 
 private:
 	SceneNode* _parent = nullptr;

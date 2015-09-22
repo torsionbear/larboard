@@ -16,8 +16,8 @@ auto Camera::SetPerspective(Float32 near, Float32 far, Vector2f lowerLeft, Vecto
 
 	// third column has been negate to transform right-hand world space to left-hand screen space.
 	_projectionTransform = Matrix4x4f{
-		2 * near / (upperRight.x - lowerLeft.x), 0, (upperRight.x + lowerLeft.x) / (upperRight.x - lowerLeft.x), 0,
-		0, 2 * near / (upperRight.y - lowerLeft.y), (upperRight.y + lowerLeft.y) / (upperRight.y - lowerLeft.y), 0,
+		2 * near / (upperRight(0) - lowerLeft(0)), 0, (upperRight(0) + lowerLeft(0)) / (upperRight(0) - lowerLeft(0)), 0,
+		0, 2 * near / (upperRight(1) - lowerLeft(1)), (upperRight(1) + lowerLeft(1)) / (upperRight(1) - lowerLeft(1)), 0,
 		0, 0, -(far + near) / (far - near), -2 * far*near / (far - near),
 		0, 0, -1, 0
 	};

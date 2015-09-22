@@ -49,9 +49,15 @@ public:
 	auto Roll(Float32 radius) -> void;
 
 	auto Translate(Float32, Float32, Float32) -> void;
-	auto Translate(Vector3f) -> void;
+	auto Translate(Vector3f const&) -> void;
 	auto Rotate(Float32, Float32, Float32, Float32) -> void;
-	auto Rotate(Vector3f center, Vector3f pivot, Float32 angle) -> void;
+	auto Rotate(Vector3f const& pivot, Float32 angle) -> void;
+	auto Rotate(Vector3f const& center, Vector3f const& pivot, Float32 angle) -> void;
+
+	auto GetRightDirection()->Vector3f const&;
+	auto GetForwardDirection()->Vector3f const&;
+	auto GetUpwardDirection() -> Vector3f const&;
+
 	auto AttachTo(Movable &) -> void;
 	auto DetachFrom() -> void;
 	auto GetMatrix() const->Matrix4x4f const&;

@@ -126,8 +126,8 @@ public:
 	}
 
 private:
-	LHS const& _lhs;
-	RHS const& _rhs;
+	MatrixExpression<LHS> const& _lhs;
+	MatrixExpression<RHS> const& _rhs;
 };
 
 template<typename LHS, typename RHS>
@@ -135,9 +135,9 @@ struct Matrix_traits<MatrixMultiply<LHS, RHS>> {
 	using value_type = typename LHS::value_type;
 };
 
-template<typename LHS, typename RHS>
-auto operator*(LHS const& lhs, RHS const& rhs) -> MatrixMultiply<LHS, RHS> const {
-	return MatrixMultiply<LHS, RHS>(lhs, rhs);
+template<typename T1, typename T2>
+auto operator*(MatrixExpression<T1> const& lhs, MatrixExpression<T2> const& rhs) {
+	return MatrixMultiply<T1, T2>(lhs, rhs);
 }
 
 }

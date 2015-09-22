@@ -80,25 +80,26 @@ int main()
 			break; 
 		case WM_MOUSEWHEEL:	// mouse wheel: zoom
 			status = 0;
-			scene->GetActiveCamera()->Forward(GET_WHEEL_DELTA_WPARAM(wParam) * 0.002);
+			scene->GetActiveCamera()->Forward(GET_WHEEL_DELTA_WPARAM(wParam) * 0.002f);
 			break;
 		case WM_MOUSEMOVE:
 		{
 			auto x = GET_X_LPARAM(lParam);
 			auto y = GET_Y_LPARAM(lParam);
+			auto * camera = scene->GetActiveCamera();
 			if (wParam == MK_MBUTTON) {	// middle mouse button: rotate
 				if (status == 1) {
 					//scene->GetActiveCamera()->Head(static_cast<float>(-(x - lastX)) / 100.0f);
-					scene->GetActiveCamera()->Rotate(0.0f, 0.0f, 1.0f, static_cast<float>(-(x - lastX)) / 100.0f);
-					scene->GetActiveCamera()->Pitch(static_cast<float>(-(y - lastY)) / 100.0f);
+					camera->Rotate(0.0f, 0.0f, 1.0f, static_cast<float>(-(x - lastX)) / 100.0f);
+					camera->Rotate(camera->GetRightDirection(), static_cast<float>(-(y - lastY)) / 100.0f);
 				}
 				lastX = x;
 				lastY = y;
 				status = 1;
 			} else if ((wParam & MK_MBUTTON) && (wParam & MK_SHIFT)) {	// middle mouse button & shift key: pan
 				if (status == 2) {
-					scene->GetActiveCamera()->Leftward(static_cast<float>(x - lastX) / 100.0f);
-					scene->GetActiveCamera()->Upward(static_cast<float>(y - lastY) / 100.0f);
+					camera->Leftward(static_cast<float>(x - lastX) / 100.0f);
+					camera->Upward(static_cast<float>(y - lastY) / 100.0f);
 				}
 				lastX = x;
 				lastY = y;
@@ -115,16 +116,16 @@ int main()
 			case VK_F2:
 				break;
 			case 0x57:	// W key
-				scene->GetActiveCamera()->Forward(0.2);
+				scene->GetActiveCamera()->Forward(0.2f);
 				break;
 			case 0x41:	// A key
-				scene->GetActiveCamera()->Leftward(0.2);
+				scene->GetActiveCamera()->Leftward(0.2f);
 				break;
 			case 0x53:	// S key
-				scene->GetActiveCamera()->Backward(0.2);
+				scene->GetActiveCamera()->Backward(0.2f);
 				break;
 			case 0x44:	// D key
-				scene->GetActiveCamera()->Rightward(0.2);
+				scene->GetActiveCamera()->Rightward(0.2f);
 				break;
 			case VK_SPACE:
 				break;

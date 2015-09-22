@@ -77,9 +77,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="PrimitiveTest.cpp" />
+    <ClCompile Include="MatrixTest.cpp" />
     <ClCompile Include="EndianTest.cpp" />
     <ClCompile Include="PngReaderTest.cpp" />
+    <ClCompile Include="VectorTest.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
