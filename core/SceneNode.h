@@ -4,7 +4,6 @@
 #include <memory>
 #include <forward_list>
 
-#include "Vector.h"
 #include "Matrix.h"
 
 namespace core {
@@ -20,7 +19,7 @@ public:
 	~SceneNode();
 
 private:
-	auto MoveAlong(Vector3f const& forwardDirection, Float32 length) -> void;
+	auto MoveAlong(Vector4f const& forwardDirection, Float32 length) -> void;
 	auto Translate(Float32, Float32, Float32) -> void;
 	auto Rotate(Float32 x, Float32 y, Float32 z, Float32 r, bool rotateSelf) -> void;
 

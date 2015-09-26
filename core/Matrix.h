@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include "Primitive.h"
 
 namespace core {
@@ -7,6 +8,7 @@ namespace core {
 template<typename T>
 struct Matrix_traits;
 
+// Matrix expression
 template<typename T>
 class MatrixExpression {
 public:
@@ -23,6 +25,9 @@ public:
 	auto operator()(size_type r, size_type c) const -> value_type {
 		return static_cast<T const&>(*this)(r, c);
 	}
+	auto operator()(size_type index) const -> value_type {
+		return static_cast<T const&>(*this)(index);
+	}
 	auto constexpr RowCount() const -> size_type {
 		return static_cast<T const&>(*this).RowCount();
 	}
@@ -31,6 +36,7 @@ public:
 	}
 };
 
+// Matrix
 template<typename T, size_type ROW, size_type COL>
 class Matrix : public MatrixExpression<Matrix<T, ROW, COL>> {
 public:
@@ -50,8 +56,10 @@ public:
 			_data[i++] = v;
 		}
 	}
-	template<typename Expression>
-	Matrix(Expression const& e) {
+	template<typename T>
+	Matrix(MatrixExpression<T> const& e) {
+		assert(e.RowCount() == RowCount());
+		assert(e.ColumnCount() == ColumnCount());
 		for (auto i = 0u; i < e.RowCount(); ++i) {
 			for (auto j = 0u; j < e.ColumnCount(); ++j) {
 				_data[i * COL + j] = e(i, j);
@@ -70,6 +78,14 @@ public:
 		assert(c < COL);
 		return _data[r * COL + c];
 	}
+	auto operator()(size_type index) const -> value_type {
+		assert(index < ROW * COL);
+		return _data[index];
+	}
+	auto operator()(size_type index) -> value_type & {
+		assert(index < ROW * COL);
+		return _data[index];
+	}
 	auto constexpr RowCount() const -> size_type {
 		return ROW;
 	}
@@ -87,19 +103,23 @@ private:
 	std::array<value_type, ROW * COL> _data;
 };
 using Matrix4x4f = Matrix<Float32, 4, 4>;
+using Vector2f = Matrix<Float32, 2, 1>;
+using Vector3f = Matrix<Float32, 3, 1>;
+using Vector4f = Matrix<Float32, 4, 1>;
 
 template<typename T, size_type ROW, size_type COL>
 struct Matrix_traits<Matrix<T, ROW, COL>> {
 	using value_type = T;
 };
 
+// Matrix product
 template<typename LHS, typename RHS>
-class MatrixMultiply : public MatrixExpression<MatrixMultiply<LHS, RHS>> {
+class MatrixProduct : public MatrixExpression<MatrixProduct<LHS, RHS>> {
 public:
 	using value_type = typename LHS::value_type;
 
 public:
-	MatrixMultiply(MatrixExpression<LHS> const& lhs, MatrixExpression<RHS> const& rhs)
+	MatrixProduct(MatrixExpression<LHS> const& lhs, MatrixExpression<RHS> const& rhs)
 		: _lhs(lhs)
 		, _rhs(rhs) {
 		assert(lhs.ColumnCount() == rhs.RowCount());
@@ -115,6 +135,11 @@ public:
 		}
 		return ret;
 	}
+	auto operator()(size_type index) const -> value_type {
+		auto r = index / ColumnCount();
+		auto c = index % ColumnCount();
+		return operator()(r, c);
+	}
 	auto constexpr ColumnCount() const -> size_type {
 		return _rhs.ColumnCount();
 	}
@@ -128,13 +153,188 @@ private:
 };
 
 template<typename LHS, typename RHS>
-struct Matrix_traits<MatrixMultiply<LHS, RHS>> {
+struct Matrix_traits<MatrixProduct<LHS, RHS>> {
 	using value_type = typename LHS::value_type;
 };
 
-template<typename T1, typename T2>
-auto operator*(MatrixExpression<T1> const& lhs, MatrixExpression<T2> const& rhs) {
-	return MatrixMultiply<T1, T2>(lhs, rhs);
+template<typename LHS, typename RHS>
+auto inline operator*(MatrixExpression<LHS> const& lhs, MatrixExpression<RHS> const& rhs) {
+	return MatrixProduct<LHS, RHS>(lhs, rhs);
 }
+
+// Matrix Transpose
+template <typename T>
+class MatrixTranspose : public MatrixExpression<MatrixTranspose<T>> {
+public:
+	using value_type = typename T::value_type;
+public:
+	MatrixTranspose(MatrixExpression<T> const& matrix)
+		: _matrix(matrix) {
+	}
+public:
+	auto operator()(size_type r, size_type c) const -> value_type {
+		return _matrix(c, r);
+	}
+	auto operator()(size_type index) const -> value_type {
+		auto r = index / ColumnCount();
+		auto c = index % ColumnCount();
+		return _matrix(c, r);
+	}
+	auto constexpr ColumnCount() const {
+		return _matrix.RowCount();
+	}
+	auto constexpr RowCount() const {
+		return _matrix.ColumnCount();
+	}
+private:
+	MatrixExpression<T> const& _matrix;
+};
+
+template <typename T>
+struct Matrix_traits<MatrixTranspose<T>> {
+	using value_type = typename T::value_type;
+};
+
+template <typename T>
+auto inline Transpose(MatrixExpression<T> const& e) {
+	return MatrixTranspose<T>(e);
+}
+
+// Matrix Negate
+template <typename T>
+class MatrixNegate : public MatrixExpression<MatrixNegate<T>> {
+public:
+	using value_type = typename T::value_type;
+public:
+	MatrixNegate(MatrixExpression<T> const& matrix)
+		: _matrix(matrix) {
+	}
+public:
+	auto operator()(size_type r, size_type c) const -> value_type {
+		assert(r < RowCount());
+		assert(c < ColumnCount());
+		return -_matrix(r, c);
+	}
+	auto operator()(size_type index) const -> value_type {
+		assert(index < RowCount() * ColumnCount());
+		return -_matrix(index);
+	}
+	auto constexpr ColumnCount() const -> size_type {
+		return _matrix.ColumnCount();
+	}
+	auto constexpr RowCount() const -> size_type {
+		return _matrix.RowCount();
+	}
+private:
+	MatrixExpression<T> const& _matrix;
+};
+
+template<typename T>
+struct Matrix_traits<MatrixNegate<T>> {
+	using value_type = typename T::value_type;
+};
+
+template<typename T>
+auto inline operator-(MatrixExpression<T> const& expression) {
+	return MatrixNegate<T>(expression);
+}
+
+// Matrix add
+template <typename LHS, typename RHS> 
+class MatrixAdd : public MatrixExpression<MatrixAdd<LHS, RHS>> {
+public:
+	using value_type = typename LHS::value_type;
+public:
+	MatrixAdd(MatrixExpression<LHS> const& lhs, MatrixExpression<RHS> const& rhs)
+		: _lhs(lhs)
+		, _rhs(rhs) {
+	}
+public:
+	auto operator()(size_type r, size_type c) const -> value_type {
+		assert(r < RowCount());
+		assert(c < ColumnCount());
+		return _lhs(r, c) + _rhs(r, c);
+	}
+	auto operator()(size_type index) const -> value_type {
+		assert(index < RowCount() * ColumnCount());
+		return _lhs(index) + _rhs(index);
+	}
+	auto constexpr RowCount() const -> size_type {
+		return _lhs.RowCount();
+	}
+	auto constexpr ColumnCount() const -> size_type {
+		return _rhs.ColumnCount();
+	}
+private:
+	MatrixExpression<LHS> const& _lhs;
+	MatrixExpression<RHS> const& _rhs;
+};
+
+template <typename LHS, typename RHS>
+struct Matrix_traits<MatrixAdd<LHS, RHS>> {
+	using value_type = typename LHS::value_type;
+};
+
+template<typename LHS, typename RHS>
+auto inline operator+(MatrixExpression<LHS> const& lhs, MatrixExpression<RHS> const& rhs) {
+	return MatrixAdd<LHS, RHS>(lhs, rhs);
+}
+
+// 3-dimention vector cross product
+template<typename T>
+class VectorCrossProduct : public MatrixExpression<VectorCrossProduct<T>> {
+public:
+	using value_type = typename T::value_type;
+public:
+	VectorCrossProduct(MatrixExpression<T> const& lhs, MatrixExpression<T> const& rhs)
+		: _lhs(lhs)
+		, _rhs(rhs) {
+		assert(_lhs.ColumnCount() == 1);
+		assert(_lhs.RowCount() == 3 || _lhs.RowCount() == 4);
+		assert(_rhs.ColumnCount() == 1);
+		assert(_rhs.RowCount() == 3 || _rhs.RowCount() == 4);
+	}
+public:
+	auto operator()(size_type r, size_type c) const -> value_type {
+		assert(c < ColumnCount());
+		assert(r < RowCount());
+		switch (r) {
+		case 0:
+			return _lhs(1) * _rhs(2) - _lhs(2) * _rhs(1);
+		case 1:
+			return _lhs(2) * _rhs(0) - _lhs(0) * _rhs(2);
+		case 2:
+			return _lhs(0) * _rhs(1) - _lhs(1) * _rhs(0);
+		case 3:
+			return 0;
+		}
+		return 0;
+	}
+	auto operator()(size_type index) const -> value_type {
+		auto r = index / ColumnCount();
+		auto c = index % ColumnCount();
+		return operator()(r, c)
+	}
+	auto constexpr RowCount() const -> size_type {
+		return _lhs.RowCount();
+	}
+	auto constexpr ColumnCount() const -> size_type {
+		return _lhs.ColumnCount();
+	}
+private:
+	MatrixExpression<T> const& _lhs;
+	MatrixExpression<T> const& _rhs;
+};
+
+template <typename T>
+struct Matrix_traits<VectorCrossProduct<T>> {
+	using value_type = typename T::value_type;
+};
+
+template<typename T>
+auto inline CrossProduct(MatrixExpression<T> const& lhs, MatrixExpression<T> const& rhs) {
+	return VectorCrossProduct<T>(lhs, rhs);
+}
+
 
 }

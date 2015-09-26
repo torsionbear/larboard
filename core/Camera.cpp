@@ -5,7 +5,7 @@
 namespace core {
 
 Camera::Camera()
-	: Movable(Vector3f{ 0.0f, 0.0f, -1.0f }, Vector3f{ 0.0f, 1.0f, 0.0f }) {	// Camera looks at -z by default
+	: Movable(Vector4f{ 0.0f, 0.0f, -1.0f, 0.0f }, Vector4f{ 0.0f, 1.0f, 0.0f, 0.0f }) {	// Camera looks at -z by default
 }
 
 auto Camera::GetProjectionTransform() const -> Matrix4x4f const & {

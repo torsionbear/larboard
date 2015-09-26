@@ -49,7 +49,7 @@ auto Movable::Translate(Float32 x, Float32 y, Float32 z) -> void {
 	_sceneNode->Translate(x, y, z);
 }
 
-auto Movable::Translate(Vector3f const& v) -> void {
+auto Movable::Translate(Vector4f const& v) -> void {
 	Translate(v(0), v(1), v(2));
 }
 
@@ -58,27 +58,26 @@ auto Movable::Rotate(Float32 x, Float32 y, Float32 z, Float32 r) -> void {
 	_sceneNode->Rotate(x, y, z, r, false);
 }
 
-auto Movable::Rotate(Vector3f const& pivot, Float32 angle) -> void {
+auto Movable::Rotate(Vector4f const& pivot, Float32 angle) -> void {
 	Rotate(pivot(0), pivot(1), pivot(2), angle);
 }
 
-auto Movable::Rotate(Vector3f const& center, Vector3f const& pivot, Float32 angle) -> void {
+auto Movable::Rotate(Vector4f const& center, Vector4f const& pivot, Float32 angle) -> void {
 	Translate(-center);
 	Rotate(pivot, angle);
 	Translate(center);
 }
 
-auto Movable::GetRightDirection() -> Vector3f const& {
-	//return _sceneNode->_transform * _rightDirection;
-	return _rightDirection;
+auto Movable::GetRightDirection() -> Vector4f {
+	return _sceneNode->_transform * _rightDirection;
 }
 
-auto Movable::GetForwardDirection() -> Vector3f const& {
-	return _forwardDirection;
+auto Movable::GetForwardDirection() -> Vector4f {
+	return _sceneNode->_transform * _forwardDirection;
 }
 
-auto Movable::GetUpwardDirection() -> Vector3f const& {
-	return _upwardDirection;
+auto Movable::GetUpwardDirection() -> Vector4f {
+	return _sceneNode->_transform * _upwardDirection;
 }
 
 auto Movable::AttachTo(Movable & node) -> void {

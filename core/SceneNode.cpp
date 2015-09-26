@@ -9,7 +9,7 @@ namespace core {
 SceneNode::SceneNode() = default;
 SceneNode::~SceneNode() = default;
 
-auto SceneNode::MoveAlong(Vector3f const& forwardDirection, Float32 length) -> void {
+auto SceneNode::MoveAlong(Vector4f const& forwardDirection, Float32 length) -> void {
 	_transform = _transform * Matrix4x4f{
 		1, 0, 0, forwardDirection(0) * length,
 		0, 1, 0, forwardDirection(1) * length,

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Matrix.h"
-#include "Vector.h"
 #include "Movable.h"
 
 namespace core {

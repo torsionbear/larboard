@@ -2,7 +2,6 @@
 
 #include <memory>
 
-#include "Vector.h"
 #include "Matrix.h"
 #include "SceneNode.h"
 
@@ -14,10 +13,10 @@ public:
 
 public:
 	Movable() = default;
-	Movable(Vector3f const& forwardDirection, Vector3f const& upwardDirection)
+	Movable(Vector4f const& forwardDirection, Vector4f const& upwardDirection)
 		: _forwardDirection(forwardDirection) 
 		, _upwardDirection(upwardDirection) 
-		, _rightDirection(_forwardDirection * _upwardDirection) {		
+		, _rightDirection(CrossProduct(_forwardDirection, _upwardDirection)) {		
 	}
 	Movable(Movable const&)
 		: _sceneNode(std::make_unique<SceneNode>()) {
@@ -49,14 +48,14 @@ public:
 	auto Roll(Float32 radius) -> void;
 
 	auto Translate(Float32, Float32, Float32) -> void;
-	auto Translate(Vector3f const&) -> void;
+	auto Translate(Vector4f const&) -> void;
 	auto Rotate(Float32, Float32, Float32, Float32) -> void;
-	auto Rotate(Vector3f const& pivot, Float32 angle) -> void;
-	auto Rotate(Vector3f const& center, Vector3f const& pivot, Float32 angle) -> void;
+	auto Rotate(Vector4f const& pivot, Float32 angle) -> void;
+	auto Rotate(Vector4f const& center, Vector4f const& pivot, Float32 angle) -> void;
 
-	auto GetRightDirection()->Vector3f const&;
-	auto GetForwardDirection()->Vector3f const&;
-	auto GetUpwardDirection() -> Vector3f const&;
+	auto GetRightDirection() -> Vector4f;
+	auto GetForwardDirection() -> Vector4f;
+	auto GetUpwardDirection() -> Vector4f;
 
 	auto AttachTo(Movable &) -> void;
 	auto DetachFrom() -> void;
@@ -65,9 +64,9 @@ public:
 
 protected:
 	std::unique_ptr<SceneNode> _sceneNode = std::make_unique<SceneNode>();
-	Vector3f _forwardDirection = Vector3f{ 0.0f, 1.0f, 0.0f };
-	Vector3f _upwardDirection = Vector3f{ 0.0f, 0.0f, 1.0f };
-	Vector3f _rightDirection = Vector3f{ 1.0f, 0.0f, 0.0f };
+	Vector4f _forwardDirection = Vector4f{ 0.0f, 1.0f, 0.0f, 0.0f };
+	Vector4f _upwardDirection = Vector4f{ 0.0f, 0.0f, 1.0f, 0.0f };
+	Vector4f _rightDirection = Vector4f{ 1.0f, 0.0f, 0.0f, 0.0f };
 };
 
 }
