@@ -16,33 +16,6 @@ using core::MessageLogger;
 
 using std::max;
 
-auto Init(core::Scene & scene) -> void {	
-	auto model = scene.CreateModel();
-	auto * shape = scene.CreateShape(model);
-	auto v = glGetString(GL_VERSION);
-
-	// texture
-	auto * texture = scene.CreateTexture("texture0", "D:\\torsionbear\\working\\larboard\\Modeling\\square\\pedobear.png");
-	//core::Texture texture{ "D:\\torsionbear\\working\\larboard\\Modeling\\square\\pedobear.png" };
-	shape->AddTexture(texture);
-
-	// vertex
-	auto * mesh = scene.CreateMesh();
-	mesh->SetVertexData(std::vector<core::Vertex>{
-		{ { -0.90f, -0.90f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f } },
-		{ { 0.85f, -0.90f, 0.0f },	{ 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f } },
-		{ { -0.90f, 0.85f, 0.0f },	{ 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
-		{ { 0.90f, -0.85f, 0.0f },	{ 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f } },
-		{ { 0.90f, 0.90f, 0.0f },	{ 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f } },
-		{ { -0.85f, 0.90f, 0.0f},	{ 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f } },
-	});
-	shape->SetMesh(mesh);
-
-	// shader program
-	auto shaderProgram = scene.CreateShaderProgram("default.vert", "default.frag");
-	shape->SetShaderProgram(shaderProgram);
-}
-
 auto DrawOneFrame(core::Scene & scene) -> void {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	scene.Draw();
@@ -65,8 +38,6 @@ int main()
     }
 
 	auto scene= x3dParser::X3dReader::Read("D:/torsionbear/working/larboard/Modeling/square2/square2.x3d");
-	//auto scene = std::make_unique<core::Scene>();
-	//Init(*scene);
 	scene->SendToCard();
 
 	auto lastX = -1; 
@@ -89,9 +60,8 @@ int main()
 			auto * camera = scene->GetActiveCamera();
 			if (wParam == MK_MBUTTON) {	// middle mouse button: rotate
 				if (status == 1) {
-					//scene->GetActiveCamera()->Head(static_cast<float>(-(x - lastX)) / 100.0f);
-					camera->Rotate(0.0f, 0.0f, 1.0f, static_cast<float>(-(x - lastX)) / 100.0f);
-					camera->Rotate(camera->GetRightDirection(), static_cast<float>(-(y - lastY)) / 100.0f);
+					camera->Rotate(0.0f, 0.0f, 1.0f, static_cast<float>(-(x - lastX)) / 150.0f);
+					camera->Rotate(camera->GetRightDirection(), static_cast<float>(-(y - lastY)) / 150.0f);
 				}
 				lastX = x;
 				lastY = y;

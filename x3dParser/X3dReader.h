@@ -17,6 +17,9 @@ namespace x3dParser {
 
 class X3dReader {
 public:
+	// when exporting x3d from blender:
+	// 1. export Normals
+	// 2. use blender coordinate system, e.g. Y Forward, Z up.
 	static auto Read(std::string const&) -> std::unique_ptr<core::Scene>;
 public:
 	X3dReader() {
