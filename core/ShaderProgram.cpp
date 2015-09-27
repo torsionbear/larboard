@@ -10,7 +10,7 @@ auto swap(ShaderProgram & first, ShaderProgram & second) -> void {
 	swap(first._shaders, second._shaders);
 }
 
-ShaderProgram::ShaderProgram(std::string const& vertexShaderFile = "default.vert", std::string const& fragmentShaderFile = "default.frag")
+ShaderProgram::ShaderProgram(std::string const& vertexShaderFile, std::string const& fragmentShaderFile)
 	: _program(0)
 	, _shaders{ Shader{ GL_VERTEX_SHADER, vertexShaderFile }, Shader{ GL_FRAGMENT_SHADER, fragmentShaderFile } } {
 }

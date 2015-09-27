@@ -87,20 +87,23 @@ auto Scene::GetActiveCamera() const -> Camera * {
 
 auto Scene::GetDefaultShaderProgram() -> ShaderProgram * {
 	if (_defaultShaderProgram == nullptr) {
-		_defaultShaderProgram = CreateShaderProgram("default.vert", "default.frag");
+		_defaultShaderProgram = CreateShaderProgram("shader/default.vert", "shader/default.frag");
 	}
 	return _defaultShaderProgram;
 }
 
 auto Scene::SendToCard() -> void {
+	// 1. shader program
 	glEnable(GL_DEPTH_TEST);
 	for (auto & s : _shaderProgram) {
 		s->SendToCard();
 	}
+	// 2. texture
 	for (auto & t : _textures) {
 		t.second->SendToCard();
 	}
 
+	// 3. vao/vbo
 	// currently we use only 1 vao & vbo for a scene.
 	glGenVertexArrays(1, &_vao);
 	glBindVertexArray(_vao);
@@ -128,6 +131,7 @@ auto Scene::SendToCard() -> void {
 
 	glBindVertexArray(0);
 	// todo: sort shapes according to: 1. shader priority; 2. vbo/vao
+
 }
 
 auto Scene::Draw() -> void {
@@ -138,27 +142,32 @@ auto Scene::Draw() -> void {
 	Matrix4x4f viewTransform = camera->GetProjectionTransform() * camera->GetRigidBodyMatrixInverse();
 
 	auto currentShaderProgram = static_cast<ShaderProgram*>(nullptr);
-	for (auto const& s : _shapes) {
-		if (currentShaderProgram != s->_shaderProgram) {
-			s->_shaderProgram->Use();
-			currentShaderProgram = s->_shaderProgram;
-			glUniformMatrix4fv(glGetUniformLocation(s->_shaderProgram->GetHandler(), "viewTransform"),
+	for (auto const& shape : _shapes) {
+		// 1. switch shader program
+		if (currentShaderProgram != shape->_shaderProgram) {
+			shape->_shaderProgram->Use();
+			currentShaderProgram = shape->_shaderProgram;
+			glUniformMatrix4fv(glGetUniformLocation(shape->_shaderProgram->GetHandler(), "viewTransform"),
 				1, GL_TRUE, viewTransform.data());
 		}
 
-		auto & worldTransform = s->_model->GetMatrix();
+		// 2. set world transformation
+		auto & worldTransform = shape->_model->GetMatrix();
 		// opengl expect column major matrix, so we pass GL_TRUE to transpose our matrix.
 		// another solution is to always multiply vector to matrix in shader (e.g. v_transformed = v * M)
 		// see http://stackoverflow.com/questions/17717600/confusion-between-c-and-opengl-matrix-order-row-major-vs-column-major#
-		glUniformMatrix4fv(glGetUniformLocation(s->_shaderProgram->GetHandler(), "worldTransform"),
+		glUniformMatrix4fv(glGetUniformLocation(shape->_shaderProgram->GetHandler(), "worldTransform"),
 			1, GL_TRUE, worldTransform.data());
 
-		for (auto i = 0u; i < s->_textures.size(); ++i) {
-			s->_textures[i]->Use(i);
+		// 3. switch texture
+		for (auto i = 0u; i < shape->_textures.size(); ++i) {
+			shape->_textures[i]->Use(i);
 			auto variable = string("texture").append({ static_cast<char>('0' + i) });
 			glUniform1i(glGetUniformLocation(currentShaderProgram->GetHandler(), variable.c_str()), i);
 		}
-		glDrawArrays(GL_TRIANGLES, s->_mesh->_startingIndex, s->_mesh->_vertex.size());
+
+		// 5. draw
+		glDrawArrays(GL_TRIANGLES, shape->_mesh->_startingIndex, shape->_mesh->_vertex.size());
 	}
 	error = glGetError();
 }
