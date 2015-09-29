@@ -93,17 +93,29 @@ auto Scene::GetDefaultShaderProgram() -> ShaderProgram * {
 }
 
 auto Scene::SendToCard() -> void {
+
+	// 0. setup ubo
+	glGenBuffers(1, &_ubo);
+	auto index = GetIndex(UniformBufferType::Material);
+	glBindBufferBase(GL_UNIFORM_BUFFER, index, _ubo);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(Material), nullptr, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
 	// 1. shader program
 	glEnable(GL_DEPTH_TEST);
 	for (auto & s : _shaderProgram) {
 		s->SendToCard();
 	}
+
 	// 2. texture
 	for (auto & t : _textures) {
 		t.second->SendToCard();
 	}
 
-	// 3. vao/vbo
+	// 3. light
+
+
+	// 4. vao/vbo
 	// currently we use only 1 vao & vbo for a scene.
 	glGenVertexArrays(1, &_vao);
 	glBindVertexArray(_vao);
@@ -143,27 +155,49 @@ auto Scene::Draw() -> void {
 
 	auto currentShaderProgram = static_cast<ShaderProgram*>(nullptr);
 	for (auto const& shape : _shapes) {
-		// 1. switch shader program
+		// 1. switch shader program, set view transform & camera position, set lights, set texture
 		if (currentShaderProgram != shape->_shaderProgram) {
 			shape->_shaderProgram->Use();
 			currentShaderProgram = shape->_shaderProgram;
-			glUniformMatrix4fv(glGetUniformLocation(shape->_shaderProgram->GetHandler(), "viewTransform"),
-				1, GL_TRUE, viewTransform.data());
+			glUniformMatrix4fv(glGetUniformLocation(shape->_shaderProgram->GetHandler(), "viewTransform"), 1, GL_TRUE, viewTransform.data());
+			glUniform4fv(glGetUniformLocation(shape->_shaderProgram->GetHandler(), "viewPosition"), 1, camera->GetPosition().data());
+
+			//glUniform1i(glGetUniformLocation(shape->_shaderProgram->GetHandler(), "lights.directionalLightCount"), 0);
+			//glUniform1i(glGetUniformLocation(shape->_shaderProgram->GetHandler(), "lights.pointLightCount"), _pointLights.size());
+			//glUniform1i(glGetUniformLocation(shape->_shaderProgram->GetHandler(), "lights.spotLightCount"), 0);
+			for (auto const& pointLight : _pointLights) {
+
+			}
+			// Do all the glUniform1i calls after loading the program, then never again. 
+			// You only need to call it once to tell the program which texture image unit each sampler uses. 
+			// After you've done that all you need to do is bind textures to the right texture image units. 
+			glUniform1i(glGetUniformLocation(currentShaderProgram->GetHandler(), "textures.diffuseTexture"), 0); // only support diffuse texture for now
 		}
 
-		// 2. set world transformation
-		auto & worldTransform = shape->_model->GetMatrix();
+		// 2. set world & normal transformation
+
 		// opengl expect column major matrix, so we pass GL_TRUE to transpose our matrix.
 		// another solution is to always multiply vector to matrix in shader (e.g. v_transformed = v * M)
 		// see http://stackoverflow.com/questions/17717600/confusion-between-c-and-opengl-matrix-order-row-major-vs-column-major#
-		glUniformMatrix4fv(glGetUniformLocation(shape->_shaderProgram->GetHandler(), "worldTransform"),
-			1, GL_TRUE, worldTransform.data());
+		glUniformMatrix4fv(glGetUniformLocation(shape->_shaderProgram->GetHandler(), "worldTransform"), 1, GL_TRUE, shape->_model->GetMatrix().data());
+		glUniformMatrix4fv(glGetUniformLocation(shape->_shaderProgram->GetHandler(), "normalTransform"), 1, GL_TRUE, shape->_model->GetNormalTransform().data());
 
-		// 3. switch texture
+		// 3. set material, switch texture
+		auto const * material = shape->_material;
+
+		glBindBufferBase(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Material), _ubo);
+		GLvoid* p = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+		memcpy(p, material, sizeof(Material));
+		glUnmapBuffer(GL_UNIFORM_BUFFER);
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+		//glUniform3fv(glGetUniformLocation(currentShaderProgram->GetHandler(), "material.ambient"), 1, shape->_material->GetAmbient().data());
+		//glUniform3fv(glGetUniformLocation(currentShaderProgram->GetHandler(), "material.diffuse"), 1, shape->_material->GetDiffuse().data());
+		//glUniform3fv(glGetUniformLocation(currentShaderProgram->GetHandler(), "material.specular"), 1, shape->_material->GetSpecular().data());
+		//glUniform1f(glGetUniformLocation(currentShaderProgram->GetHandler(), "material.shininess"), shape->_material->GetShininess());
+
 		for (auto i = 0u; i < shape->_textures.size(); ++i) {
-			shape->_textures[i]->Use(i);
-			auto variable = string("texture").append({ static_cast<char>('0' + i) });
-			glUniform1i(glGetUniformLocation(currentShaderProgram->GetHandler(), variable.c_str()), i);
+			shape->_textures[0]->Use(i);
 		}
 
 		// 5. draw

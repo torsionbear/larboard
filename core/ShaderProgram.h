@@ -12,6 +12,14 @@
 
 namespace core {
 
+enum class UniformBufferType : unsigned int {
+	Material = 2u,
+};
+
+auto inline GetIndex(UniformBufferType t) {
+	return static_cast<unsigned int>(t);
+}
+
 class ShaderProgram : public Resource {
 public:
 	friend auto swap(ShaderProgram & first, ShaderProgram & second) -> void;

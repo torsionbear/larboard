@@ -59,6 +59,7 @@ private:
 
 	openglUint _vao;
 	openglUint _vbo;
+	openglUint _ubo;
 	size_t _vertexCount = 0;
 };
 

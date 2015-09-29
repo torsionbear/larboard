@@ -138,11 +138,11 @@ auto X3dReader::Read(Material const & material) -> core::Material * {
 	auto ret = _scene->CreateMaterial(materialName);
 
 	auto diffuse = material.GetDiffuseColor();
-	ret->SetDiffuse({ diffuse.x, diffuse.y, diffuse.z });
+	ret->SetDiffuse({ diffuse.x, diffuse.y, diffuse.z, 1.0f });
 	auto specular = material.GetSpecularColor();
-	ret->SetSpecular({ specular.x, specular.y, specular.z });
+	ret->SetSpecular({ specular.x, specular.y, specular.z, 1.0f });
 	auto emissive = material.GetEmissiveColor();
-	ret->SetEmissive({ emissive.x, emissive.y, emissive.z });
+	ret->SetEmissive({ emissive.x, emissive.y, emissive.z, 1.0f });
 	ret->SetAmbientIntensity(material.GetAmbientIntensity());
 	ret->SetShininess(material.GetShininess());
 	ret->SetTransparency(material.GetTransparency());

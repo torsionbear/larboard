@@ -2,15 +2,15 @@
 
 namespace core {
 
-auto Material::SetDiffuse(Vector3f diffuse) -> void {
+auto Material::SetDiffuse(Vector4f diffuse) -> void {
 	_diffuse = diffuse;
 }
 
-auto Material::SetSpecular(Vector3f specular) -> void {
+auto Material::SetSpecular(Vector4f specular) -> void {
 	_specular = specular;
 }
 
-auto Material::SetEmissive(Vector3f emissive) -> void {
+auto Material::SetEmissive(Vector4f emissive) -> void {
 	_emissive = emissive;
 }
 
@@ -26,19 +26,19 @@ auto Material::SetTransparency(Float32 transparency) -> void {
 	_transparency = transparency;
 }
 
-auto core::Material::GetDiffuse() -> Vector3f {
+auto core::Material::GetDiffuse() -> Vector4f {
 	return _diffuse;
 }
 
-auto Material::GetSpecular() -> Vector3f {
+auto Material::GetSpecular() -> Vector4f {
 	return _specular;
 }
 
-auto Material::GetEmissive() -> Vector3f {
+auto Material::GetEmissive() -> Vector4f {
 	return _emissive;
 }
 
-auto Material::GetAmbient() -> Vector3f {
+auto Material::GetAmbient() -> Vector4f {
 	return _diffuse * _ambientIntensity;
 }
 
