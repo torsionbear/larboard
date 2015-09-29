@@ -13,11 +13,11 @@ public:
 	auto SetShininess(Float32) -> void;
 	auto SetTransparency(Float32) -> void;
 
-	auto GetDiffuse() ->Vector3f;
-	auto GetSpecular() ->Vector3f;
-	auto GetEmissive() ->Vector3f;
-	auto GetAmbientIntensity() ->Float32;
-	auto GetShininess() ->Float32;
+	auto GetDiffuse() -> Vector3f;
+	auto GetSpecular() -> Vector3f;
+	auto GetEmissive() -> Vector3f;
+	auto GetAmbient() ->Vector3f;
+	auto GetShininess() -> Float32;
 	auto GetTransparency() ->Float32;
 
 private:

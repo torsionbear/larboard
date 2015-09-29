@@ -89,6 +89,10 @@ auto Movable::DetachFrom() -> void {
 	_sceneNode->_parent = nullptr;
 }
 
+auto Movable::GetPosition() const -> Point4f {
+	return _sceneNode->_transform * Point4f{0, 0, 0, 1};
+}
+
 auto Movable::GetMatrix() const -> Matrix4x4f const& {
 	return _sceneNode->_transform;
 }
@@ -112,6 +116,12 @@ auto Movable::GetRigidBodyMatrixInverse() const -> Matrix4x4f {
 		0, 0, 0, 1,
 	};
 	return rotation * translation;
+}
+
+auto Movable::GetNormalTransform() const -> Matrix4x4f {
+	// normal transform is the transpose of the inverse of the upper-left corner of the model matrix
+	// but for rigid body transformation, normal transformation is the same with world transformation.
+	return _sceneNode->_transform;
 }
 
 }

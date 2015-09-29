@@ -106,6 +106,7 @@ using Matrix4x4f = Matrix<Float32, 4, 4>;
 using Vector2f = Matrix<Float32, 2, 1>;
 using Vector3f = Matrix<Float32, 3, 1>;
 using Vector4f = Matrix<Float32, 4, 1>;
+using Point4f = Matrix<Float32, 4, 1>;
 
 template<typename T, size_type ROW, size_type COL>
 struct Matrix_traits<Matrix<T, ROW, COL>> {
@@ -237,6 +238,52 @@ struct Matrix_traits<MatrixNegate<T>> {
 template<typename T>
 auto inline operator-(MatrixExpression<T> const& expression) {
 	return MatrixNegate<T>(expression);
+}
+
+// Matrix multiply scalar
+template <typename T>
+class MatrixScalarMultiply : public MatrixExpression<MatrixScalarMultiply<T>> {
+public:
+	using value_type = typename T::value_type;
+public:
+	MatrixScalarMultiply(MatrixExpression<T> const& matrix, value_type scalar)
+		: _matrix(matrix)
+		, _scalar(scalar) {
+	}
+public:
+	auto operator()(size_type r, size_type c) const -> value_type {
+		assert(r < RowCount());
+		assert(c < ColumnCount());
+		return _scalar * _matrix(r, c);
+	}
+	auto operator()(size_type index) const -> value_type {
+		assert(index < RowCount() * ColumnCount());
+		return _scalar * _matrix(index);
+	}
+	auto constexpr ColumnCount() const -> size_type {
+		return _matrix.ColumnCount();
+	}
+	auto constexpr RowCount() const -> size_type {
+		return _matrix.RowCount();
+	}
+private:
+	MatrixExpression<T> const& _matrix;
+	value_type _scalar;
+};
+
+template<typename T>
+struct Matrix_traits<MatrixScalarMultiply<T>> {
+	using value_type = typename T::value_type;
+};
+
+template<typename T>
+auto inline operator*(MatrixExpression<T> const& expression, typename T::value_type scalar) {
+	return MatrixScalarMultiply<T>(expression, scalar);
+}
+
+template<typename T>
+auto inline operator*(typename T::value_type scalar, MatrixExpression<T> const& expression) {
+	return MatrixScalarMultiply<T>(expression, scalar);
 }
 
 // Matrix add

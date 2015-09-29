@@ -56,6 +56,14 @@ TEST_F(MatrixTest, Vector_negate) {
 	ASSERT_TRUE(equal(Vector3f{ -1.0f, -2.0f, -3.0f }, result));
 }
 
+TEST_F(MatrixTest, Matrix_scalar_multiply) {
+	auto result = static_cast<Vector3f>(Vector3f{ 1.0f, 2.0f, 3.0f } *2.0f);
+	ASSERT_TRUE(equal(Vector3f{ 2.0f, 4.0f, 6.0f }, result));
+
+	auto result2 = static_cast<Vector3f>(2.0f * Vector3f{ 1.0f, 2.0f, 3.0f });
+	ASSERT_TRUE(equal(Vector3f{ 2.0f, 4.0f, 6.0f }, result));
+}
+
 TEST_F(MatrixTest, Vector_add) {
 	auto result = static_cast<Vector3f>(Vector3f{ 1.0f, 2.0f, 3.0f } + Vector3f{ -1.0f, -2.0f, -3.0f });
 	ASSERT_TRUE(equal(Vector3f{ 0.0f, 0.0f, 0.0f }, result));

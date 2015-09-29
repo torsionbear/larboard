@@ -38,8 +38,8 @@ auto Material::GetEmissive() -> Vector3f {
 	return _emissive;
 }
 
-auto Material::GetAmbientIntensity() -> Float32 {
-	return _ambientIntensity;
+auto Material::GetAmbient() -> Vector3f {
+	return _diffuse * _ambientIntensity;
 }
 
 auto Material::GetShininess() -> Float32 {
