@@ -11,12 +11,7 @@ struct Lights {
 	int spotLightCount;
 };
 
-layout (std140, row_major, binding = 0) uniform Viewpoint {
-	mat4 viewTransform;
-	vec4 viewPosition;
-} viewpoint;
-
-layout (std140,  binding = 2) uniform Material {
+layout (std140) uniform material_t {
     vec4 diffuse;
     vec4 specular;
 	vec4 emissive;
@@ -25,6 +20,7 @@ layout (std140,  binding = 2) uniform Material {
 	float transparency;
 } material;
 
+uniform vec4 viewPosition;
 uniform Textures textures;
 //uniform Lights lights;
 
@@ -33,7 +29,7 @@ in vec4 fragNormal;
 in vec2 fragTexCoord;
 layout (location = 0)  out vec4 fragColor;
 
-vec4 viewDirection = normalize(viewpoint.viewPosition - fragPosition);
+vec4 viewDirection = normalize(viewPosition - fragPosition);
 
 /*
 vec3 processLights() {
@@ -75,5 +71,5 @@ void main()
 {
 	//vec3 result = processLights();
     //fragColor = vec4(result, 1.0);
-	fragColor = texture(textures.diffuseTexture, fragTexCoord) * max(dot(viewDirection, fragNormal), 0.0) * material.shininess * 10.0;
+	fragColor = texture(textures.diffuseTexture, fragTexCoord) * max(dot(viewDirection, fragNormal), 0.0) * material.diffuse.r;
 }

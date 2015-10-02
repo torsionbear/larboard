@@ -14,13 +14,22 @@
 
 namespace core {
 
+struct Viewpoint {
+	Matrix4x4f viewTransform;
+	Vector4f viewPosition;
+};
+
+struct Transform {
+	Matrix4x4f worldTransform;
+	Matrix4x4f normalTransform;	 
+};
+
 class Scene {
 public:
 	Scene();
 	Scene(Scene const&) = delete;
 	Scene& operator=(Scene const&) = delete;
 	~Scene();
-
 public:
 	auto CreateMovable() -> Movable *;
 	auto CreateModel() -> Model *;
@@ -42,6 +51,13 @@ public:
 
 	auto SendToCard() -> void;
 	auto Draw() -> void;
+private:
+	auto GenerateViewpointUbo() -> void;
+	auto GenerateTransformUbo() -> void;
+	auto GenerateMaterialUbo() -> void;
+	auto UpdateViewpoint(Camera const* camera) -> void;
+	auto UpdateTransform(Model const* model) -> void;
+	auto UpdateMaterial(Material const* material) -> void;
 
 private:
 	Movable _root;
@@ -59,7 +75,9 @@ private:
 
 	openglUint _vao;
 	openglUint _vbo;
-	openglUint _ubo;
+	openglUint _viewpointUbo;
+	openglUint _transformUbo;
+	openglUint _materialUbo;
 	size_t _vertexCount = 0;
 };
 

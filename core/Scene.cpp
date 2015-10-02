@@ -95,11 +95,9 @@ auto Scene::GetDefaultShaderProgram() -> ShaderProgram * {
 auto Scene::SendToCard() -> void {
 
 	// 0. setup ubo
-	glGenBuffers(1, &_ubo);
-	auto index = GetIndex(UniformBufferType::Material);
-	glBindBufferBase(GL_UNIFORM_BUFFER, index, _ubo);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(Material), nullptr, GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	GenerateViewpointUbo();
+	GenerateMaterialUbo();
+	GenerateTransformUbo();
 
 	// 1. shader program
 	glEnable(GL_DEPTH_TEST);
@@ -150,8 +148,8 @@ auto Scene::Draw() -> void {
 	auto error = glGetError();
 	glBindVertexArray(_vao);
 
-	auto & camera = _cameras.front();	
-	Matrix4x4f viewTransform = camera->GetProjectionTransform() * camera->GetRigidBodyMatrixInverse();
+	// 0. feed shape independent data (viewpoint) to shader via ubo
+	UpdateViewpoint(_cameras.front().get());
 
 	auto currentShaderProgram = static_cast<ShaderProgram*>(nullptr);
 	for (auto const& shape : _shapes) {
@@ -159,8 +157,6 @@ auto Scene::Draw() -> void {
 		if (currentShaderProgram != shape->_shaderProgram) {
 			shape->_shaderProgram->Use();
 			currentShaderProgram = shape->_shaderProgram;
-			glUniformMatrix4fv(glGetUniformLocation(shape->_shaderProgram->GetHandler(), "viewTransform"), 1, GL_TRUE, viewTransform.data());
-			glUniform4fv(glGetUniformLocation(shape->_shaderProgram->GetHandler(), "viewPosition"), 1, camera->GetPosition().data());
 
 			//glUniform1i(glGetUniformLocation(shape->_shaderProgram->GetHandler(), "lights.directionalLightCount"), 0);
 			//glUniform1i(glGetUniformLocation(shape->_shaderProgram->GetHandler(), "lights.pointLightCount"), _pointLights.size());
@@ -174,36 +170,68 @@ auto Scene::Draw() -> void {
 			glUniform1i(glGetUniformLocation(currentShaderProgram->GetHandler(), "textures.diffuseTexture"), 0); // only support diffuse texture for now
 		}
 
-		// 2. set world & normal transformation
+		// 2. feed shape dependent data (transform & material) to shader via ubo 
+		UpdateTransform(shape->_model);
+		UpdateMaterial(shape->_material);
 
-		// opengl expect column major matrix, so we pass GL_TRUE to transpose our matrix.
-		// another solution is to always multiply vector to matrix in shader (e.g. v_transformed = v * M)
-		// see http://stackoverflow.com/questions/17717600/confusion-between-c-and-opengl-matrix-order-row-major-vs-column-major#
-		glUniformMatrix4fv(glGetUniformLocation(shape->_shaderProgram->GetHandler(), "worldTransform"), 1, GL_TRUE, shape->_model->GetMatrix().data());
-		glUniformMatrix4fv(glGetUniformLocation(shape->_shaderProgram->GetHandler(), "normalTransform"), 1, GL_TRUE, shape->_model->GetNormalTransform().data());
-
-		// 3. set material, switch texture
-		auto const * material = shape->_material;
-
-		glBindBufferBase(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Material), _ubo);
-		GLvoid* p = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-		memcpy(p, material, sizeof(Material));
-		glUnmapBuffer(GL_UNIFORM_BUFFER);
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-		//glUniform3fv(glGetUniformLocation(currentShaderProgram->GetHandler(), "material.ambient"), 1, shape->_material->GetAmbient().data());
-		//glUniform3fv(glGetUniformLocation(currentShaderProgram->GetHandler(), "material.diffuse"), 1, shape->_material->GetDiffuse().data());
-		//glUniform3fv(glGetUniformLocation(currentShaderProgram->GetHandler(), "material.specular"), 1, shape->_material->GetSpecular().data());
-		//glUniform1f(glGetUniformLocation(currentShaderProgram->GetHandler(), "material.shininess"), shape->_material->GetShininess());
-
+		// 3. texture
 		for (auto i = 0u; i < shape->_textures.size(); ++i) {
 			shape->_textures[0]->Use(i);
 		}
 
-		// 5. draw
+		// 4. draw
 		glDrawArrays(GL_TRIANGLES, shape->_mesh->_startingIndex, shape->_mesh->_vertex.size());
 	}
 	error = glGetError();
+}
+
+auto Scene::GenerateViewpointUbo() -> void {
+	glGenBuffers(1, &_viewpointUbo);
+	glBindBufferBase(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Viewpoint), _viewpointUbo);
+}
+
+auto Scene::GenerateTransformUbo() -> void {
+	glGenBuffers(1, &_transformUbo);
+	glBindBufferBase(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Transform), _transformUbo);
+}
+
+auto Scene::GenerateMaterialUbo() -> void {
+	glGenBuffers(1, &_materialUbo);
+	glBindBufferBase(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Material), _materialUbo);
+}
+
+auto Scene::UpdateViewpoint(Camera const* camera) -> void {
+	glBindBuffer(GL_UNIFORM_BUFFER, _viewpointUbo);
+	// Buffer re-specification (orphaning). See https://www.opengl.org/wiki/Buffer_Object_Streaming
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(Viewpoint), nullptr, GL_DYNAMIC_DRAW);
+	auto viewpoint = Viewpoint{
+		camera->GetProjectionTransform() * camera->GetRigidBodyMatrixInverse(),
+		camera->GetPosition(),
+	};
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(Viewpoint), &viewpoint);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+auto Scene::UpdateTransform(Model const* model) -> void {
+	glBindBuffer(GL_UNIFORM_BUFFER, _transformUbo);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(Transform), nullptr, GL_DYNAMIC_DRAW);
+	auto transform = Transform{
+		model->GetMatrix(),
+		model->GetNormalTransform(),
+	};
+	// 1. glsl expect column major matrix, but our matrix is row major, so we need to specify row_major in shader's interface block layout.
+	// 2. when using glUniformMatrix4fv() to feed shader with matrix, we need to pass GL_TRUE for the 3rd parameter to transpose our matrix.
+	// 3. another dirty solution is to always multiply vector to matrix in shader (e.g. v_transformed = v * M)
+	// see http://stackoverflow.com/questions/17717600/confusion-between-c-and-opengl-matrix-order-row-major-vs-column-major#
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(Transform), &transform);	
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+auto Scene::UpdateMaterial(Material const* material) -> void {
+	glBindBuffer(GL_UNIFORM_BUFFER, _materialUbo);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(Material), nullptr, GL_DYNAMIC_DRAW);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(Material), material);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 }

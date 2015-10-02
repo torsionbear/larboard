@@ -2,6 +2,7 @@
 
 #include <GL/glew.h>
 
+
 namespace core {
 
 auto swap(ShaderProgram & first, ShaderProgram & second) -> void {
@@ -65,12 +66,12 @@ auto ShaderProgram::SendToCardImpl() -> bool {
 		shader.DeleteShader();
 	}
 
-	// bind uniform block with uniform buffer index
-	auto block_index = glGetUniformBlockIndex(_program, "Material");
-	if (block_index == GL_INVALID_INDEX) {
-		MessageLogger::Log(MessageLogger::Error, "Invalid uniform block index returned from glGetUniformBlockIndex.");
-	}
-	glUniformBlockBinding(_program, block_index, GetIndex(UniformBufferType::Material));
+	// no longer bind uniform block with uniform buffer index here,
+	// instead we specify binding in shader's interface block layout.
+	//glUniformBlockBinding(_program, glGetUniformBlockIndex(_program, "Viewpoint"), GetIndex(UniformBufferType::Viewpoint));
+	//glUniformBlockBinding(_program, glGetUniformBlockIndex(_program, "Transform"), GetIndex(UniformBufferType::Transform));
+	//glUniformBlockBinding(_program, glGetUniformBlockIndex(_program, "Material"), GetIndex(UniformBufferType::Material));
+
 	return true;
 }
 auto ShaderProgram::FreeFromCardImpl() -> bool {
