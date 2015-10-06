@@ -13,7 +13,7 @@
 namespace core {
 
 enum class UniformBufferType : unsigned int {
-	Viewpoint = 0u,
+	Camera = 0u,
 	Transform = 1u,
 	Material = 2u,
 };

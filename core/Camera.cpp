@@ -43,4 +43,11 @@ auto Camera::SetPerspective(Float32 near, Float32 far, Float32 aspectRatio, Floa
 	SetPerspective(near, far, { -halfWidth, -halfHeight }, { halfWidth, halfHeight });
 }
 
+auto Camera::GetShaderData() -> ShaderData {
+	return ShaderData {
+		_projectionTransform * GetRigidBodyMatrixInverse(),
+		GetPosition(),
+	};
+}
+
 }

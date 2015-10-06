@@ -11,10 +11,10 @@ struct Lights {
 	int spotLightCount;
 };
 
-layout (std140, row_major, binding = 0) uniform Viewpoint {
+layout (std140, row_major, binding = 0) uniform Camera {
 	mat4 viewTransform;
 	vec4 viewPosition;
-} viewpoint;
+} camera;
 
 layout (std140,  binding = 2) uniform Material {
     vec4 diffuse;
@@ -33,7 +33,7 @@ in vec4 fragNormal;
 in vec2 fragTexCoord;
 layout (location = 0)  out vec4 fragColor;
 
-vec4 viewDirection = normalize(viewpoint.viewPosition - fragPosition);
+vec4 viewDirection = normalize(camera.viewPosition - fragPosition);
 
 /*
 vec3 processLights() {

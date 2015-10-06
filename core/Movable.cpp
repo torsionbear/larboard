@@ -124,4 +124,11 @@ auto Movable::GetNormalTransform() const -> Matrix4x4f {
 	return _sceneNode->_transform;
 }
 
+auto Movable::GetShaderData() const -> ShaderData {
+	return ShaderData {
+		_sceneNode->_transform,
+		_sceneNode->_transform,
+	};
+}
+
 }

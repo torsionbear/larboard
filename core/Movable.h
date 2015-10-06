@@ -10,6 +10,11 @@ namespace core {
 class Movable {
 public:
 	friend class Scene;
+public:
+	struct ShaderData {
+		Matrix4x4f worldTransform;
+		Matrix4x4f normalTransform;
+	};
 
 public:
 	Movable() = default;
@@ -65,11 +70,21 @@ public:
 	auto GetRigidBodyMatrixInverse() const->Matrix4x4f;
 	auto GetNormalTransform() const -> Matrix4x4f;
 
+	auto GetUboOffset() const -> int {
+		return _uboOffset;
+	}
+	auto SetUboOffset(int offset) -> void {
+		_uboOffset = offset;
+	}
+	auto GetShaderData() const -> ShaderData;
+
 protected:
 	std::unique_ptr<SceneNode> _sceneNode = std::make_unique<SceneNode>();
 	Vector4f _forwardDirection = Vector4f{ 0.0f, 1.0f, 0.0f, 0.0f };
 	Vector4f _upwardDirection = Vector4f{ 0.0f, 0.0f, 1.0f, 0.0f };
 	Vector4f _rightDirection = Vector4f{ 1.0f, 0.0f, 0.0f, 0.0f };
+
+	openglInt _uboOffset;
 };
 
 }

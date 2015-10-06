@@ -30,6 +30,8 @@ int main()
 {
 	RenderWindow rw{};
     rw.Create(800, 600, L"RenderWindow");
+	MessageLogger::Log(MessageLogger::Info, std::string((const char*)glGetString(GL_VERSION)));
+	MessageLogger::Log(MessageLogger::Info, std::string((const char*)glGetString(GL_RENDERER)));
 
     if (glewInit())
     {

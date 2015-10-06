@@ -9,7 +9,17 @@ using std::make_unique;
 
 namespace core {
 
-Scene::Scene() = default;
+Scene::Scene() {
+	// There is an alignment restriction for UBOs when binding. 
+	// Any glBindBufferRange/Base's offset must be a multiple of GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT. 
+	// This alignment could be anything, so you have to query it before building your array of uniform buffers. 
+	// That means you can't do it directly in compile-time C++ logic; it has to be runtime logic.
+	// see http://stackoverflow.com/questions/13028852/issue-with-glbindbufferrange-opengl-3-1
+	glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &_uboAlignment);
+	_cameraShaderDataSize = AlignedSize(_uboAlignment, sizeof(Camera::ShaderData));
+	_materialShaderDataSize = AlignedSize(_uboAlignment, sizeof(Material::ShaderData));
+	_transformShaderDataSize = AlignedSize(_uboAlignment, sizeof(Movable::ShaderData));
+}
 
 Scene::~Scene() {
 	glDeleteBuffers(1, &_vbo);
@@ -95,12 +105,14 @@ auto Scene::GetDefaultShaderProgram() -> ShaderProgram * {
 auto Scene::SendToCard() -> void {
 
 	// 0. setup ubo
-	GenerateViewpointUbo();
-	GenerateMaterialUbo();
-	GenerateTransformUbo();
+	InitCameraData();
+	InitTransformData();
+	LoadMaterialData();
 
 	// 1. shader program
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+
 	for (auto & s : _shaderProgram) {
 		s->SendToCard();
 	}
@@ -146,10 +158,13 @@ auto Scene::SendToCard() -> void {
 
 auto Scene::Draw() -> void {
 	auto error = glGetError();
-	glBindVertexArray(_vao);
 
-	// 0. feed shape independent data (viewpoint) to shader via ubo
-	UpdateViewpoint(_cameras.front().get());
+	// 0. feed model independent data (camera) to shader via ubo
+	LoadCameraData();
+	UseCameraData(_cameras.front().get());
+
+	// 1. prepare transform data
+	LoadTransformData();
 
 	auto currentShaderProgram = static_cast<ShaderProgram*>(nullptr);
 	for (auto const& shape : _shapes) {
@@ -171,67 +186,95 @@ auto Scene::Draw() -> void {
 		}
 
 		// 2. feed shape dependent data (transform & material) to shader via ubo 
-		UpdateTransform(shape->_model);
-		UpdateMaterial(shape->_material);
-
+		UseTransformData(shape->_model);
+		UseMaterialData(shape->_material);
+		
 		// 3. texture
 		for (auto i = 0u; i < shape->_textures.size(); ++i) {
 			shape->_textures[0]->Use(i);
 		}
 
-		// 4. draw
+		// 4. feed vertex data via vao, draw call
+		glBindVertexArray(_vao);
 		glDrawArrays(GL_TRIANGLES, shape->_mesh->_startingIndex, shape->_mesh->_vertex.size());
 	}
 	error = glGetError();
 }
 
-auto Scene::GenerateViewpointUbo() -> void {
-	glGenBuffers(1, &_viewpointUbo);
-	glBindBufferBase(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Viewpoint), _viewpointUbo);
+// store all camera's data in _cameraUbo. 
+// if there's not need to split screen for multiple player, 
+// maybe we should store only 1 camera's data in _cameraUbo
+auto Scene::InitCameraData() -> void {
+	glGenBuffers(1, &_cameraUbo);
+	glBindBuffer(GL_UNIFORM_BUFFER, _cameraUbo);
+	glBufferData(GL_UNIFORM_BUFFER, _cameraShaderDataSize * _cameras.size(), nullptr, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-auto Scene::GenerateTransformUbo() -> void {
+auto Scene::LoadCameraData() -> void {
+	auto cache = vector<unsigned char>(_cameraShaderDataSize * _cameras.size());
+	auto offset = 0;
+	for (auto & camera : _cameras) {
+		auto * p = reinterpret_cast<Camera::ShaderData *>(&cache[offset]);
+		*p = camera->GetShaderData();
+		camera->SetUboOffset(offset);
+		offset += _cameraShaderDataSize;
+	}
+	glBindBuffer(GL_UNIFORM_BUFFER, _cameraUbo);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, cache.size(), cache.data());
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+auto Scene::UseCameraData(Camera const * camera) -> void {
+	glBindBufferRange(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Camera), _cameraUbo, camera->GetUboOffset(), sizeof(Camera::ShaderData));
+}
+
+auto Scene::InitTransformData() -> void {
 	glGenBuffers(1, &_transformUbo);
-	glBindBufferBase(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Transform), _transformUbo);
-}
-
-auto Scene::GenerateMaterialUbo() -> void {
-	glGenBuffers(1, &_materialUbo);
-	glBindBufferBase(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Material), _materialUbo);
-}
-
-auto Scene::UpdateViewpoint(Camera const* camera) -> void {
-	glBindBuffer(GL_UNIFORM_BUFFER, _viewpointUbo);
-	// Buffer re-specification (orphaning). See https://www.opengl.org/wiki/Buffer_Object_Streaming
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(Viewpoint), nullptr, GL_DYNAMIC_DRAW);
-	auto viewpoint = Viewpoint{
-		camera->GetProjectionTransform() * camera->GetRigidBodyMatrixInverse(),
-		camera->GetPosition(),
-	};
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(Viewpoint), &viewpoint);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-}
-
-auto Scene::UpdateTransform(Model const* model) -> void {
 	glBindBuffer(GL_UNIFORM_BUFFER, _transformUbo);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(Transform), nullptr, GL_DYNAMIC_DRAW);
-	auto transform = Transform{
-		model->GetMatrix(),
-		model->GetNormalTransform(),
-	};
-	// 1. glsl expect column major matrix, but our matrix is row major, so we need to specify row_major in shader's interface block layout.
-	// 2. when using glUniformMatrix4fv() to feed shader with matrix, we need to pass GL_TRUE for the 3rd parameter to transpose our matrix.
-	// 3. another dirty solution is to always multiply vector to matrix in shader (e.g. v_transformed = v * M)
-	// see http://stackoverflow.com/questions/17717600/confusion-between-c-and-opengl-matrix-order-row-major-vs-column-major#
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(Transform), &transform);	
+	glBufferData(GL_UNIFORM_BUFFER, _transformShaderDataSize * _shapes.size(), nullptr, GL_DYNAMIC_DRAW);
+	// may use glBufferStorage() instead of glBufferData() on gl version 4.4+
+	//glBufferStorage(GL_UNIFORM_BUFFER, _transformShaderDataSize * _shapes.size(), nullptr, GL_DYNAMIC_STORAGE_BIT);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-auto Scene::UpdateMaterial(Material const* material) -> void {
-	glBindBuffer(GL_UNIFORM_BUFFER, _materialUbo);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(Material), nullptr, GL_DYNAMIC_DRAW);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(Material), material);
+auto Scene::LoadTransformData() -> void {
+	auto cache = vector<unsigned char>(_transformShaderDataSize * _models.size());
+	auto offset = 0;
+	for (auto & model : _models) {
+		auto * p = reinterpret_cast<Movable::ShaderData *>(cache.data() + offset);
+		*p = model->GetShaderData();
+		model->SetUboOffset(offset);
+		offset += _transformShaderDataSize;
+	}
+	glBindBuffer(GL_UNIFORM_BUFFER, _transformUbo);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, cache.size(), cache.data());
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+auto Scene::UseTransformData(Model const* model) -> void {
+	glBindBufferRange(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Transform), _transformUbo, model->GetUboOffset(), _transformShaderDataSize);
+}
+
+auto Scene::LoadMaterialData() -> void {
+	glGenBuffers(1, &_materialUbo);
+	glBindBuffer(GL_UNIFORM_BUFFER, _materialUbo);
+	glBufferData(GL_UNIFORM_BUFFER, _materialShaderDataSize * _materials.size(), nullptr, GL_DYNAMIC_DRAW);
+	auto * p = static_cast<unsigned char*>(glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY));
+	auto offset = 0;
+	for (auto & m : _materials) {
+		auto * material = m.second.get();
+		material->SetUboOffset(offset);
+		memcpy(p, &material->GetShaderData(), sizeof(Material::ShaderData));
+		p += _materialShaderDataSize;
+		offset += _materialShaderDataSize;
+	}
+	glUnmapBuffer(GL_UNIFORM_BUFFER);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+auto Scene::UseMaterialData(Material const* material) -> void {
+	glBindBufferRange(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Material), _materialUbo, material->GetUboOffset(), _materialShaderDataSize);
 }
 
 }

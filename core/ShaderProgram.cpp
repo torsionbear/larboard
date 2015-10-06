@@ -68,7 +68,7 @@ auto ShaderProgram::SendToCardImpl() -> bool {
 
 	// no longer bind uniform block with uniform buffer index here,
 	// instead we specify binding in shader's interface block layout.
-	//glUniformBlockBinding(_program, glGetUniformBlockIndex(_program, "Viewpoint"), GetIndex(UniformBufferType::Viewpoint));
+	//glUniformBlockBinding(_program, glGetUniformBlockIndex(_program, "Camera"), GetIndex(UniformBufferType::Viewpoint));
 	//glUniformBlockBinding(_program, glGetUniformBlockIndex(_program, "Transform"), GetIndex(UniformBufferType::Transform));
 	//glUniformBlockBinding(_program, glGetUniformBlockIndex(_program, "Material"), GetIndex(UniformBufferType::Material));
 

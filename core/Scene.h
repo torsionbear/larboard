@@ -14,16 +14,6 @@
 
 namespace core {
 
-struct Viewpoint {
-	Matrix4x4f viewTransform;
-	Vector4f viewPosition;
-};
-
-struct Transform {
-	Matrix4x4f worldTransform;
-	Matrix4x4f normalTransform;	 
-};
-
 class Scene {
 public:
 	Scene();
@@ -51,13 +41,16 @@ public:
 
 	auto SendToCard() -> void;
 	auto Draw() -> void;
+
 private:
-	auto GenerateViewpointUbo() -> void;
-	auto GenerateTransformUbo() -> void;
-	auto GenerateMaterialUbo() -> void;
-	auto UpdateViewpoint(Camera const* camera) -> void;
-	auto UpdateTransform(Model const* model) -> void;
-	auto UpdateMaterial(Material const* material) -> void;
+	auto InitCameraData() -> void;
+	auto LoadCameraData() -> void;
+	auto UseCameraData(Camera const* camera) -> void;
+	auto InitTransformData() -> void;
+	auto LoadTransformData() -> void;
+	auto UseTransformData(Model const* model) -> void;
+	auto LoadMaterialData() -> void;
+	auto UseMaterialData(Material const* material) -> void;
 
 private:
 	Movable _root;
@@ -65,7 +58,6 @@ private:
 	std::vector<std::unique_ptr<Model>> _models;
 	std::vector<std::unique_ptr<Camera>> _cameras;
 	std::vector<std::unique_ptr<PointLight>> _pointLights;
-
 	std::vector<std::unique_ptr<Shape>> _shapes;
 	std::map<std::string, std::unique_ptr<Material>> _materials;
 	std::map<std::string, std::unique_ptr<Texture>> _textures;
@@ -73,9 +65,13 @@ private:
 	std::vector<std::unique_ptr<ShaderProgram>> _shaderProgram;
 	ShaderProgram * _defaultShaderProgram = nullptr;
 
+	openglInt _uboAlignment;
+	unsigned int _cameraShaderDataSize;
+	unsigned int _materialShaderDataSize;
+	unsigned int _transformShaderDataSize;
 	openglUint _vao;
 	openglUint _vbo;
-	openglUint _viewpointUbo;
+	openglUint _cameraUbo;
 	openglUint _transformUbo;
 	openglUint _materialUbo;
 	size_t _vertexCount = 0;

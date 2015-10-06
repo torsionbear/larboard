@@ -15,4 +15,9 @@ using size_type = unsigned int;
 
 static Float32 const pi = 3.1415926536f;
 
+auto inline AlignedSize(unsigned int alignment, unsigned int actualSize) -> unsigned int {
+	auto remainder = actualSize % alignment;
+	return remainder == 0 ? actualSize : actualSize + alignment - remainder;
+}
+
 }
