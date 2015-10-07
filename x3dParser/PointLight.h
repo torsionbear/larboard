@@ -18,13 +18,15 @@ public:
 	auto GetIntensity() const ->Float;
 	auto GetRadius() const ->Float;
 	auto GetLocation() const -> Float3;
+	auto GetAttenuation() const -> Float3;
 
 private:
-	auto SetAmbientIntensity(std::string &&) -> void;
-	auto SetColor(std::string &&) -> void;
-	auto SetIntensity(std::string &&) -> void;
-	auto SetRadius(std::string &&) -> void;
-	auto SetLocation(std::string &&) -> void;
+	auto SetAmbientIntensity(std::string && s) -> void;
+	auto SetColor(std::string && s) -> void;
+	auto SetIntensity(std::string && s) -> void;
+	auto SetRadius(std::string && s) -> void;
+	auto SetLocation(std::string && s) -> void;
+	auto SetAttenuation(std::string && s) -> void;
 
 private:
 	Float _ambientIntensity;
@@ -32,6 +34,7 @@ private:
 	Float _intensity;
 	Float _radius;
 	Float3 _location;
+	Float3 _attenuation;
 };
 
 }

@@ -53,7 +53,7 @@ public:
 	auto Roll(Float32 radius) -> void;
 
 	auto Translate(Float32, Float32, Float32) -> void;
-	auto Translate(Vector4f const&) -> void;
+	auto Translate(Vector3f const&) -> void;
 	auto Rotate(Float32, Float32, Float32, Float32) -> void;
 	auto Rotate(Vector4f const& pivot, Float32 angle) -> void;
 	auto Rotate(Vector4f const& center, Vector4f const& pivot, Float32 angle) -> void;

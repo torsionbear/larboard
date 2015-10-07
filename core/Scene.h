@@ -14,6 +14,20 @@
 
 namespace core {
 
+struct LightShaderData {
+	enum {
+		MaxDirectionalLightCount = 50,
+		MaxpointLightCount = 50,
+		MaxspotLightCount = 10,
+	};
+	PointLight::ShaderData directionalLights[MaxDirectionalLightCount];
+	PointLight::ShaderData pointLights[MaxpointLightCount];
+	PointLight::ShaderData spotLights[MaxspotLightCount];
+	int directionalLightCount;
+	int pointLightCount;
+	int spotLightCount;
+};
+
 class Scene {
 public:
 	Scene();
@@ -51,6 +65,7 @@ private:
 	auto UseTransformData(Model const* model) -> void;
 	auto LoadMaterialData() -> void;
 	auto UseMaterialData(Material const* material) -> void;
+	auto LoadLightData() -> void;
 
 private:
 	Movable _root;
@@ -74,6 +89,7 @@ private:
 	openglUint _cameraUbo;
 	openglUint _transformUbo;
 	openglUint _materialUbo;
+	openglUint _lightUbo;
 	size_t _vertexCount = 0;
 };
 

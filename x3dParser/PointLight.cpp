@@ -15,6 +15,8 @@ auto PointLight::SetAttribute(string const& attribute, string&& value) -> void {
 		SetRadius(move(value));
 	} else if (attribute.compare("location") == 0) {
 		SetLocation(move(value));
+	} else if (attribute.compare("attenuation") == 0) {
+		SetAttenuation(move(value));
 	} else if (attribute.compare("DEF") == 0) {
 		SetDef(move(value));
 	} else if (attribute.compare("USE") == 0) {
@@ -46,6 +48,10 @@ auto PointLight::GetLocation() const -> Float3 {
 	return _location;
 }
 
+auto PointLight::GetAttenuation() const -> Float3 {
+	return _attenuation;
+}
+
 auto PointLight::SetAmbientIntensity(string && s) -> void {
 	_ambientIntensity = stof(move(s));
 }
@@ -64,6 +70,10 @@ auto PointLight::SetRadius(string && s) -> void {
 
 auto PointLight::SetLocation(string && s) -> void {
 	_location = Float3{ move(s) };
+}
+
+auto PointLight::SetAttenuation(std::string && s) -> void {
+	_attenuation = Float3{ move(s) };
 }
 
 }

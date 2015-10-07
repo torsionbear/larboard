@@ -104,15 +104,16 @@ auto Scene::GetDefaultShaderProgram() -> ShaderProgram * {
 
 auto Scene::SendToCard() -> void {
 
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+
 	// 0. setup ubo
 	InitCameraData();
 	InitTransformData();
 	LoadMaterialData();
+	LoadLightData();
 
 	// 1. shader program
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
-
 	for (auto & s : _shaderProgram) {
 		s->SendToCard();
 	}
@@ -122,10 +123,7 @@ auto Scene::SendToCard() -> void {
 		t.second->SendToCard();
 	}
 
-	// 3. light
-
-
-	// 4. vao/vbo
+	// 3. vao/vbo
 	// currently we use only 1 vao & vbo for a scene.
 	glGenVertexArrays(1, &_vao);
 	glBindVertexArray(_vao);
@@ -275,6 +273,28 @@ auto Scene::LoadMaterialData() -> void {
 
 auto Scene::UseMaterialData(Material const* material) -> void {
 	glBindBufferRange(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Material), _materialUbo, material->GetUboOffset(), _materialShaderDataSize);
+}
+
+auto Scene::LoadLightData() -> void {
+	auto data = LightShaderData{};
+
+	data.directionalLightCount = 0;
+	assert(data.directionalLightCount <= LightShaderData::MaxDirectionalLightCount);
+
+	data.pointLightCount = _pointLights.size();
+	assert(data.pointLightCount <= LightShaderData::MaxpointLightCount);
+	auto index = 0u;
+	for (auto const& pointLight : _pointLights) {
+		data.pointLights[index++] = pointLight->GetShaderData();
+	}
+
+	data.spotLightCount = 0;
+	assert(data.spotLightCount <= LightShaderData::MaxspotLightCount);
+
+	glGenBuffers(1, &_lightUbo);
+	glBindBuffer(GL_UNIFORM_BUFFER, _lightUbo);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(data), &data, GL_DYNAMIC_DRAW);
+	glBindBufferBase(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Light), _lightUbo);
 }
 
 }

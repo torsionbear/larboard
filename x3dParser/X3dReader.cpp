@@ -170,10 +170,11 @@ auto X3dReader::Read(Viewpoint const& viewpoint) -> Camera * {
 
 auto X3dReader::Read(PointLight const& pointLight) -> core::PointLight * {
 	auto ret = _scene->CreatePointLight();
-	ret->SetAmbientIntensity(pointLight.GetAmbientIntensity());
-	ret->SetColor(ToPoint3(pointLight.GetColor()));
-	ret->SetIntensity(pointLight.GetIntensity());
-	ret->SetLocation(ToPoint3(pointLight.GetLocation()));
+	// ignore ambientIntensity. Use standalone ambient light instead
+	//ret->SetAmbientIntensity(pointLight.GetAmbientIntensity());
+	ret->SetColor(ToPoint3(pointLight.GetColor()) * pointLight.GetIntensity());
+	ret->Translate(ToPoint3(pointLight.GetLocation()));
+	ret->SetAttenuation(ToPoint3(pointLight.GetAttenuation()));
 	ret->SetRadius(pointLight.GetRadius());
 	return ret;
 }

@@ -16,6 +16,7 @@ enum class UniformBufferType : unsigned int {
 	Camera = 0u,
 	Transform = 1u,
 	Material = 2u,
+	Light = 3u,
 };
 
 auto inline GetIndex(UniformBufferType t) {

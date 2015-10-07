@@ -7,18 +7,24 @@ namespace core {
 
 class PointLight : public Movable {
 public:
-	auto SetAmbientIntensity(Float32) -> void;
-	auto SetColor(Vector3f) -> void;
-	auto SetIntensity(Float32) -> void;
-	auto SetRadius(Float32) -> void;
-	auto SetLocation(Vector3f) -> void;
+	struct ShaderData {
+		Vector4f position;
+		Vector4f color;
+		Vector4f attenuation;
+	};
+public:
+	PointLight();
+public:
+	auto SetColor(Vector3f value) -> void;
+	auto SetRadius(Float32 value) -> void;
+	auto SetAttenuation(Vector3f value) -> void;
+
+	auto GetShaderData() const -> ShaderData;
 
 private:
-	Float32 _ambientIntensity;
-	Vector3f _color;
-	Float32 _intensity;
+	Vector4f _color;
+	Vector3f _attenuation;
 	Float32 _radius;
-	Vector3f _location;
 };
 
 }

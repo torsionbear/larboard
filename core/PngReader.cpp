@@ -23,9 +23,7 @@ public:
 	}
 	PngReaderImpl(PngReader const&) = delete;
 	PngReaderImpl& operator=(PngReader const&) = delete;
-	~PngReaderImpl() {
-		_file.close();
-	}
+	~PngReaderImpl() = default;
 
 public:
 	auto ReadPng() {

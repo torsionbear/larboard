@@ -49,7 +49,7 @@ auto Movable::Translate(Float32 x, Float32 y, Float32 z) -> void {
 	_sceneNode->Translate(x, y, z);
 }
 
-auto Movable::Translate(Vector4f const& v) -> void {
+auto Movable::Translate(Vector3f const& v) -> void {
 	Translate(v(0), v(1), v(2));
 }
 

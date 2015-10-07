@@ -56,8 +56,8 @@ public:
 			_data[i++] = v;
 		}
 	}
-	template<typename T>
-	Matrix(MatrixExpression<T> const& e) {
+	template<typename T2>
+	Matrix(MatrixExpression<T2> const& e) {
 		assert(e.RowCount() == RowCount());
 		assert(e.ColumnCount() == ColumnCount());
 		for (auto i = 0u; i < e.RowCount(); ++i) {
