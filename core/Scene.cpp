@@ -41,6 +41,11 @@ auto Scene::CreateCamera() -> Camera * {
 	return _cameras.back().get();
 }
 
+auto Scene::CreateDirectionalLight() -> DirectionalLight * {
+	_directionalLights.push_back(make_unique<DirectionalLight>());
+	return _directionalLights.back().get();
+}
+
 auto Scene::CreatePointLight() -> PointLight * {
 	_pointLights.push_back(make_unique<PointLight>());
 	return _pointLights.back().get();
@@ -278,14 +283,16 @@ auto Scene::UseMaterialData(Material const* material) -> void {
 auto Scene::LoadLightData() -> void {
 	auto data = LightShaderData{};
 
-	data.directionalLightCount = 0;
+	data.directionalLightCount = _directionalLights.size();
 	assert(data.directionalLightCount <= LightShaderData::MaxDirectionalLightCount);
+	for (auto i = 0; i < data.directionalLightCount; ++i) {
+		data.directionalLights[i] = _directionalLights[i]->GetShaderData();
+	}
 
 	data.pointLightCount = _pointLights.size();
 	assert(data.pointLightCount <= LightShaderData::MaxpointLightCount);
-	auto index = 0u;
-	for (auto const& pointLight : _pointLights) {
-		data.pointLights[index++] = pointLight->GetShaderData();
+	for (auto i = 0; i < data.pointLightCount; ++i) {
+		data.pointLights[i] = _pointLights[i]->GetShaderData();
 	}
 
 	data.spotLightCount = 0;

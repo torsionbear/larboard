@@ -28,6 +28,8 @@ auto Transform::AddChild(X3dNode * child) -> void {
         _viewpoint = static_cast<Viewpoint*>(child);
 	} else if (typeid(*child) == typeid(PointLight)) {
 		_pointLight = static_cast<PointLight*>(child);
+	} else if (typeid(*child) == typeid(DirectionalLight)) {
+		_directionalLight = static_cast<DirectionalLight*>(child);
 	}
 }
 
@@ -57,6 +59,10 @@ auto Transform::GetViewpoint() const -> Viewpoint const* {
 
 auto Transform::GetPointLight() const -> PointLight const* {
 	return _pointLight;
+}
+
+auto Transform::GetDirectionalLight() const -> DirectionalLight const * {
+	return _directionalLight;
 }
 
 auto Transform::SetTranslation(string&& s) -> void {

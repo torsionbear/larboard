@@ -83,6 +83,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DirectionalLight.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Movable.cpp" />
@@ -98,6 +99,7 @@
     <ClCompile Include="Camera.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DirectionalLight.h" />
     <ClInclude Include="Endian.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Matrix.h" />

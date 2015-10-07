@@ -7,10 +7,15 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "renderSystem", "RenderSyste
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "client", "client\Client.vcxproj", "{A092D6FD-2D55-4F6D-B422-50D3C6907B56}"
 	ProjectSection(ProjectDependencies) = postProject
+		{3826285B-1514-486F-B0E5-1B025F03EBD4} = {3826285B-1514-486F-B0E5-1B025F03EBD4}
+		{C2FC558E-395A-4306-83B4-8EED31C25E7B} = {C2FC558E-395A-4306-83B4-8EED31C25E7B}
 		{C40525D8-5F04-4CF0-A719-BEA896895413} = {C40525D8-5F04-4CF0-A719-BEA896895413}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "x3dParser", "X3dParser\X3dParser.vcxproj", "{C2FC558E-395A-4306-83B4-8EED31C25E7B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3826285B-1514-486F-B0E5-1B025F03EBD4} = {3826285B-1514-486F-B0E5-1B025F03EBD4}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "x3dParserMicroTest", "X3dParserMicroTest\X3dParserMicroTest.vcxproj", "{D3CBDAD4-10DD-4466-88B0-4797B5CBC557}"
 	ProjectSection(ProjectDependencies) = postProject

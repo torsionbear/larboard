@@ -67,7 +67,9 @@ auto X3dNode::BuildNode(string const& nodeType) -> unique_ptr<X3dNode> {
 		return make_unique<Viewpoint>();
 	} else if (nodeType == "PointLight") {
 		return make_unique<PointLight>();
-	} 
+	} else if (nodeType == "DirectionalLight") {
+		return make_unique<DirectionalLight>();
+	}
 	return make_unique<NullNode>();
 }
 

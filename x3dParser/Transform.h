@@ -7,6 +7,7 @@
 #include "Group.h"
 #include "Viewpoint.h"
 #include "PointLight.h"
+#include "DirectionalLight.h"
 
 namespace x3dParser {
 
@@ -22,6 +23,7 @@ public:
     auto GetGroup() const-> Group const*;
     auto GetViewpoint() const -> Viewpoint const*;
 	auto GetPointLight() const -> PointLight const*;
+	auto GetDirectionalLight() const -> DirectionalLight const *;
 
 private:
     auto SetTranslation(std::string&&) -> void;
@@ -36,6 +38,7 @@ private:
     Group * _group = nullptr;
     Viewpoint * _viewpoint = nullptr;
 	PointLight * _pointLight = nullptr;
+	DirectionalLight * _directionalLight = nullptr;
 };
 
 }

@@ -68,6 +68,7 @@ auto X3dReader::Read(Transform const& transform) -> Movable *
 	auto viewpoint = transform.GetViewpoint();
 	auto transformChildren = transform.GetTransform();
 	auto pointLight = transform.GetPointLight();
+	auto directionalLight = transform.GetDirectionalLight();
 	if (nullptr != group) {
 		auto& shapes = group->GetShape();
 		assert(1u == shapes.size());	// support only 1 shape under a transform. Multiple shapes share the same transform does not make sense.
@@ -76,6 +77,8 @@ auto X3dReader::Read(Transform const& transform) -> Movable *
 		ret = Read(*viewpoint);
 	} else if (nullptr != pointLight) {
 		ret = Read(*pointLight);
+	} else if (nullptr != directionalLight) {
+		ret = Read(*directionalLight);
 	} else if (!transformChildren.empty()) {
 		ret = _scene->CreateMovable();
 		for (auto& transformChild : transformChildren) {
@@ -144,7 +147,7 @@ auto X3dReader::Read(Material const & material) -> core::Material * {
 	auto emissive = material.GetEmissiveColor();
 	ret->SetEmissive({ emissive.x, emissive.y, emissive.z, 1.0f });
 	ret->SetAmbientIntensity(material.GetAmbientIntensity());
-	ret->SetShininess(material.GetShininess());
+	ret->SetShininess(material.GetShininess() * 128);	// multiple 128 to x3d shininess. see http://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/lighting.html#Lightingmodel
 	ret->SetTransparency(material.GetTransparency());
 
 	return ret;
@@ -176,6 +179,15 @@ auto X3dReader::Read(PointLight const& pointLight) -> core::PointLight * {
 	ret->Translate(ToPoint3(pointLight.GetLocation()));
 	ret->SetAttenuation(ToPoint3(pointLight.GetAttenuation()));
 	ret->SetRadius(pointLight.GetRadius());
+	return ret;
+}
+
+auto X3dReader::Read(DirectionalLight const & directionalLight) -> core::DirectionalLight * {
+	auto ret = _scene->CreateDirectionalLight();
+	// ignore ambientIntensity. Use standalone ambient light instead
+	ret->SetColor(ToPoint3(directionalLight.GetColor()) * directionalLight.GetIntensity());
+	auto direction = directionalLight.GetDirection();
+	ret->SetDirection(core::Vector4f{direction.x, direction.y, direction.z, 0.0f});
 	return ret;
 }
 

@@ -22,7 +22,7 @@ public:
 	auto GetShaderData() const -> ShaderData;
 
 private:
-	Vector4f _color;
+	Vector3f _color;
 	Vector3f _attenuation;
 	Float32 _radius;
 };

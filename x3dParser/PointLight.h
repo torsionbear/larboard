@@ -9,7 +9,6 @@ namespace x3dParser {
 
 class PointLight : public X3dNode {
 public:
-public:
 	auto SetAttribute(std::string const&, std::string&&) -> void override;
 	auto AddChild(X3dNode *) -> void override;
 
@@ -31,10 +30,10 @@ private:
 private:
 	Float _ambientIntensity;
 	Float3 _color;
-	Float _intensity;
-	Float _radius;
+	Float _intensity = 1.0f;
+	Float _radius = 5.0f;
 	Float3 _location;
-	Float3 _attenuation;
+	Float3 _attenuation = { 0.8f, 0.1f, 0.1f };
 };
 
 }
