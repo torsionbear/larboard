@@ -11,6 +11,7 @@
 #include "core/Camera.h"
 #include "core/PointLight.h"
 #include "core/DirectionalLight.h"
+#include "core/SpotLight.h"
 
 using std::make_unique;
 
@@ -36,7 +37,8 @@ private:
 	auto Read(ImageTexture const& imageTexture) -> core::Texture*;
 	auto Read(Viewpoint const& viewpoint)->core::Camera *;
 	auto Read(PointLight const& pointLight)->core::PointLight *;
-	auto Read(DirectionalLight const& directionalLight) -> core::DirectionalLight *;
+	auto Read(DirectionalLight const& directionalLight)->core::DirectionalLight *;
+	auto Read(SpotLight const& spotLight) -> core::SpotLight *;
 
 private:
 	std::unique_ptr<core::Scene> _scene;

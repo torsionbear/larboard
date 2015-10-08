@@ -17,8 +17,8 @@ auto DirectionalLight::SetDirection(Vector4f value) -> void {
 
 auto DirectionalLight::GetShaderData() const -> ShaderData {
 	return ShaderData{
+		Vector4f{ _color(0), _color(1), _color(2), 1.0f },
 		GetMatrix() * _direction,
-		Vector4f{_color(0), _color(1), _color(2), 1.0f},
 	};
 }
 

@@ -20,6 +20,7 @@
 #include "TextureCoordinate.h"
 #include "ViewPoint.h"
 #include "PointLight.h"
+#include "SpotLight.h"
 
 using std::unique_ptr;
 using std::make_unique;
@@ -69,6 +70,8 @@ auto X3dNode::BuildNode(string const& nodeType) -> unique_ptr<X3dNode> {
 		return make_unique<PointLight>();
 	} else if (nodeType == "DirectionalLight") {
 		return make_unique<DirectionalLight>();
+	} else if (nodeType == "SpotLight") {
+		return make_unique<SpotLight>();
 	}
 	return make_unique<NullNode>();
 }

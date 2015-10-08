@@ -7,8 +7,8 @@ namespace core {
 class DirectionalLight : public Movable {
 public:
 	struct ShaderData {
-		Vector4f direction;
 		Vector4f color;
+		Vector4f direction;
 	};
 public:
 	DirectionalLight();

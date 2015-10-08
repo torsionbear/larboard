@@ -12,18 +12,19 @@
 #include "Camera.h"
 #include "PointLight.h"
 #include "DirectionalLight.h"
+#include "SpotLight.h"
 
 namespace core {
 
 struct LightShaderData {
 	enum {
 		MaxDirectionalLightCount = 10,
-		MaxpointLightCount = 50,
-		MaxspotLightCount = 50,
+		MaxPointLightCount = 50,
+		MaxSpotLightCount = 50,
 	};
 	DirectionalLight::ShaderData directionalLights[MaxDirectionalLightCount];
-	PointLight::ShaderData pointLights[MaxpointLightCount];
-	PointLight::ShaderData spotLights[MaxspotLightCount];
+	PointLight::ShaderData pointLights[MaxPointLightCount];
+	SpotLight::ShaderData spotLights[MaxSpotLightCount];
 	int directionalLightCount;
 	int pointLightCount;
 	int spotLightCount;
@@ -41,6 +42,7 @@ public:
 	auto CreateCamera() -> Camera *;
 	auto CreateDirectionalLight() -> DirectionalLight *;
 	auto CreatePointLight() -> PointLight *;
+	auto CreateSpotLight() -> SpotLight *;
 	auto Stage(Movable *) -> void;
 	auto Unstage(Movable *) -> void;
 
@@ -76,6 +78,7 @@ private:
 	std::vector<std::unique_ptr<Camera>> _cameras;
 	std::vector<std::unique_ptr<PointLight>> _pointLights;
 	std::vector<std::unique_ptr<DirectionalLight>> _directionalLights;
+	std::vector<std::unique_ptr<SpotLight>> _spotLights;
 	std::vector<std::unique_ptr<Shape>> _shapes;
 	std::map<std::string, std::unique_ptr<Material>> _materials;
 	std::map<std::string, std::unique_ptr<Texture>> _textures;

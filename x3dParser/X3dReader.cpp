@@ -69,6 +69,7 @@ auto X3dReader::Read(Transform const& transform) -> Movable *
 	auto transformChildren = transform.GetTransform();
 	auto pointLight = transform.GetPointLight();
 	auto directionalLight = transform.GetDirectionalLight();
+	auto spotLight = transform.GetSpotLight();
 	if (nullptr != group) {
 		auto& shapes = group->GetShape();
 		assert(1u == shapes.size());	// support only 1 shape under a transform. Multiple shapes share the same transform does not make sense.
@@ -79,6 +80,8 @@ auto X3dReader::Read(Transform const& transform) -> Movable *
 		ret = Read(*pointLight);
 	} else if (nullptr != directionalLight) {
 		ret = Read(*directionalLight);
+	} else if (nullptr != spotLight) {
+		ret = Read(*spotLight);
 	} else if (!transformChildren.empty()) {
 		ret = _scene->CreateMovable();
 		for (auto& transformChild : transformChildren) {
@@ -98,8 +101,7 @@ auto X3dReader::Read(Transform const& transform) -> Movable *
 	return ret;
 }
 
-auto X3dReader::Read(Scene const& scene) -> std::unique_ptr<core::Scene> {
-	
+auto X3dReader::Read(Scene const& scene) -> std::unique_ptr<core::Scene> {	
 	auto& transforms = scene.GetTransform();
 	for (auto& transform : transforms) {
 		_scene->Stage(Read(*transform));
@@ -175,7 +177,9 @@ auto X3dReader::Read(PointLight const& pointLight) -> core::PointLight * {
 	auto ret = _scene->CreatePointLight();
 	// ignore ambientIntensity. Use standalone ambient light instead
 	//ret->SetAmbientIntensity(pointLight.GetAmbientIntensity());
-	ret->SetColor(ToPoint3(pointLight.GetColor()) * pointLight.GetIntensity());
+	auto color = pointLight.GetColor();
+	auto intensity = pointLight.GetIntensity();
+	ret->SetColor(core::Vector4f{ color.x, color.y, color.z, 1.0f } * intensity);
 	ret->Translate(ToPoint3(pointLight.GetLocation()));
 	ret->SetAttenuation(ToPoint3(pointLight.GetAttenuation()));
 	ret->SetRadius(pointLight.GetRadius());
@@ -188,6 +192,22 @@ auto X3dReader::Read(DirectionalLight const & directionalLight) -> core::Directi
 	ret->SetColor(ToPoint3(directionalLight.GetColor()) * directionalLight.GetIntensity());
 	auto direction = directionalLight.GetDirection();
 	ret->SetDirection(core::Vector4f{direction.x, direction.y, direction.z, 0.0f});
+	return ret;
+}
+
+auto X3dReader::Read(SpotLight const & spotLight) -> core::SpotLight * {
+	auto ret = _scene->CreateSpotLight();
+	// ignore ambientIntensity. Use standalone ambient light instead
+	auto color = spotLight.GetColor();
+	auto intensity = spotLight.GetIntensity();
+	ret->SetColor(core::Vector4f{ color.x, color.y, color.z, 1.0f } *intensity);
+	ret->Translate(ToPoint3(spotLight.GetLocation()));
+	ret->SetAttenuation(ToPoint3(spotLight.GetAttenuation()));
+	ret->SetRadius(spotLight.GetRadius());
+	auto direction = spotLight.GetDirection();
+	ret->SetDirection(core::Vector4f{ direction.x, direction.y, direction.z, 0.0f });
+	ret->SetBeamWidth(spotLight.GetBeamWidth());
+	ret->SetCutOffAngle(spotLight.GetCutOffAngle());
 	return ret;
 }
 

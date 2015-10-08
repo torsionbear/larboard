@@ -94,6 +94,7 @@
     <ClCompile Include="PointLight.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Shape.cpp" />
+    <ClCompile Include="SpotLight.cpp" />
     <ClCompile Include="TextureCoordinate.cpp" />
     <ClCompile Include="TextureTransform.cpp" />
     <ClCompile Include="Transform.cpp" />
@@ -112,6 +113,7 @@
     <ClInclude Include="IndexedFaceSet.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="PointLight.h" />
+    <ClInclude Include="SpotLight.h" />
     <ClInclude Include="X3dReader.h" />
     <ClInclude Include="Normal.h" />
     <ClInclude Include="NullNode.h" />

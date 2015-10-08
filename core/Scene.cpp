@@ -51,6 +51,11 @@ auto Scene::CreatePointLight() -> PointLight * {
 	return _pointLights.back().get();
 }
 
+auto Scene::CreateSpotLight() -> SpotLight * {
+	_spotLights.push_back(make_unique<SpotLight>());
+	return _spotLights.back().get();
+}
+
 auto Scene::Stage(Movable * movable) -> void {
 	movable->AttachTo(_root);
 }
@@ -185,7 +190,7 @@ auto Scene::Draw() -> void {
 			// Do all the glUniform1i calls after loading the program, then never again. 
 			// You only need to call it once to tell the program which texture image unit each sampler uses. 
 			// After you've done that all you need to do is bind textures to the right texture image units. 
-			glUniform1i(glGetUniformLocation(currentShaderProgram->GetHandler(), "textures.diffuseTexture"), 0); // only support diffuse texture for now
+			glUniform1i(glGetUniformLocation(currentShaderProgram->GetHandler(), "textures.diffuseMap"), 0); // only support diffuse texture for now
 		}
 
 		// 2. feed shape dependent data (transform & material) to shader via ubo 
@@ -194,7 +199,7 @@ auto Scene::Draw() -> void {
 		
 		// 3. texture
 		for (auto i = 0u; i < shape->_textures.size(); ++i) {
-			shape->_textures[0]->Use(i);
+			shape->_textures[i]->Use(i);
 		}
 
 		// 4. feed vertex data via vao, draw call
@@ -290,13 +295,16 @@ auto Scene::LoadLightData() -> void {
 	}
 
 	data.pointLightCount = _pointLights.size();
-	assert(data.pointLightCount <= LightShaderData::MaxpointLightCount);
+	assert(data.pointLightCount <= LightShaderData::MaxPointLightCount);
 	for (auto i = 0; i < data.pointLightCount; ++i) {
 		data.pointLights[i] = _pointLights[i]->GetShaderData();
 	}
 
-	data.spotLightCount = 0;
-	assert(data.spotLightCount <= LightShaderData::MaxspotLightCount);
+	data.spotLightCount = _spotLights.size();
+	assert(data.spotLightCount <= LightShaderData::MaxSpotLightCount);
+	for (auto i = 0; i < data.spotLightCount; ++i) {
+		data.spotLights[i] = _spotLights[i]->GetShaderData();
+	}
 
 	glGenBuffers(1, &_lightUbo);
 	glBindBuffer(GL_UNIFORM_BUFFER, _lightUbo);
