@@ -112,6 +112,16 @@ auto Scene::GetDefaultShaderProgram() -> ShaderProgram * {
 	return _defaultShaderProgram;
 }
 
+auto Scene::ToggleBackFace() -> void {
+	_renderBackFace = !_renderBackFace;
+	_renderBackFace ? glDisable(GL_CULL_FACE) : glEnable(GL_CULL_FACE);
+}
+
+auto Scene::ToggleWireframe() -> void {
+	_wireframeMode = !_wireframeMode;
+	_wireframeMode ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE) : glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
+
 auto Scene::SendToCard() -> void {
 
 	glEnable(GL_DEPTH_TEST);
@@ -181,12 +191,7 @@ auto Scene::Draw() -> void {
 			shape->_shaderProgram->Use();
 			currentShaderProgram = shape->_shaderProgram;
 
-			//glUniform1i(glGetUniformLocation(shape->_shaderProgram->GetHandler(), "lights.directionalLightCount"), 0);
-			//glUniform1i(glGetUniformLocation(shape->_shaderProgram->GetHandler(), "lights.pointLightCount"), _pointLights.size());
-			//glUniform1i(glGetUniformLocation(shape->_shaderProgram->GetHandler(), "lights.spotLightCount"), 0);
-			for (auto const& pointLight : _pointLights) {
 
-			}
 			// Do all the glUniform1i calls after loading the program, then never again. 
 			// You only need to call it once to tell the program which texture image unit each sampler uses. 
 			// After you've done that all you need to do is bind textures to the right texture image units. 

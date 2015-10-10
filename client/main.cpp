@@ -85,7 +85,11 @@ int main()
 			switch(wParam) {
 			case VK_ESCAPE:
 				break;
+			case VK_F1:
+				scene->ToggleBackFace();
+				break;
 			case VK_F2:
+				scene->ToggleWireframe();
 				break;
 			case 0x57:	// W key
 				scene->GetActiveCamera()->Forward(0.2f);

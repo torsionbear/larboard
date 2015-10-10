@@ -57,6 +57,8 @@ public:
 	auto GetActiveCamera() const -> Camera *;
 	auto GetDefaultShaderProgram()->ShaderProgram *;
 
+	auto Scene::ToggleBackFace() -> void;
+	auto Scene::ToggleWireframe() -> void;
 	auto SendToCard() -> void;
 	auto Draw() -> void;
 
@@ -97,6 +99,9 @@ private:
 	openglUint _materialUbo;
 	openglUint _lightUbo;
 	size_t _vertexCount = 0;
+
+	bool _wireframeMode = false;
+	bool _renderBackFace = false;
 };
 
 }
