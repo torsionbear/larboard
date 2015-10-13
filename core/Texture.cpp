@@ -58,10 +58,10 @@ auto Texture::FreeFromCardImpl() -> bool {
 	return true;
 }
 
-auto Texture::Use(unsigned int index) -> void {
+auto Texture::Use() -> void {
 	assert(status::SentToCard == _status);
 
-	glActiveTexture(GL_TEXTURE0 + index);
+	glActiveTexture(GL_TEXTURE0 + _type);
 	glBindTexture(GL_TEXTURE_2D, _texture);
 
 }

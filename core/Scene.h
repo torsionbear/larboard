@@ -62,6 +62,8 @@ public:
 	auto SendToCard() -> void;
 	auto Draw() -> void;
 
+	auto GetShapes() -> std::vector<std::unique_ptr<Shape>> &;
+
 private:
 	auto InitCameraData() -> void;
 	auto LoadCameraData() -> void;

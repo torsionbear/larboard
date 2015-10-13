@@ -190,12 +190,6 @@ auto Scene::Draw() -> void {
 		if (currentShaderProgram != shape->_shaderProgram) {
 			shape->_shaderProgram->Use();
 			currentShaderProgram = shape->_shaderProgram;
-
-
-			// Do all the glUniform1i calls after loading the program, then never again. 
-			// You only need to call it once to tell the program which texture image unit each sampler uses. 
-			// After you've done that all you need to do is bind textures to the right texture image units. 
-			glUniform1i(glGetUniformLocation(currentShaderProgram->GetHandler(), "textures.diffuseMap"), 0); // only support diffuse texture for now
 		}
 
 		// 2. feed shape dependent data (transform & material) to shader via ubo 
@@ -203,8 +197,8 @@ auto Scene::Draw() -> void {
 		UseMaterialData(shape->_material);
 		
 		// 3. texture
-		for (auto i = 0u; i < shape->_textures.size(); ++i) {
-			shape->_textures[i]->Use(i);
+		for (auto & texture : shape->_textures) {
+			texture->Use();
 		}
 
 		// 4. feed vertex data via vao, draw call
@@ -212,6 +206,10 @@ auto Scene::Draw() -> void {
 		glDrawArrays(GL_TRIANGLES, shape->_mesh->_startingIndex, shape->_mesh->_vertex.size());
 	}
 	error = glGetError();
+}
+
+auto Scene::GetShapes() -> std::vector<std::unique_ptr<Shape>>& {
+	return _shapes;
 }
 
 // store all camera's data in _cameraUbo. 

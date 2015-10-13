@@ -2,6 +2,7 @@
 
 #include <GL/glew.h>
 
+#include "Texture.h"
 
 namespace core {
 
@@ -95,6 +96,23 @@ auto ShaderProgram::Use() -> void {
 	assert(status::SentToCard == _status);
 
 	glUseProgram(_program);
+
+	// Do all the glUniform1i calls after loading the program, then never again.
+	// You only need to call it once to tell the program which texture image unit each sampler uses.
+	// After you've done that all you need to do is bind textures to the right texture image units.
+	auto location = -1;
+	if (location = glGetUniformLocation(_program, "textures.diffuseMap") != -1) {
+		glUniform1i(location, Texture::DiffuseMap);
+	}
+	if (location = glGetUniformLocation(_program, "textures.specularMap") != -1) {
+		glUniform1i(location, Texture::SpecularMap);
+	}
+	if (location = glGetUniformLocation(_program, "textures.normalMap") != -1) {
+		glUniform1i(location, Texture::NormalMap);
+	}
+	if (location = glGetUniformLocation(_program, "textures.parallaxMap") != -1) {
+		glUniform1i(location, Texture::ParallaxMap);
+	}
 }
 
 auto ShaderProgram::GetHandler() -> GLuint {

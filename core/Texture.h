@@ -17,9 +17,18 @@ public:
 	friend class ResourceManager;
 
 public:
-	explicit Texture(std::string const& filename)
+	enum TextureType : int {
+		DiffuseMap = 0,
+		SpecularMap = 1,
+		NormalMap = 2,
+		ParallaxMap = 3,
+	};
+
+public:
+	explicit Texture(std::string const& filename, TextureType type = DiffuseMap)
 		: _filename(filename)
-		, _texture(0) {
+		, _texture(0)
+		, _type(type) {
 	}
 	Texture(Texture const&) = delete;
 	Texture(Texture && other) {
@@ -40,14 +49,14 @@ private:
 	auto FreeFromCardImpl() -> bool override;
 
 public:
-	auto Use(unsigned int) -> void;
-
+	auto Use() -> void;
 private:
 	std::string _filename;
 	std::vector<Vector4f> _data;
 	unsigned int _width;
 	unsigned int _height;
 	openglUint _texture;
+	TextureType _type;
 };
 
 }
