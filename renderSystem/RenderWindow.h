@@ -19,6 +19,7 @@ public:
 public:
 	void RegisterInputHandler(std::function<void(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)> inputHandler);
     void Create(int width, int height, wstring name);
+	void SetCaption(wstring name);
     bool Step();
 
 private:

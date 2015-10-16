@@ -43,7 +43,7 @@ private:
 	Float _beamWidth;
 	Float _cutOffAngle;
 	Float3 _direction;
-	Float3 _attenuation = { 0.8f, 0.1f, 0.1f };
+	Float3 _attenuation = { 1.0f, 0.0f, 0.0f };
 
 };
 

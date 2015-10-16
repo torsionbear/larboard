@@ -160,6 +160,10 @@ void RenderWindow::Create(int width, int height, wstring name)
     InitializeGl();
 }
 
+void RenderWindow::SetCaption(wstring text) {
+	SetWindowText(m_RenderWindowHandle, text.c_str());
+}
+
 RenderWindow::~RenderWindow()
 {
     DeinitializeGl();

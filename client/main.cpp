@@ -1,6 +1,7 @@
 #include <GL/glew.h>
 #include <iostream>
 #include <algorithm>
+#include <chrono>
 
 #include "renderSystem/RenderWindow.h"
 #include "core/scene.h"
@@ -40,6 +41,11 @@ auto LoadScene2() -> std::unique_ptr<core::Scene> {
 	return move(scene);
 }
 
+auto LoadScene3() -> std::unique_ptr<core::Scene> {
+	auto scene = x3dParser::X3dReader::Read("D:/torsionbear/working/larboard/Modeling/8/8.x3d");
+	return move(scene);
+}
+
 int main()
 {
 	RenderWindow rw{};
@@ -53,7 +59,7 @@ int main()
         exit(EXIT_FAILURE);
     }
 
-	auto scene = LoadScene2();
+	auto scene = LoadScene3();
 	scene->SendToCard();
 
 	auto lastX = -1; 
@@ -130,8 +136,20 @@ int main()
 		}
 	});
 
+	rw.SetCaption(L"newCaption");
+	auto fpsCount = 0u;
+	auto clock = std::chrono::system_clock();
+	auto timePoint = clock.now();
     while (rw.Step())
     {
+		if (++fpsCount == 100u) {
+			fpsCount = 0;
+			auto lastTimePoint = timePoint;
+			timePoint = clock.now();
+			auto timeSpan = std::chrono::duration_cast<std::chrono::milliseconds>(timePoint - lastTimePoint);
+			auto fps = 100000.0f / static_cast<float>(timeSpan.count());
+			rw.SetCaption(L"FPS: " + std::to_wstring(fps));
+		}
 		UpdateScene(*scene);
         DrawOneFrame(*scene);
     }
