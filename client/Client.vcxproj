@@ -41,13 +41,13 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(SolutionDir)\glew-1.11.0\include;$(SolutionDir);$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)$(Configuration)\;$(SolutionDir)\glew-1.11.0\lib\Release\Win32;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)\glew-1.11.0\include;$(SolutionDir)\boost_1_57_0;$(SolutionDir);$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)$(Configuration)\;$(SolutionDir)\glew-1.11.0\lib\Release\Win32;$(SolutionDir)\boost_1_57_0\stage\lib\;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(SolutionDir)\glew-1.11.0\include;$(SolutionDir);$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)$(Configuration)\;$(SolutionDir)\glew-1.11.0\lib\Release\Win32;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)\glew-1.11.0\include;$(SolutionDir)\boost_1_57_0;$(SolutionDir);$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)$(Configuration)\;$(SolutionDir)\glew-1.11.0\lib\Release\Win32;$(SolutionDir)\boost_1_57_0\stage\lib\;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

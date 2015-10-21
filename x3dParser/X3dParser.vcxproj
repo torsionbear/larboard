@@ -87,6 +87,7 @@
     <ClCompile Include="Group.cpp" />
     <ClCompile Include="ImageTexture.cpp" />
     <ClCompile Include="IndexedFaceSet.cpp" />
+    <ClCompile Include="IndexedTriangleSet.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Normal.cpp" />
     <ClCompile Include="NullNode.cpp" />
@@ -111,6 +112,7 @@
     <ClInclude Include="Group.h" />
     <ClInclude Include="ImageTexture.h" />
     <ClInclude Include="IndexedFaceSet.h" />
+    <ClInclude Include="IndexedTriangleSet.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="PointLight.h" />
     <ClInclude Include="SpotLight.h" />

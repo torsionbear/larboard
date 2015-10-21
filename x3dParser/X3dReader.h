@@ -2,9 +2,13 @@
 
 #include <memory>
 
+#include <boost/filesystem/path.hpp>
+
+#include "X3dParser.h"
 #include "X3d.h"
 #include "Transform.h"
 #include "IndexedFaceSet.h"
+#include "IndexedTriangleSet.h"
 #include "Appearance.h"
 #include "core/Scene.h"
 #include "core/SceneNode.h"
@@ -19,20 +23,22 @@ namespace x3dParser {
 
 class X3dReader {
 public:
+	X3dReader(std::string pathname)
+		: _pathName(pathname) {
+		_scene = make_unique<core::Scene>();
+	}
+public:
 	// when exporting x3d from blender:
 	// 1. export Normals
 	// 2. use blender coordinate system, e.g. Y Forward, Z up.
-	static auto Read(std::string const&) -> std::unique_ptr<core::Scene>;
-public:
-	X3dReader() {
-		_scene = make_unique<core::Scene>();
-	}
+	auto Read()->std::unique_ptr<core::Scene>;
 private:
-	auto Read(IndexedFaceSet const& indexedFaceSet) -> core::Mesh *;
+	auto Read(IndexedFaceSet const& indexedFaceSet)->core::Mesh *;
+	auto Read(IndexedTriangleSet const& indexedTriangleSet) -> core::Mesh *;
     auto Read(Transform const& transform) -> core::Movable *;
 	auto Read(Scene const& scene) ->std::unique_ptr<core::Scene>;
 	auto Read(X3d const& x3d) ->std::unique_ptr<core::Scene>;
-	auto Read(Shape const& shape) -> core::Model *;
+	auto Read(vector<Shape*> const& shapes) -> core::Model *;
 	auto Read(Material const& material) -> core::Material *;
 	auto Read(ImageTexture const& imageTexture) -> core::Texture*;
 	auto Read(Viewpoint const& viewpoint)->core::Camera *;
@@ -42,6 +48,8 @@ private:
 
 private:
 	std::unique_ptr<core::Scene> _scene;
+	boost::filesystem::path _pathName;
+	X3dParser _x3dParser;
 };
 
 }

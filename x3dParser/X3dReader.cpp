@@ -1,7 +1,5 @@
 #include "X3dReader.h"
 
-#include "X3dParser.h"
-
 using std::vector;
 using std::make_unique;
 using std::move;
@@ -30,12 +28,11 @@ auto inline ToPoint2(Float2 const& in) -> Vector2f {
     return {in.x, in.y};
 }
 
-auto X3dReader::Read(string const& filename) -> std::unique_ptr<core::Scene> {
-	std::ifstream file{ filename };
-	auto x3dParser = X3dParser();
-	auto nodes = x3dParser.Parse(file);
-	auto x3dReader = X3dReader{};
-	return x3dReader.Read(*static_cast<X3d*>(nodes[0].get()));
+auto X3dReader::Read() -> std::unique_ptr<core::Scene> {
+	std::ifstream file{ _pathName.generic_string() };
+	assert(file);
+	auto nodes = X3dParser().Parse(file);
+	return Read(*static_cast<X3d*>(nodes[0].get()));
 }
 
 auto X3dReader::Read(IndexedFaceSet const& indexedFaceSet) ->  Mesh * {
@@ -61,6 +58,26 @@ auto X3dReader::Read(IndexedFaceSet const& indexedFaceSet) ->  Mesh * {
 	return ret;
 }
 
+auto X3dReader::Read(IndexedTriangleSet const& indexedTriangleSet) ->  Mesh * {
+	if (!indexedTriangleSet.GetNormalPerVertex()) {
+		throw "normalPerVertex is false";
+	}
+
+	auto ret = _scene->CreateMesh();
+	auto index = indexedTriangleSet.GetIndex();
+	auto& coordinate = indexedTriangleSet.GetCoordinate()->GetPoint();
+	auto& normal = indexedTriangleSet.GetNormal()->GetVector();
+	auto& textureCoordinate = indexedTriangleSet.GetTextureCoordinate()->GetPoint();
+
+	auto vertexData = vector<Vertex>{};
+	for (auto i = 0u; i < coordinate.size(); ++i) {
+		vertexData.push_back({ ToPoint3(coordinate[i]), ToPoint3(normal[i]), ToPoint2(textureCoordinate[i]) });
+	}
+	ret->SetVertexData(move(vertexData), move(index));
+
+	return ret;
+}
+
 auto X3dReader::Read(Transform const& transform) -> Movable *
 {
 	Movable * ret = nullptr;
@@ -72,8 +89,7 @@ auto X3dReader::Read(Transform const& transform) -> Movable *
 	auto spotLight = transform.GetSpotLight();
 	if (nullptr != group) {
 		auto& shapes = group->GetShape();
-		assert(1u == shapes.size());	// support only 1 shape under a transform. Multiple shapes share the same transform does not make sense.
-		ret = Read(*shapes[0]);
+		ret = Read(shapes);
 	} else if (nullptr != viewpoint) {
 		ret = Read(*viewpoint);
 	} else if (nullptr != pointLight) {
@@ -113,23 +129,29 @@ auto X3dReader::Read(X3d const& x3d) -> std::unique_ptr<core::Scene> {
 	return Read(*x3d.GetScene());
 }
 
-auto X3dReader::Read(Shape const& shape) -> core::Model* {
+auto X3dReader::Read(vector<Shape*> const& shapes) -> core::Model* {
 	auto ret = _scene->CreateModel();
-	auto newShape = _scene->CreateShape(ret);
+	for (auto const& shape : shapes) {
+		auto newShape = _scene->CreateShape(ret);
+		newShape->SetShaderProgram(_scene->GetDefaultShaderProgram());
 
-	newShape->SetShaderProgram(_scene->GetDefaultShaderProgram());
-
-	auto appearance = shape.GetAppearance();
-	auto imageTexture = appearance->GetImageTexture();
-	if (nullptr != imageTexture) {
-		newShape->AddTexture(Read(*imageTexture));
+		auto appearance = shape->GetAppearance();
+		auto imageTexture = appearance->GetImageTexture();
+		if (nullptr != imageTexture) {
+			newShape->AddTexture(Read(*imageTexture));
+		}
+		auto material = appearance->GetMaterial();
+		if (nullptr != material) {
+			newShape->SetMaterial(Read(*material));
+		}
+		auto indexedTriangleSet = shape->GetIndexedTriangleSet();
+		if (indexedTriangleSet != nullptr) {
+			newShape->SetMesh(Read(*indexedTriangleSet));
+		} else {
+			auto mesh = Read(*shape->GetIndexedFaceSet());
+			newShape->SetMesh(mesh);
+		}
 	}
-	auto material = appearance->GetMaterial();
-	if (nullptr != material) {
-		newShape->SetMaterial(Read(*material));
-	}
-	auto mesh = Read(*shape.GetIndexedFaceSet());
-	newShape->SetMesh(mesh);
 
 	return ret;
 }
@@ -162,9 +184,10 @@ auto X3dReader::Read(ImageTexture const& imageTexture) -> core::Texture * {
 	}
 	auto textureName = imageTexture.GetDef();
 	auto urls = imageTexture.GetUrl();
-	// todo: support multiple urls. for now only use second url 
-	// (which is absolute path in x3d file generated from blender)
-	return _scene->CreateTexture(textureName, urls[1]);
+	// todo: support multiple urls. for now only use first url 
+	// which is relative path in x3d file generated from blender
+	auto pathName = _pathName.parent_path().append(urls[0]);
+	return _scene->CreateTexture(textureName, pathName.generic_string());
 }
 
 auto X3dReader::Read(Viewpoint const& viewpoint) -> Camera * {

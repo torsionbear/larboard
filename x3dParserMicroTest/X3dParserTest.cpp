@@ -16,6 +16,7 @@
 #include "x3dParser/TextureTransform.h"
 #include "x3dParser/Material.h"
 #include "x3dParser/IndexedFaceSet.h"
+#include "x3dParser/IndexedTriangleSet.h"
 #include "x3dParser/Coordinate.h"
 #include "x3dParser/Normal.h"
 #include "x3dParser/TextureCoordinate.h"

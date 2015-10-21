@@ -41,14 +41,14 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(SolutionDir);$(SolutionDir)\gtest-1.7.0\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir);$(SolutionDir)\gtest-1.7.0\include;$(SolutionDir)\boost_1_57_0;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
-    <LibraryPath>$(SolutionDir)$(Configuration)\;$(SolutionDir)\gtest-1.7.0\msvc\gtest-md\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)$(Configuration)\;$(SolutionDir)\gtest-1.7.0\msvc\gtest-md\$(Configuration)\;$(SolutionDir)\boost_1_57_0\stage\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(SolutionDir);$(SolutionDir)\gtest-1.7.0\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir);$(SolutionDir)\gtest-1.7.0\include;$(SolutionDir)\boost_1_57_0;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
-    <LibraryPath>$(SolutionDir)$(Configuration)\;$(SolutionDir)\gtest-1.7.0\msvc\gtest-md\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)$(Configuration)\;$(SolutionDir)\gtest-1.7.0\msvc\gtest-md\$(Configuration)\;$(SolutionDir)\boost_1_57_0\stage\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

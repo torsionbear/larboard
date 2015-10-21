@@ -20,6 +20,7 @@ public:
 		_zStream.zalloc = Z_NULL;
 		_zStream.zfree = Z_NULL;
 		_zStream.opaque = Z_NULL;
+		assert(_file);
 	}
 	PngReaderImpl(PngReader const&) = delete;
 	PngReaderImpl& operator=(PngReader const&) = delete;
@@ -27,6 +28,9 @@ public:
 
 public:
 	auto ReadPng() {
+		if (!_file) {
+			throw("unable to open png file");
+		}
 		ReadHeader();
 		for (auto hasMoreChunk = true; hasMoreChunk;) {
 			hasMoreChunk = ReadChunk();

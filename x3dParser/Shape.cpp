@@ -12,6 +12,8 @@ auto Shape::AddChild(X3dNode * child) -> void {
         _appearance = static_cast<Appearance*>(child);
     } else if(typeid(*child) == typeid(IndexedFaceSet)) {
         _indexedFaceSet = static_cast<IndexedFaceSet*>(child);
+    } else if(typeid(*child) == typeid(IndexedTriangleSet)) {
+        _indexedTriangleSet = static_cast<IndexedTriangleSet*>(child);
     }
 }
 
@@ -21,6 +23,10 @@ auto Shape::GetAppearance() const -> Appearance const* {
 
 auto Shape::GetIndexedFaceSet() const -> IndexedFaceSet const* {
     return _indexedFaceSet;
+}
+
+auto Shape::GetIndexedTriangleSet() const -> IndexedTriangleSet const* {
+    return _indexedTriangleSet;
 }
 
 }

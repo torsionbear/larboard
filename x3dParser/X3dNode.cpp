@@ -15,6 +15,7 @@
 #include "TextureTransform.h"
 #include "Material.h"
 #include "IndexedFaceSet.h"
+#include "IndexedTriangleSet.h"
 #include "Coordinate.h"
 #include "Normal.h"
 #include "TextureCoordinate.h"
@@ -58,6 +59,8 @@ auto X3dNode::BuildNode(string const& nodeType) -> unique_ptr<X3dNode> {
 		return make_unique<Material>();
 	} else if (nodeType == "IndexedFaceSet") {
 		return make_unique<IndexedFaceSet>();
+	} else if (nodeType == "IndexedTriangleSet") {
+		return make_unique<IndexedTriangleSet>();
 	} else if (nodeType == "Coordinate") {
 		return make_unique<Coordinate>();
 	} else if (nodeType == "Normal") {
