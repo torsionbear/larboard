@@ -90,6 +90,7 @@
     <ClCompile Include="PointLight.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="PngReader.cpp" />
+    <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="SceneNode.cpp" />
     <ClCompile Include="Shader.cpp" />
@@ -112,6 +113,7 @@
     <ClInclude Include="PngReader.h" />
     <ClInclude Include="Primitive.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SceneNode.h" />
     <ClInclude Include="Shader.h" />

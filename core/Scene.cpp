@@ -19,6 +19,9 @@ Scene::Scene() {
 	_cameraShaderDataSize = AlignedSize(_uboAlignment, sizeof(Camera::ShaderData));
 	_materialShaderDataSize = AlignedSize(_uboAlignment, sizeof(Material::ShaderData));
 	_transformShaderDataSize = AlignedSize(_uboAlignment, sizeof(Movable::ShaderData));
+
+	// todo: send in resourceManager by argument
+	_resourceManager = make_unique<ResourceManager>();
 }
 
 Scene::~Scene() {
@@ -144,32 +147,8 @@ auto Scene::SendToCard() -> void {
 	}
 
 	// 3. vao/vbo
-	// currently we use only 1 vao & vbo for a scene.
-	glGenVertexArrays(1, &_vao);
-	glBindVertexArray(_vao);
-	glGenBuffers(1, &_vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
-	for (auto const& m : _meshes) {
-		_vertexCount += m->_vertex.size();
-	}
-	glBufferData(GL_ARRAY_BUFFER, _vertexCount * sizeof(Vertex), nullptr, GL_STATIC_DRAW);
+	_resourceManager->LoadMeshes(_meshes);
 
-	auto vertexCount = 0;
-	for (auto & m : _meshes) {
-		m->_vao = _vao;
-		m->_startingIndex = vertexCount;
-		glBufferSubData(GL_ARRAY_BUFFER, m->_startingIndex * sizeof(Vertex), m->_vertex.size() * sizeof(Vertex), m->_vertex.data());
-		vertexCount += m->_vertex.size();
-	}
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(sizeof(Vector3f)));
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(2 * sizeof(Vector3f)));
-	glEnableVertexAttribArray(2);
-
-	glBindVertexArray(0);
 	// todo: sort shapes according to: 1. shader priority; 2. vbo/vao
 
 }
@@ -202,8 +181,7 @@ auto Scene::Draw() -> void {
 		}
 
 		// 4. feed vertex data via vao, draw call
-		glBindVertexArray(_vao);
-		glDrawArrays(GL_TRIANGLES, shape->_mesh->_startingIndex, shape->_mesh->_vertex.size());
+		shape->_mesh->Draw();
 	}
 	error = glGetError();
 }

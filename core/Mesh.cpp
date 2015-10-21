@@ -1,5 +1,7 @@
 #include "Mesh.h"
 
+#include <GL/glew.h>
+
 using std::vector;
 using std::move;
 
@@ -32,8 +34,22 @@ Mesh& Mesh::operator=(Mesh && rhs) {
 	return *this;
 }
 
+auto Mesh::SetVertexData(std::vector<Vertex>&& vertexData, vector<unsigned int> && index) -> void {
+	_vertex = move(vertexData);
+	_index = move(index);
+}
+
 auto Mesh::SetVertexData(std::vector<Vertex>&& vertexData) -> void {
 	_vertex = move(vertexData);
+	_index.resize(_vertex.size());
+	for (auto i = 0u; i < _vertex.size(); ++i) {
+		_index[i] = i;
+	}
+}
+
+auto Mesh::Draw() -> void {
+	glBindVertexArray(_vao);
+	glDrawElementsBaseVertex(GL_TRIANGLES, _index.size(), GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(_indexOffset), _baseVertex);
 }
 
 }

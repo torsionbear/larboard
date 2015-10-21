@@ -4,6 +4,7 @@
 #include <memory>
 #include <map>
 
+#include "ResourceManager.h"
 #include "SceneNode.h"
 #include "Camera.h"
 #include "Movable.h"
@@ -76,6 +77,7 @@ private:
 	auto LoadLightData() -> void;
 
 private:
+	std::unique_ptr<ResourceManager> _resourceManager;
 	Movable _root;
 	std::vector<std::unique_ptr<Movable>> _movables;
 	std::vector<std::unique_ptr<Model>> _models;
