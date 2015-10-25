@@ -28,11 +28,11 @@ auto inline ToPoint2(Float2 const& in) -> Vector2f {
     return {in.x, in.y};
 }
 
-auto X3dReader::Read() -> std::unique_ptr<core::Scene> {
+auto X3dReader::Read() -> void {
 	std::ifstream file{ _pathName.generic_string() };
 	assert(file);
 	auto nodes = X3dParser().Parse(file);
-	return Read(*static_cast<X3d*>(nodes[0].get()));
+	Read(*static_cast<X3d*>(nodes[0].get()));
 }
 
 auto X3dReader::Read(IndexedFaceSet const& indexedFaceSet) ->  Mesh * {
@@ -117,16 +117,15 @@ auto X3dReader::Read(Transform const& transform) -> Movable *
 	return ret;
 }
 
-auto X3dReader::Read(Scene const& scene) -> std::unique_ptr<core::Scene> {	
+auto X3dReader::Read(Scene const& scene) -> void {
 	auto& transforms = scene.GetTransform();
 	for (auto& transform : transforms) {
 		_scene->Stage(Read(*transform));
 	}
-	return move(_scene);
 }
 
-auto X3dReader::Read(X3d const& x3d) -> std::unique_ptr<core::Scene> {
-	return Read(*x3d.GetScene());
+auto X3dReader::Read(X3d const& x3d) -> void {
+	Read(*x3d.GetScene());
 }
 
 auto X3dReader::Read(vector<Shape*> const& shapes) -> core::Model* {

@@ -23,21 +23,21 @@ namespace x3dParser {
 
 class X3dReader {
 public:
-	X3dReader(std::string pathname)
-		: _pathName(pathname) {
-		_scene = make_unique<core::Scene>();
+	X3dReader(std::string pathname, core::Scene * scene)
+		: _pathName(pathname)
+        , _scene(scene) {
 	}
 public:
 	// when exporting x3d from blender:
 	// 1. export Normals
 	// 2. use blender coordinate system, e.g. Y Forward, Z up.
-	auto Read()->std::unique_ptr<core::Scene>;
+	auto Read() -> void;
 private:
 	auto Read(IndexedFaceSet const& indexedFaceSet)->core::Mesh *;
 	auto Read(IndexedTriangleSet const& indexedTriangleSet) -> core::Mesh *;
     auto Read(Transform const& transform) -> core::Movable *;
-	auto Read(Scene const& scene) ->std::unique_ptr<core::Scene>;
-	auto Read(X3d const& x3d) ->std::unique_ptr<core::Scene>;
+	auto Read(Scene const& scene) -> void;
+	auto Read(X3d const& x3d) -> void;
 	auto Read(vector<Shape*> const& shapes) -> core::Model *;
 	auto Read(Material const& material) -> core::Material *;
 	auto Read(ImageTexture const& imageTexture) -> core::Texture*;
@@ -47,7 +47,7 @@ private:
 	auto Read(SpotLight const& spotLight) -> core::SpotLight *;
 
 private:
-	std::unique_ptr<core::Scene> _scene;
+	core::Scene * _scene;
 	boost::filesystem::path _pathName;
 	X3dParser _x3dParser;
 };
