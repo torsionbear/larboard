@@ -86,11 +86,6 @@ auto Scene::CreateTexture(string const& textureName, string const& filename) -> 
 	return ret;
 }
 
-auto Scene::CreateMesh() -> Mesh * {
-	_meshes.push_back(make_unique<Mesh>());
-	return _meshes.back().get();
-}
-
 auto Scene::CreateShaderProgram(string const& vertexShaderFile, string const& fragmentShaderFile) -> ShaderProgram * {
 	_shaderProgram.push_back(make_unique<ShaderProgram>(vertexShaderFile, fragmentShaderFile));
 	return _shaderProgram.back().get();

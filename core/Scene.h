@@ -50,9 +50,12 @@ public:
 	auto CreateShape(Model *) -> Shape *;
 	auto CreateMaterial(std::string const& materialName) -> Material *;
 	auto CreateTexture(std::string const& textureName, std::string const& filename) -> Texture *;
-	auto CreateMesh() -> Mesh *;
+    template <typename... Args>
+    auto CreateMesh(Args&&... args) -> Mesh * {
+        _meshes.push_back(make_unique<Mesh>(std::forward<Args>(args)...));
+        return _meshes.back().get();
+    }
 	auto CreateShaderProgram(std::string const& vertexShaderFile, std::string const& fragmentShaderFile) -> ShaderProgram *;
-
 	auto GetMaterial(std::string const& materialName) const->Material *;
 	auto GetTexture(std::string const& textureName) const -> Texture *;
 	auto GetActiveCamera() const -> Camera *;

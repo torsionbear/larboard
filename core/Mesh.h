@@ -11,18 +11,16 @@ namespace core {
 class Mesh{
 public:
 	friend void swap(Mesh&, Mesh&);
-	Mesh();
-	Mesh(Mesh const&);
+    Mesh() = default;
+    Mesh(std::vector<Vertex> && vertexData, std::vector<unsigned int> && index);
+    Mesh(std::vector<Vertex> && vertexData);
 	Mesh(Mesh&& other);
 	~Mesh();
 	Mesh& operator=(Mesh);
 	Mesh& operator=(Mesh && rhs);
-	
 public:
-	auto SetVertexData(std::vector<Vertex> && vertexData, std::vector<unsigned int> && index) -> void;
-	auto SetVertexData(std::vector<Vertex> && vertexData) -> void;
 	auto GetVertex() -> std::vector<Vertex> const& {
-		return _vertex;
+		return _vertexes;
 	}
 	auto GetIndex() -> std::vector<unsigned int> const& {
 		return _index;
@@ -37,9 +35,8 @@ public:
 		_indexOffset = indexOffset;
 	}
 	auto Draw() -> void;
-
 private:
-	std::vector<Vertex> _vertex;
+	std::vector<Vertex> _vertexes;
 	std::vector<unsigned int> _index;
 	openglUint _vao;
 	openglUint _indexOffset;	// represents an offset, in bytes, into the element array buffer where the indices begin

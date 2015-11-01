@@ -1,21 +1,33 @@
 #include "Mesh.h"
 
+#include <limits>
+
 #include <GL/glew.h>
 
 using std::vector;
 using std::move;
+using std::make_unique;
 
 namespace core {
 
 void swap(Mesh& first, Mesh& second) {
 	using std::swap;
-	swap(first._vertex, second._vertex);
+	swap(first._vertexes, second._vertexes);
 	swap(first._vao, second._vao);
 }
 
-Mesh::Mesh() = default;
+Mesh::Mesh(std::vector<Vertex>&& vertexData, std::vector<unsigned int>&& index)
+    : _vertexes(move(vertexData))
+    , _index(move(index)) {
+}
 
-Mesh::Mesh(Mesh const&) = default;
+Mesh::Mesh(std::vector<Vertex>&& vertexData)
+    : _vertexes(move(vertexData)) {
+    _index.resize(_vertexes.size());
+    for (auto i = 0u; i < _vertexes.size(); ++i) {
+        _index[i] = i;
+    }
+}
 
 Mesh::Mesh(Mesh&& other)
 	: Mesh() {
@@ -32,19 +44,6 @@ Mesh& Mesh::operator=(Mesh rhs) {
 Mesh& Mesh::operator=(Mesh && rhs) {
 	swap(*this, rhs);
 	return *this;
-}
-
-auto Mesh::SetVertexData(std::vector<Vertex>&& vertexData, vector<unsigned int> && index) -> void {
-	_vertex = move(vertexData);
-	_index = move(index);
-}
-
-auto Mesh::SetVertexData(std::vector<Vertex>&& vertexData) -> void {
-	_vertex = move(vertexData);
-	_index.resize(_vertex.size());
-	for (auto i = 0u; i < _vertex.size(); ++i) {
-		_index[i] = i;
-	}
 }
 
 auto Mesh::Draw() -> void {

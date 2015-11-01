@@ -40,7 +40,6 @@ auto X3dReader::Read(IndexedFaceSet const& indexedFaceSet) ->  Mesh * {
         throw "normalPerVertex is false";
     }
 
-	auto ret = _scene->CreateMesh();
     auto& coordIndex = indexedFaceSet.GetCoordIndex();
     auto& texCoordIndex = indexedFaceSet.GetTexCoordIndex();
     auto& coordinate = indexedFaceSet.GetCoordinate()->GetPoint();
@@ -53,9 +52,7 @@ auto X3dReader::Read(IndexedFaceSet const& indexedFaceSet) ->  Mesh * {
 		vertexData.push_back({ ToPoint3(coordinate.at(coordIndex[i].b)), ToPoint3(normal.at(coordIndex[i].b)), ToPoint2(textureCoordinate.at(texCoordIndex[i].b))});
 		vertexData.push_back({ ToPoint3(coordinate.at(coordIndex[i].c)), ToPoint3(normal.at(coordIndex[i].c)), ToPoint2(textureCoordinate.at(texCoordIndex[i].c))});
     }
-	ret->SetVertexData(move(vertexData));
-
-	return ret;
+	return _scene->CreateMesh(move(vertexData));;
 }
 
 auto X3dReader::Read(IndexedTriangleSet const& indexedTriangleSet) ->  Mesh * {
@@ -63,7 +60,6 @@ auto X3dReader::Read(IndexedTriangleSet const& indexedTriangleSet) ->  Mesh * {
 		throw "normalPerVertex is false";
 	}
 
-	auto ret = _scene->CreateMesh();
 	auto index = indexedTriangleSet.GetIndex();
 	auto& coordinate = indexedTriangleSet.GetCoordinate()->GetPoint();
 	auto& normal = indexedTriangleSet.GetNormal()->GetVector();
@@ -73,9 +69,7 @@ auto X3dReader::Read(IndexedTriangleSet const& indexedTriangleSet) ->  Mesh * {
 	for (auto i = 0u; i < coordinate.size(); ++i) {
 		vertexData.push_back({ ToPoint3(coordinate[i]), ToPoint3(normal[i]), ToPoint2(textureCoordinate[i]) });
 	}
-	ret->SetVertexData(move(vertexData), move(index));
-
-	return ret;
+	return _scene->CreateMesh(move(vertexData), move(index));
 }
 
 auto X3dReader::Read(Transform const& transform) -> Movable *
