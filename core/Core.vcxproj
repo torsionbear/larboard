@@ -83,6 +83,9 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Aabb.cpp" />
+    <ClCompile Include="Bvh.cpp" />
+    <ClCompile Include="BvhNode.cpp" />
     <ClCompile Include="DirectionalLight.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
@@ -101,6 +104,8 @@
     <ClCompile Include="Camera.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Bvh.h" />
+    <ClInclude Include="BvhNode.h" />
     <ClInclude Include="DirectionalLight.h" />
     <ClInclude Include="Endian.h" />
     <ClInclude Include="Material.h" />
@@ -108,6 +113,7 @@
     <ClInclude Include="MessageLogger.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Movable.h" />
+    <ClInclude Include="Aabb.h" />
     <ClInclude Include="PointLight.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="PngReader.h" />

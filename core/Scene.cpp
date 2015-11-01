@@ -144,6 +144,9 @@ auto Scene::SendToCard() -> void {
 	// 3. vao/vbo
 	_resourceManager->LoadMeshes(_meshes);
 
+    // 4. bvh
+    _bvh->PrepareForDraw(*_resourceManager);
+
 	// todo: sort shapes according to: 1. shader priority; 2. vbo/vao
 
 }
@@ -178,7 +181,20 @@ auto Scene::Draw() -> void {
 		// 4. feed vertex data via vao, draw call
 		shape->_mesh->Draw();
 	}
+
+    _bvh->Draw();
 	error = glGetError();
+}
+
+auto Scene::Initialize() -> void {
+    // build BVH
+    auto shapes = vector<Shape *>{};
+    for (auto const& s : _shapes) {
+        shapes.push_back(s.get());
+    }
+    _bvh = make_unique<Bvh>(move(shapes));
+
+    SendToCard();
 }
 
 auto Scene::GetShapes() -> std::vector<std::unique_ptr<Shape>>& {

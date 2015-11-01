@@ -46,4 +46,30 @@ auto ResourceManager::LoadMeshes(std::vector<std::unique_ptr<Mesh>> const& meshe
 	glBindVertexArray(0);
 }
 
+auto ResourceManager::LoadBvh(std::vector<Vector3f> const & vertexData, std::vector<unsigned int> const & indexData) -> openglUint {
+    _vertexArrayObjects.push_back(0);
+    auto & vao = _vertexArrayObjects.back();
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    _vertexBufferObjects.push_back(0);
+    auto & vbo = _vertexBufferObjects.back();
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+    _vertexElementObjects.push_back(0);
+    auto & veo = _vertexElementObjects.back();
+    glGenBuffers(1, &veo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, veo);
+
+    glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(Vector3f), vertexData.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexData.size() * sizeof(unsigned int), indexData.data(), GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3f), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0);
+    return vao;
+}
+
 }

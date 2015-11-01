@@ -29,25 +29,31 @@ auto UpdateScene(core::Scene & scene) -> void {
 
 auto LoadScene() -> std::unique_ptr<core::Scene> {
     auto scene = make_unique<core::Scene>();
-	x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square2/square2.x3d", scene.get()).Read();
+	x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square/square.x3d", scene.get()).Read();
 	return move(scene);
+}
+
+auto LoadScene1() -> std::unique_ptr<core::Scene> {
+    auto scene = make_unique<core::Scene>();
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square2/square2.x3d", scene.get()).Read();
+    return move(scene);
 }
 
 auto LoadScene2() -> std::unique_ptr<core::Scene> {
     auto scene = make_unique<core::Scene>();
-    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_00.x3d", scene.get()).Read();
-
-	auto plainProgram = scene->CreateShaderProgram("shader/plain.vert", "shader/plain.frag");
-	for (auto & shape : scene->GetShapes()) {
-		shape->SetShaderProgram(plainProgram);
-	}
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/8/8.x3d", scene.get()).Read();
 	return move(scene);
 }
 
 auto LoadScene3() -> std::unique_ptr<core::Scene> {
     auto scene = make_unique<core::Scene>();
-    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/8/8.x3d", scene.get()).Read();
-	return move(scene);
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_00.x3d", scene.get()).Read();
+
+    auto plainProgram = scene->CreateShaderProgram("shader/plain.vert", "shader/plain.frag");
+    for (auto & shape : scene->GetShapes()) {
+        shape->SetShaderProgram(plainProgram);
+    }
+    return move(scene);
 }
 
 int main()
@@ -63,8 +69,8 @@ int main()
         exit(EXIT_FAILURE);
     }
 
-	auto scene = LoadScene3();
-	scene->SendToCard();
+	auto scene = LoadScene2();
+	scene->Initialize();
 
 	auto lastX = -1; 
 	auto lastY = -1;

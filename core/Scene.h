@@ -14,6 +14,7 @@
 #include "PointLight.h"
 #include "DirectionalLight.h"
 #include "SpotLight.h"
+#include "Bvh.h"
 
 namespace core {
 
@@ -61,14 +62,15 @@ public:
 	auto GetActiveCamera() const -> Camera *;
 	auto GetDefaultShaderProgram()->ShaderProgram *;
 
-	auto Scene::ToggleBackFace() -> void;
-	auto Scene::ToggleWireframe() -> void;
-	auto SendToCard() -> void;
+	auto ToggleBackFace() -> void;
+	auto ToggleWireframe() -> void;
 	auto Draw() -> void;
+    auto Initialize() -> void;
 
 	auto GetShapes() -> std::vector<std::unique_ptr<Shape>> &;
 
 private:
+    auto SendToCard() -> void;
 	auto InitCameraData() -> void;
 	auto LoadCameraData() -> void;
 	auto UseCameraData(Camera const* camera) -> void;
@@ -94,6 +96,7 @@ private:
 	std::vector<std::unique_ptr<Mesh>> _meshes;
 	std::vector<std::unique_ptr<ShaderProgram>> _shaderProgram;
 	ShaderProgram * _defaultShaderProgram = nullptr;
+    std::unique_ptr<Bvh> _bvh = nullptr;
 
 	openglInt _uboAlignment;
 	unsigned int _cameraShaderDataSize;
