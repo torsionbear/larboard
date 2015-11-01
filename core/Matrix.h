@@ -327,6 +327,47 @@ auto inline operator+(MatrixExpression<LHS> const& lhs, MatrixExpression<RHS> co
 	return MatrixAdd<LHS, RHS>(lhs, rhs);
 }
 
+// Matrix subtract
+template <typename LHS, typename RHS>
+class MatrixSubtract : public MatrixExpression<MatrixSubtract<LHS, RHS>> {
+public:
+    using value_type = typename LHS::value_type;
+public:
+    MatrixSubtract(MatrixExpression<LHS> const& lhs, MatrixExpression<RHS> const& rhs)
+        : _lhs(lhs)
+        , _rhs(rhs) {
+    }
+public:
+    auto operator()(size_type r, size_type c) const -> value_type {
+        assert(r < RowCount());
+        assert(c < ColumnCount());
+        return _lhs(r, c) - _rhs(r, c);
+    }
+    auto operator()(size_type index) const -> value_type {
+        assert(index < RowCount() * ColumnCount());
+        return _lhs(index) - _rhs(index);
+    }
+    auto constexpr RowCount() const -> size_type {
+        return _lhs.RowCount();
+    }
+    auto constexpr ColumnCount() const -> size_type {
+        return _rhs.ColumnCount();
+    }
+private:
+    MatrixExpression<LHS> const& _lhs;
+    MatrixExpression<RHS> const& _rhs;
+};
+
+template <typename LHS, typename RHS>
+struct Matrix_traits<MatrixSubtract<LHS, RHS>> {
+    using value_type = typename LHS::value_type;
+};
+
+template<typename LHS, typename RHS>
+auto inline operator-(MatrixExpression<LHS> const& lhs, MatrixExpression<RHS> const& rhs) {
+    return MatrixSubtract<LHS, RHS>(lhs, rhs);
+}
+
 // 3-dimention vector cross product
 template<typename T>
 class VectorCrossProduct : public MatrixExpression<VectorCrossProduct<T>> {

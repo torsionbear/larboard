@@ -69,6 +69,11 @@ TEST_F(MatrixTest, Vector_add) {
 	ASSERT_TRUE(equal(Vector3f{ 0.0f, 0.0f, 0.0f }, result));
 }
 
+TEST_F(MatrixTest, Vector_subtract) {
+    auto result = static_cast<Vector3f>(Vector3f{ 1.0f, 2.0f, 3.0f } - Vector3f{ 1.0f, 1.0f, 1.0f });
+    ASSERT_TRUE(equal(Vector3f{ 0.0f, 1.0f, 2.0f }, result));
+}
+
 TEST_F(MatrixTest, Vector_cross_product) {
 	auto result = static_cast<Vector3f>(CrossProduct(Vector3f{ 0, 1, 0 }, Vector3f{ 0, 0, 1 }));
 	ASSERT_TRUE(equal(Vector3f{ 1.0f, 0.0f, 0.0f }, result));
