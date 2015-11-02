@@ -7,12 +7,15 @@ namespace core {
 class Material {
 public:
 	struct ShaderData {
+    public:
 		Vector4f _diffuse;
 		Vector4f _specular;
 		Vector4f _emissive;
 		Float32 _ambientIntensity;
 		Float32 _shininess;
 		Float32 _transparency;
+    public:
+        static auto Size() -> unsigned int;
 	};
 public:
 	auto SetDiffuse(Vector4f) -> void;

@@ -92,7 +92,7 @@ auto ShaderProgram::AddShader(std::string const& filename) -> void {
 	throw "not implemented yet";
 }
 
-auto ShaderProgram::Use() -> void {
+auto ShaderProgram::Use() const -> void {
 	assert(status::SentToCard == _status);
 
 	glUseProgram(_program);

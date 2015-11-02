@@ -34,7 +34,7 @@ public:
 	auto SetIndexOffset(openglUint indexOffset) -> void {
 		_indexOffset = indexOffset;
 	}
-	auto Draw() -> void;
+	auto Draw() const -> void;
 private:
 	std::vector<Vertex> _vertexes;
 	std::vector<unsigned int> _index;

@@ -12,8 +12,11 @@ public:
 	friend class Scene;
 public:
 	struct ShaderData {
+    public:
 		Matrix4x4f worldTransform;
 		Matrix4x4f normalTransform;
+    public:
+        static auto Size() -> unsigned int;
 	};
 
 public:

@@ -1,6 +1,16 @@
 #include "Material.h"
 
+#include "GlRuntimeHelper.h"
+
 namespace core {
+
+auto Material::ShaderData::Size() -> unsigned int {
+    static unsigned int size = 0u;
+    if (size == 0u) {
+        size = GlRuntimeHelper::GetUboAlignedSize(sizeof(Material::ShaderData));
+    }
+    return size;
+}
 
 auto Material::SetDiffuse(Vector4f diffuse) -> void {
 	_shaderData._diffuse = diffuse;

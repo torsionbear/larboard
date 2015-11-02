@@ -47,7 +47,7 @@ private:
 	auto Read(SpotLight const& spotLight) -> core::SpotLight *;
 
 private:
-	core::Scene * _scene;
+    core::Scene * _scene;
 	boost::filesystem::path _pathName;
 	X3dParser _x3dParser;
 };

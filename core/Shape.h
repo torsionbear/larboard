@@ -28,11 +28,20 @@ public:
 	auto SetShaderProgram(ShaderProgram * shaderProgram) -> void {
         _shaderProgram = shaderProgram;
     }
+    auto GetMaterial() const -> Material const* {
+        return _material;
+    }
     auto GetMesh() const -> Mesh const* {
         return _mesh;
     }
+    auto GetShaderProgram() const -> ShaderProgram const * {
+        return _shaderProgram;
+    }
     auto GetModel() const -> Model const* {
         return _model;
+    }
+    auto GetTextures() const -> std::vector<Texture *> const& {
+        return _textures;
     }
     auto AddTexture(Texture * texture) -> void;
     auto GetAabb() -> Aabb const&;

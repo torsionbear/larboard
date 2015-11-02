@@ -8,12 +8,14 @@ namespace core {
 class Camera : public Movable {
 public:
 	struct ShaderData {
+    public:
 		Matrix4x4f viewTransform;
 		Vector4f viewPosition;
+    public:
+        static auto Size() -> unsigned int;
 	};
 public:
 	Camera();
-
 public:
 	auto SetPerspective(Float32 near, Float32 far, Vector2f lowerLeft, Vector2f upperRight) -> void;
 	auto SetPerspective(Float32 near, Float32 far, Float32 fieldOfView, Float32 aspectRatio) -> void;
@@ -28,7 +30,7 @@ public:
 	}
 private:
 	Matrix4x4f _projectionTransform;
-	openglInt _uboOffset;
+    openglInt _uboOffset;
 };
 
 }

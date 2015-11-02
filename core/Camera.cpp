@@ -2,7 +2,17 @@
 
 #include <cmath>
 
+#include "GlRuntimeHelper.h"
+
 namespace core {
+
+auto Camera::ShaderData::Size() -> unsigned int {
+    static unsigned int size = 0u;
+    if (size == 0u) {
+        size = GlRuntimeHelper::GetUboAlignedSize(sizeof(Camera::ShaderData));
+    }
+    return size;
+}
 
 Camera::Camera()
 	: Movable(Vector4f{ 0.0f, 0.0f, -1.0f, 0.0f }, Vector4f{ 0.0f, 1.0f, 0.0f, 0.0f }) {	// Camera looks at -z by default

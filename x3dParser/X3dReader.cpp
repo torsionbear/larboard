@@ -52,7 +52,7 @@ auto X3dReader::Read(IndexedFaceSet const& indexedFaceSet) ->  Mesh * {
 		vertexData.push_back({ ToPoint3(coordinate.at(coordIndex[i].b)), ToPoint3(normal.at(coordIndex[i].b)), ToPoint2(textureCoordinate.at(texCoordIndex[i].b))});
 		vertexData.push_back({ ToPoint3(coordinate.at(coordIndex[i].c)), ToPoint3(normal.at(coordIndex[i].c)), ToPoint2(textureCoordinate.at(texCoordIndex[i].c))});
     }
-	return _scene->CreateMesh(move(vertexData));;
+	return _scene->GetStaticModelGroup().CreateMesh(move(vertexData));;
 }
 
 auto X3dReader::Read(IndexedTriangleSet const& indexedTriangleSet) ->  Mesh * {
@@ -69,7 +69,7 @@ auto X3dReader::Read(IndexedTriangleSet const& indexedTriangleSet) ->  Mesh * {
 	for (auto i = 0u; i < coordinate.size(); ++i) {
 		vertexData.push_back({ ToPoint3(coordinate[i]), ToPoint3(normal[i]), ToPoint2(textureCoordinate[i]) });
 	}
-	return _scene->CreateMesh(move(vertexData), move(index));
+	return _scene->GetStaticModelGroup().CreateMesh(move(vertexData), move(index));
 }
 
 auto X3dReader::Read(Transform const& transform) -> Movable *
@@ -93,12 +93,12 @@ auto X3dReader::Read(Transform const& transform) -> Movable *
 	} else if (nullptr != spotLight) {
 		ret = Read(*spotLight);
 	} else if (!transformChildren.empty()) {
-		ret = _scene->CreateMovable();
+		ret = _scene->GetStaticModelGroup().CreateMovable();
 		for (auto& transformChild : transformChildren) {
 			Read(*transformChild)->AttachTo(*ret);
 		}
 	} else {
-		ret = _scene->CreateMovable();
+		ret = _scene->GetStaticModelGroup().CreateMovable();
 	}
 
 	// Does not support scale yet.
@@ -123,10 +123,10 @@ auto X3dReader::Read(X3d const& x3d) -> void {
 }
 
 auto X3dReader::Read(vector<Shape*> const& shapes) -> core::Model* {
-	auto ret = _scene->CreateModel();
+	auto ret = _scene->GetStaticModelGroup().CreateModel();
 	for (auto const& shape : shapes) {
-		auto newShape = _scene->CreateShape(ret);
-		newShape->SetShaderProgram(_scene->GetDefaultShaderProgram());
+		auto newShape = _scene->GetStaticModelGroup().CreateShape(ret);
+		newShape->SetShaderProgram(_scene->GetStaticModelGroup().GetDefaultShaderProgram());
 
 		auto appearance = shape->GetAppearance();
 		auto imageTexture = appearance->GetImageTexture();
@@ -152,10 +152,10 @@ auto X3dReader::Read(vector<Shape*> const& shapes) -> core::Model* {
 auto X3dReader::Read(Material const & material) -> core::Material * {
 	auto use = material.GetUse();
 	if (!use.empty()) {
-		return _scene->GetMaterial(use);
+		return _scene->GetStaticModelGroup().GetMaterial(use);
 	}
 	auto materialName = material.GetDef();
-	auto ret = _scene->CreateMaterial(materialName);
+	auto ret = _scene->GetStaticModelGroup().CreateMaterial(materialName);
 
 	auto diffuse = material.GetDiffuseColor();
 	ret->SetDiffuse({ diffuse.x, diffuse.y, diffuse.z, 1.0f });
@@ -173,14 +173,14 @@ auto X3dReader::Read(Material const & material) -> core::Material * {
 auto X3dReader::Read(ImageTexture const& imageTexture) -> core::Texture * {
 	auto use = imageTexture.GetUse();
 	if (!use.empty()) {
-		return _scene->GetTexture(use);
+		return _scene->GetStaticModelGroup().GetTexture(use);
 	}
 	auto textureName = imageTexture.GetDef();
 	auto urls = imageTexture.GetUrl();
 	// todo: support multiple urls. for now only use first url 
 	// which is relative path in x3d file generated from blender
 	auto pathName = _pathName.parent_path().append(urls[0]);
-	return _scene->CreateTexture(textureName, pathName.generic_string());
+	return _scene->GetStaticModelGroup().CreateTexture(textureName, pathName.generic_string());
 }
 
 auto X3dReader::Read(Viewpoint const& viewpoint) -> Camera * {

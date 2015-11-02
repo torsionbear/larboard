@@ -46,7 +46,7 @@ Mesh& Mesh::operator=(Mesh && rhs) {
 	return *this;
 }
 
-auto Mesh::Draw() -> void {
+auto Mesh::Draw() const -> void {
 	glBindVertexArray(_vao);
 	glDrawElementsBaseVertex(GL_TRIANGLES, _index.size(), GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(_indexOffset), _baseVertex);
 }

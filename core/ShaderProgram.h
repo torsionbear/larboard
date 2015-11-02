@@ -43,7 +43,7 @@ public:
 	auto SetVertexShader(std::string const& filename) -> void;
 	auto SetFragmentShader(std::string const& filename) -> void;
 	auto AddShader(std::string const& filename) -> void;
-	auto Use() -> void;
+	auto Use() const -> void;
 	auto GetHandler() -> openglUint;
 	
 private:

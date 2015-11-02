@@ -100,6 +100,7 @@
     <ClCompile Include="ShaderProgram.cpp" />
     <ClCompile Include="Shape.cpp" />
     <ClCompile Include="SpotLight.cpp" />
+    <ClCompile Include="StaticModelGroup.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Camera.cpp" />
   </ItemGroup>
@@ -108,6 +109,7 @@
     <ClInclude Include="BvhNode.h" />
     <ClInclude Include="DirectionalLight.h" />
     <ClInclude Include="Endian.h" />
+    <ClInclude Include="GlRuntimeHelper.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="MessageLogger.h" />
@@ -126,6 +128,7 @@
     <ClInclude Include="ShaderProgram.h" />
     <ClInclude Include="Shape.h" />
     <ClInclude Include="SpotLight.h" />
+    <ClInclude Include="StaticModelGroup.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Vertex.h" />

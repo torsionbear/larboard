@@ -49,8 +49,8 @@ auto LoadScene3() -> std::unique_ptr<core::Scene> {
     auto scene = make_unique<core::Scene>();
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_00.x3d", scene.get()).Read();
 
-    auto plainProgram = scene->CreateShaderProgram("shader/plain.vert", "shader/plain.frag");
-    for (auto & shape : scene->GetShapes()) {
+    auto plainProgram = scene->GetStaticModelGroup().CreateShaderProgram("shader/plain.vert", "shader/plain.frag");
+    for (auto & shape : scene->GetStaticModelGroup().GetShapes()) {
         shape->SetShaderProgram(plainProgram);
     }
     return move(scene);
@@ -70,7 +70,7 @@ int main()
     }
 
 	auto scene = LoadScene2();
-	scene->Initialize();
+	scene->PrepareForDraw();
 
 	auto lastX = -1; 
 	auto lastY = -1;

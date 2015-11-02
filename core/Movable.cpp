@@ -2,7 +2,17 @@
 
 #include <assert.h>
 
+#include "GlRuntimeHelper.h"
+
 namespace core {
+
+auto Movable::ShaderData::Size() -> unsigned int {
+    static unsigned int size = 0u;
+    if (size == 0u) {
+        size = GlRuntimeHelper::GetUboAlignedSize(sizeof(Movable::ShaderData));
+    }
+    return size;
+}
 
 auto swap(Movable & first, Movable & second) -> void {
 	swap(first._sceneNode, second._sceneNode);
