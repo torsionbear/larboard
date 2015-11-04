@@ -3,6 +3,7 @@
 #include "Primitive.h"
 #include "Matrix.h"
 #include "Vertex.h"
+#include "Ray.h"
 
 namespace core {
 
@@ -19,6 +20,7 @@ public:
     auto GetMaxVertex() const -> Point4f {
         return _maxVertex;
     }
+    auto IntersectRay(Ray ray) const -> Float32;
 private:
     Point4f _minVertex;
     Point4f _maxVertex;

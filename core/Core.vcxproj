@@ -120,6 +120,7 @@
     <ClInclude Include="Model.h" />
     <ClInclude Include="PngReader.h" />
     <ClInclude Include="Primitive.h" />
+    <ClInclude Include="Ray.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="Scene.h" />
