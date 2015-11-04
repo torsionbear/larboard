@@ -18,6 +18,18 @@ public:
     auto GetAabb() const -> Aabb const& {
         return _aabb;
     }
+    auto IsLeaf() const -> bool {
+        return _leftChild == nullptr && _rightChild == nullptr;
+    }
+    auto LeftChild() const -> BvhNode * {
+        return _leftChild.get();
+    }
+    auto RightChild() const -> BvhNode * {
+        return _rightChild.get();
+    }
+    auto GetShapes() const -> std::vector<Shape *> const& {
+        return _shapes;
+    }
 private:
     Aabb _aabb;
     std::unique_ptr<BvhNode> _leftChild = nullptr;

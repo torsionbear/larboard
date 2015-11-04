@@ -11,6 +11,9 @@ class Bvh {
 public:
     Bvh(std::vector<Shape *> && shapes);
 public:
+    auto GetRoot() const -> BvhNode * {
+        return _root.get();
+    }
     auto PrepareForDraw(ResourceManager & resourceManager) -> void;
     auto Draw() -> void;
 private:

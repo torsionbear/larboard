@@ -1,6 +1,7 @@
 #include "Scene.h"
 
 #include <algorithm>
+#include <stack>
 
 #include <GL/glew.h>
 
@@ -47,6 +48,38 @@ auto Scene::GetActiveCamera() const -> Camera * {
 	return _cameras.front().get();
 }
 
+auto Scene::Picking(Ray & ray) -> bool {
+    auto ret = false;
+    auto bvhRoot = _staticModelGroup->GetBvh()->GetRoot();
+    auto nodeStack = std::stack<BvhNode *>{};
+    nodeStack.push(bvhRoot);
+    while (!nodeStack.empty()) {
+        auto currentNode = nodeStack.top();
+        nodeStack.pop();
+        auto length = currentNode->GetAabb().IntersectRay(ray);
+        if (length < 0) {
+            continue;
+        }
+        if (currentNode->RightChild() != nullptr) {
+            nodeStack.push(currentNode->RightChild());
+        }
+        if (currentNode->LeftChild() != nullptr) {
+            nodeStack.push(currentNode->LeftChild());
+        }
+        if(currentNode->IsLeaf()) {
+            auto shapes = currentNode->GetShapes();
+            for (auto shape : shapes) {
+                auto length = shape->GetAabb().IntersectRay(ray);
+                if (length > 0) {
+                    ray.length = length;
+                    ret = true;
+                }
+            }
+        }
+    }
+    return ret;
+}
+
 auto Scene::ToggleBackFace() -> void {
 	_renderBackFace = !_renderBackFace;
 	_renderBackFace ? glDisable(GL_CULL_FACE) : glEnable(GL_CULL_FACE);
@@ -66,6 +99,7 @@ auto Scene::PrepareForDraw() -> void {
 	InitCameraData();
 	LoadLightData();
     _staticModelGroup->PrepareForDraw();
+    _staticModelGroup->GetBvh()->PrepareForDraw(*_resourceManager);
 
 	// todo: sort shapes according to: 1. shader priority; 2. vbo/vao
 }
@@ -78,6 +112,7 @@ auto Scene::Draw() -> void {
 	UseCameraData(_cameras.front().get());
 
     _staticModelGroup->Draw();
+    _staticModelGroup->GetBvh()->Draw();
 
 	error = glGetError();
 }

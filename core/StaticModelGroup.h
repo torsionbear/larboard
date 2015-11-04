@@ -35,6 +35,9 @@ public:
     auto GetMaterial(std::string const& materialName) const->Material *;
     auto GetTexture(std::string const& textureName) const->Texture *;
     auto GetDefaultShaderProgram()->ShaderProgram *;
+    auto GetBvh() const -> Bvh * {
+        return _bvh.get();
+    }
 
 private:
     auto InitTransformData() -> void;

@@ -41,8 +41,6 @@ auto StaticModelGroup::PrepareForDraw() -> void {
     }
     _bvh = make_unique<Bvh>(move(shapes));
 
-    _bvh->PrepareForDraw(*_resourceManager);
-
     // todo: sort shapes according to: 1. shader priority; 2. vbo/vao
 }
 
@@ -70,8 +68,6 @@ auto StaticModelGroup::Draw() -> void {
         // 4. feed vertex data via vao, draw call
         shape->GetMesh()->Draw();
     }
-
-    _bvh->Draw();
 }
 
 auto StaticModelGroup::GetShapes() -> std::vector<std::unique_ptr<Shape>>& {

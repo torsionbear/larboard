@@ -51,6 +51,7 @@ public:
     auto GetStaticModelGroup() -> StaticModelGroup & {
         return *_staticModelGroup;
     }
+    auto Picking(Ray & ray) -> bool;
 
 	auto ToggleBackFace() -> void;
 	auto ToggleWireframe() -> void;
