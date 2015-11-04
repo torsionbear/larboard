@@ -27,7 +27,7 @@ auto UpdateScene(core::Scene & scene) -> void {
 
 }
 
-auto LoadScene() -> std::unique_ptr<core::Scene> {
+auto LoadScene0() -> std::unique_ptr<core::Scene> {
     auto scene = make_unique<core::Scene>();
 	x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square/square.x3d", scene.get()).Read();
 	return move(scene);
@@ -59,7 +59,9 @@ auto LoadScene3() -> std::unique_ptr<core::Scene> {
 int main()
 {
 	RenderWindow rw{};
-    rw.Create(800, 600, L"RenderWindow");
+    auto width = 800;
+    auto height = 600;
+    rw.Create(width, height, L"RenderWindow");
 	MessageLogger::Log(MessageLogger::Info, std::string((const char*)glGetString(GL_VERSION)));
 	MessageLogger::Log(MessageLogger::Info, std::string((const char*)glGetString(GL_RENDERER)));
 
@@ -69,39 +71,82 @@ int main()
         exit(EXIT_FAILURE);
     }
 
-	auto scene = LoadScene2();
+	auto scene = LoadScene3();
 	scene->PrepareForDraw();
 
-	auto lastX = -1; 
-	auto lastY = -1;
-	auto status = 0; // 0.:none; 1:rotate; 2:pan;
-	rw.RegisterInputHandler([&scene, &lastX, &lastY, &status](HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	auto lastX = 0.0f;
+	auto lastY = 0.0f;
+	auto status = 0; // 0:none; 1:rotate; 2:pan;
+    auto pickPoint = core::Point4f{ 0, 0, 0, 1 };
+	rw.RegisterInputHandler([
+        &pickPoint, &scene, &lastX, &lastY, &status, widthInverse = 1.0f/static_cast<float>(width), heightInverse = 1.0f / static_cast<float>(height)]
+        (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		switch (uMsg) {
 		case WM_LBUTTONDOWN:
 			break;
 		case WM_SIZE:
 			break; 
+        case WM_MBUTTONDOWN:
+        {
+            POINT point;
+            point.x = GET_X_LPARAM(lParam);
+            point.y = GET_Y_LPARAM(lParam);
+            //ScreenToClient(hWnd, &point);
+            auto x = static_cast<float>(point.x) * widthInverse;
+            auto y = static_cast<float>(point.y) * heightInverse;
+            auto ray = scene->GetActiveCamera()->GetRayTo(core::Vector2f{ x, y });
+            if (scene->Picking(ray)) {
+                pickPoint = ray.GetHead();
+            } else {
+                pickPoint = core::Point4f{ 0, 0, 0, 1 };
+            }
+            break;
+        }
 		case WM_MOUSEWHEEL:	// mouse wheel: zoom
-			status = 0;
-			scene->GetActiveCamera()->Forward(GET_WHEEL_DELTA_WPARAM(wParam) * 0.002f);
-			break;
+        {
+            POINT point;
+            point.x = GET_X_LPARAM(lParam);
+            point.y = GET_Y_LPARAM(lParam);
+            // unlike WM_MBUTTONDOWN, WM_MOUSEWHEEL carries screen-based coordinates in lParam. Need to convert them to client-based coordinates
+            ScreenToClient(hWnd, &point);
+            auto x = static_cast<float>(point.x) * widthInverse;
+            auto y = static_cast<float>(point.y) * heightInverse;
+
+            auto ray = scene->GetActiveCamera()->GetRayTo(core::Vector2f{ x, y });
+            auto step = 0.01f;
+            if (scene->Picking(ray)) {
+                step = ray.length * 0.0008f;
+            }
+
+            status = 0;
+            scene->GetActiveCamera()->Translate(ray.direction * GET_WHEEL_DELTA_WPARAM(wParam) * step);
+
+            break;
+        }
 		case WM_MOUSEMOVE:
 		{
-			auto x = GET_X_LPARAM(lParam);
-			auto y = GET_Y_LPARAM(lParam);
+            POINT point;
+            point.x = GET_X_LPARAM(lParam);
+            point.y = GET_Y_LPARAM(lParam);
+            ScreenToClient(hWnd, &point);
+            auto x = static_cast<float>(point.x) * widthInverse;
+            auto y = static_cast<float>(point.y) * heightInverse;
+
 			auto * camera = scene->GetActiveCamera();
 			if (wParam == MK_MBUTTON) {	// middle mouse button: rotate
 				if (status == 1) {
-					camera->Rotate(0.0f, 0.0f, 1.0f, static_cast<float>(-(x - lastX)) / 150.0f);
-					camera->Rotate(camera->GetRightDirection(), static_cast<float>(-(y - lastY)) / 150.0f);
+                    camera->Rotate(pickPoint, core::Vector4f{ 0, 0, 1, 0 }, static_cast<float>(-(x - lastX)) * 5);
+					camera->Rotate(pickPoint, camera->GetRightDirection(), static_cast<float>(-(y - lastY)) * 5);
 				}
 				lastX = x;
 				lastY = y;
 				status = 1;
 			} else if ((wParam & MK_MBUTTON) && (wParam & MK_SHIFT)) {	// middle mouse button & shift key: pan
 				if (status == 2) {
-					camera->Leftward(static_cast<float>(x - lastX) / 100.0f);
-					camera->Upward(static_cast<float>(y - lastY) / 100.0f);
+                    auto pickPointVector = static_cast<core::Vector4f>(pickPoint - camera->GetPosition());
+                    auto panMultiplier = DotProduct(pickPointVector, camera->GetForwardDirection()) / camera->GetNearPlane();
+					camera->Leftward(static_cast<float>(x - lastX) * camera->GetHalfWidth() * 2 * panMultiplier);
+					camera->Upward(static_cast<float>(y - lastY) * camera->GetHalfHeight() * 2 * panMultiplier);
 				}
 				lastX = x;
 				lastY = y;
