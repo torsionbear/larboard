@@ -18,6 +18,7 @@ LRESULT CALLBACK RenderWindow::RenderWindowProc(HWND hWnd, UINT uMsg, WPARAM wPa
 		PostQuitMessage(0);
 		break;
 	case WM_LBUTTONDOWN:
+    case WM_MBUTTONDOWN:
 	case WM_SIZE:
 	case WM_MOUSEWHEEL:
 	case WM_MOUSEMOVE:
@@ -56,15 +57,17 @@ void RenderWindow::UnregisterRenderWindowClass()
 
 void RenderWindow::CreateRenderWindow()
 {
+    RECT rect{ 100, 100, m_Width + 100, m_Height + 100 };
+    AdjustWindowRectEx(&rect, WS_OVERLAPPEDWINDOW, false, 0); // calculate actual window rect according to client area rect
     m_RenderWindowHandle = CreateWindowEx(
         0,
         windowClassName.c_str(),
         m_WindowName.c_str(),
         WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        m_Width,
-        m_Height,
+        rect.left,
+        rect.top,
+        rect.right - rect.left,
+        rect.bottom - rect.top,
         nullptr,
         nullptr,
         nullptr,
