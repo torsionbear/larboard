@@ -2,6 +2,7 @@
 
 #include "Matrix.h"
 #include "Movable.h"
+#include "Ray.h"
 
 namespace core {
 
@@ -17,9 +18,22 @@ public:
 public:
 	Camera();
 public:
-	auto SetPerspective(Float32 near, Float32 far, Vector2f lowerLeft, Vector2f upperRight) -> void;
-	auto SetPerspective(Float32 near, Float32 far, Float32 fieldOfView, Float32 aspectRatio) -> void;
+	auto SetPerspective(Point4f lowerLeft, Point4f upperRight, Float32 farPlane) -> void;
+	auto SetPerspective(Float32 aspectRatio, Float32 fieldOfView, Float32 nearPlane, Float32 farPlane) -> void;
 	auto GetProjectionTransform() const -> Matrix4x4f const&;
+    auto GetRayTo(Vector2f windowCoordinate) const -> Ray;
+    auto GetFarPlane() const -> Float32 {
+        return _farPlane;
+    }
+    auto GetNearPlane() const -> Float32 {
+        return _lowerLeft(2);
+    }
+    auto GetHalfWidth() const -> Float32 {
+        return _upperRight(0);
+    }
+    auto GetHalfHeight() const -> Float32 {
+        return _upperRight(1);
+    }
 
 	auto GetShaderData() -> ShaderData;
 	auto GetUboOffset() const -> int {
@@ -30,6 +44,9 @@ public:
 	}
 private:
 	Matrix4x4f _projectionTransform;
+    Point4f _lowerLeft;
+    Point4f _upperRight;
+    Float32 _farPlane;
     openglInt _uboOffset;
 };
 

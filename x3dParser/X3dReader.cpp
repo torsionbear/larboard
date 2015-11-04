@@ -7,8 +7,6 @@ using std::unique_ptr;
 using std::make_unique;
 using std::string;
 
-using core::Vector2f;
-using core::Vector3f;
 using core::Mesh;
 using core::Vertex;
 using core::SceneNode;
@@ -20,11 +18,15 @@ using core::Movable;
 
 namespace x3dParser {
 
-auto inline ToPoint3(Float3 const& in) -> Vector3f {
-    return {in.x, in.y, in.z};
+auto inline ToPoint4(Float3 const& in) -> core::Point4f {
+    return {in.x, in.y, in.z, 1.0f};
 }
 
-auto inline ToPoint2(Float2 const& in) -> Vector2f {
+auto inline ToVector3(Float3 const& in) -> core::Vector3f {
+    return{ in.x, in.y, in.z };
+}
+
+auto inline ToVector2(Float2 const& in) -> core::Vector2f {
     return {in.x, in.y};
 }
 
@@ -48,9 +50,9 @@ auto X3dReader::Read(IndexedFaceSet const& indexedFaceSet) ->  Mesh * {
 
 	auto vertexData = vector<Vertex>{};
 	for (auto i = 0u; i < coordIndex.size(); ++i) {
-		vertexData.push_back({ ToPoint3(coordinate.at(coordIndex[i].a)), ToPoint3(normal.at(coordIndex[i].a)), ToPoint2(textureCoordinate.at(texCoordIndex[i].a))});
-		vertexData.push_back({ ToPoint3(coordinate.at(coordIndex[i].b)), ToPoint3(normal.at(coordIndex[i].b)), ToPoint2(textureCoordinate.at(texCoordIndex[i].b))});
-		vertexData.push_back({ ToPoint3(coordinate.at(coordIndex[i].c)), ToPoint3(normal.at(coordIndex[i].c)), ToPoint2(textureCoordinate.at(texCoordIndex[i].c))});
+		vertexData.push_back({ ToVector3(coordinate.at(coordIndex[i].a)), ToVector3(normal.at(coordIndex[i].a)), ToVector2(textureCoordinate.at(texCoordIndex[i].a))});
+		vertexData.push_back({ ToVector3(coordinate.at(coordIndex[i].b)), ToVector3(normal.at(coordIndex[i].b)), ToVector2(textureCoordinate.at(texCoordIndex[i].b))});
+		vertexData.push_back({ ToVector3(coordinate.at(coordIndex[i].c)), ToVector3(normal.at(coordIndex[i].c)), ToVector2(textureCoordinate.at(texCoordIndex[i].c))});
     }
 	return _scene->GetStaticModelGroup().CreateMesh(move(vertexData));;
 }
@@ -67,7 +69,7 @@ auto X3dReader::Read(IndexedTriangleSet const& indexedTriangleSet) ->  Mesh * {
 
 	auto vertexData = vector<Vertex>{};
 	for (auto i = 0u; i < coordinate.size(); ++i) {
-		vertexData.push_back({ ToPoint3(coordinate[i]), ToPoint3(normal[i]), ToPoint2(textureCoordinate[i]) });
+		vertexData.push_back({ ToVector3(coordinate[i]), ToVector3(normal[i]), ToVector2(textureCoordinate[i]) });
 	}
 	return _scene->GetStaticModelGroup().CreateMesh(move(vertexData), move(index));
 }
@@ -185,7 +187,7 @@ auto X3dReader::Read(ImageTexture const& imageTexture) -> core::Texture * {
 
 auto X3dReader::Read(Viewpoint const& viewpoint) -> Camera * {
 	auto ret = _scene->CreateCamera();
-	ret->SetPerspective(1, 100, viewpoint.GetFieldOfView(), 1);
+	ret->SetPerspective(1, viewpoint.GetFieldOfView(), 0.1f, 100.0f);
 	return ret;
 }
 
@@ -196,8 +198,8 @@ auto X3dReader::Read(PointLight const& pointLight) -> core::PointLight * {
 	auto color = pointLight.GetColor();
 	auto intensity = pointLight.GetIntensity();
 	ret->SetColor(core::Vector4f{ color.x, color.y, color.z, 1.0f } * intensity);
-	ret->Translate(ToPoint3(pointLight.GetLocation()));
-	ret->SetAttenuation(ToPoint3(pointLight.GetAttenuation()));
+	ret->Translate(ToPoint4(pointLight.GetLocation()));
+	ret->SetAttenuation(ToVector3(pointLight.GetAttenuation()));
 	ret->SetRadius(pointLight.GetRadius());
 	return ret;
 }
@@ -205,7 +207,7 @@ auto X3dReader::Read(PointLight const& pointLight) -> core::PointLight * {
 auto X3dReader::Read(DirectionalLight const & directionalLight) -> core::DirectionalLight * {
 	auto ret = _scene->CreateDirectionalLight();
 	// ignore ambientIntensity. Use standalone ambient light instead
-	ret->SetColor(ToPoint3(directionalLight.GetColor()) * directionalLight.GetIntensity());
+	ret->SetColor(ToVector3(directionalLight.GetColor()) * directionalLight.GetIntensity());
 	auto direction = directionalLight.GetDirection();
 	ret->SetDirection(core::Vector4f{direction.x, direction.y, direction.z, 0.0f});
 	return ret;
@@ -217,8 +219,8 @@ auto X3dReader::Read(SpotLight const & spotLight) -> core::SpotLight * {
 	auto color = spotLight.GetColor();
 	auto intensity = spotLight.GetIntensity();
 	ret->SetColor(core::Vector4f{ color.x, color.y, color.z, 1.0f } *intensity);
-	ret->Translate(ToPoint3(spotLight.GetLocation()));
-	ret->SetAttenuation(ToPoint3(spotLight.GetAttenuation()));
+	ret->Translate(ToPoint4(spotLight.GetLocation()));
+	ret->SetAttenuation(ToVector3(spotLight.GetAttenuation()));
 	ret->SetRadius(spotLight.GetRadius());
 	auto direction = spotLight.GetDirection();
 	ret->SetDirection(core::Vector4f{ direction.x, direction.y, direction.z, 0.0f });

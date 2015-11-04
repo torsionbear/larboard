@@ -22,20 +22,35 @@ auto Camera::GetProjectionTransform() const -> Matrix4x4f const & {
 	return _projectionTransform;
 }
 
-auto Camera::SetPerspective(Float32 near, Float32 far, Vector2f lowerLeft, Vector2f upperRight) -> void {
+auto Camera::GetRayTo(Vector2f windowCoordinate) const -> Ray {
+    auto ret = Ray{};
+    ret.origin = GetMatrix() * Point4f{
+        (1 - windowCoordinate(0)) * _lowerLeft(0) + windowCoordinate(0) * _upperRight(0),
+        (1 - windowCoordinate(1)) * _upperRight(1) + windowCoordinate(1) * _lowerLeft(1),
+        -_lowerLeft(2),
+        1,
+    };
+    ret.direction = Normalize(static_cast<Vector4f>(ret.origin - GetPosition()));
+    ret.length = _farPlane - _lowerLeft(2); // make it simple for now...
+    return ret;
+}
 
+auto Camera::SetPerspective(Point4f lowerLeft, Point4f upperRight, Float32 farPlane) -> void {
+    _lowerLeft = lowerLeft;
+    _upperRight = upperRight;
+    _farPlane = farPlane;
 	// third column has been negate to transform right-hand world space to left-hand screen space.
 	_projectionTransform = Matrix4x4f{
-		2 * near / (upperRight(0) - lowerLeft(0)), 0, (upperRight(0) + lowerLeft(0)) / (upperRight(0) - lowerLeft(0)), 0,
-		0, 2 * near / (upperRight(1) - lowerLeft(1)), (upperRight(1) + lowerLeft(1)) / (upperRight(1) - lowerLeft(1)), 0,
-		0, 0, -(far + near) / (far - near), -2 * far*near / (far - near),
+		2 * lowerLeft(2) / (upperRight(0) - lowerLeft(0)), 0, (upperRight(0) + lowerLeft(0)) / (upperRight(0) - lowerLeft(0)), 0,
+		0, 2 * lowerLeft(2) / (upperRight(1) - lowerLeft(1)), (upperRight(1) + lowerLeft(1)) / (upperRight(1) - lowerLeft(1)), 0,
+		0, 0, -(farPlane + lowerLeft(2)) / (farPlane - lowerLeft(2)), -2 * farPlane*lowerLeft(2) / (farPlane - lowerLeft(2)),
 		0, 0, -1, 0
 	};
 }
 
-auto Camera::SetPerspective(Float32 near, Float32 far, Float32 aspectRatio, Float32 fieldOfView) -> void {
-	auto halfWidth = near;
-	auto halfHeight = near;
+auto Camera::SetPerspective(Float32 aspectRatio, Float32 fieldOfView, Float32 nearPlane, Float32 farPlane) -> void {
+	auto halfWidth = nearPlane;
+	auto halfHeight = nearPlane;
 	auto & majorAxis = aspectRatio > 1 ? halfWidth : halfHeight;
 	auto & minorAxis = aspectRatio > 1 ? halfHeight : halfWidth;
 
@@ -50,7 +65,7 @@ auto Camera::SetPerspective(Float32 near, Float32 far, Float32 aspectRatio, Floa
 	majorAxis *= tangent;
 	minorAxis *= tangent / aspectRatio;
 	
-	SetPerspective(near, far, { -halfWidth, -halfHeight }, { halfWidth, halfHeight });
+	SetPerspective({ -halfWidth, -halfHeight, nearPlane, 1 }, { halfWidth, halfHeight, nearPlane, 1 }, farPlane);
 }
 
 auto Camera::GetShaderData() -> ShaderData {
