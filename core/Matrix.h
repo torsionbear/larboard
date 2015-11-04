@@ -113,6 +113,21 @@ struct Matrix_traits<Matrix<T, ROW, COL>> {
 	using value_type = T;
 };
 
+template<typename T>
+auto Normalize(Matrix<T, 4, 1> const& vector) -> Matrix<T, 4, 1> {
+    auto lengthInverse = 1.0f / sqrt(vector(0) * vector(0) + vector(1) * vector(1) + vector(2) * vector(2));
+    return Matrix<T, 4, 1>{ vector(0) * lengthInverse , vector(1) * lengthInverse , vector(2) * lengthInverse, 0 };
+}
+
+template<typename T, size_type ROW>
+auto DotProduct(Matrix<T, ROW, 1> const& lhs, Matrix<T, ROW, 1> const& rhs) -> T {
+    auto ret = 0.0f;
+    for (auto i = 0; i < ROW; ++i) {
+        ret += lhs(i) * rhs(i);
+    }
+    return ret;
+}
+
 // Matrix product
 template<typename LHS, typename RHS>
 class MatrixProduct : public MatrixExpression<MatrixProduct<LHS, RHS>> {
