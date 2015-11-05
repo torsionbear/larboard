@@ -11,6 +11,7 @@
 #include "Model.h"
 #include "Shape.h"
 #include "Camera.h"
+#include "AmbientLight.h"
 #include "PointLight.h"
 #include "DirectionalLight.h"
 #include "SpotLight.h"
@@ -25,6 +26,7 @@ struct LightShaderData {
 		MaxPointLightCount = 50,
 		MaxSpotLightCount = 50,
 	};
+    AmbientLight::ShaderData ambientLight;
 	DirectionalLight::ShaderData directionalLights[MaxDirectionalLightCount];
 	PointLight::ShaderData pointLights[MaxPointLightCount];
 	SpotLight::ShaderData spotLights[MaxSpotLightCount];
@@ -41,7 +43,8 @@ public:
 	~Scene() = default;
 public:
 	auto CreateCamera() -> Camera *;
-	auto CreateDirectionalLight() -> DirectionalLight *;
+    auto CreateAmbientLight() -> AmbientLight *;
+    auto CreateDirectionalLight() -> DirectionalLight *;
 	auto CreatePointLight() -> PointLight *;
 	auto CreateSpotLight() -> SpotLight *;
 	auto Stage(Movable *) -> void;
@@ -68,6 +71,7 @@ private:
 	std::unique_ptr<ResourceManager> _resourceManager;
 	Movable _root;
 	std::vector<std::unique_ptr<Camera>> _cameras;
+    std::vector<std::unique_ptr<AmbientLight>> _ambientLights;
 	std::vector<std::unique_ptr<PointLight>> _pointLights;
 	std::vector<std::unique_ptr<DirectionalLight>> _directionalLights;
 	std::vector<std::unique_ptr<SpotLight>> _spotLights;

@@ -21,6 +21,11 @@ auto Scene::CreateCamera() -> Camera * {
 	return _cameras.back().get();
 }
 
+auto Scene::CreateAmbientLight() -> AmbientLight * {
+    _ambientLights.push_back(make_unique<AmbientLight>());
+    return _ambientLights.back().get();
+}
+
 auto Scene::CreateDirectionalLight() -> DirectionalLight * {
 	_directionalLights.push_back(make_unique<DirectionalLight>());
 	return _directionalLights.back().get();
@@ -147,6 +152,8 @@ auto Scene::UseCameraData(Camera const * camera) -> void {
 
 auto Scene::LoadLightData() -> void {
 	auto data = LightShaderData{};
+
+    data.ambientLight = _ambientLights.front()->GetShaderData();
 
 	data.directionalLightCount = _directionalLights.size();
 	assert(data.directionalLightCount <= LightShaderData::MaxDirectionalLightCount);

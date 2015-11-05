@@ -32,26 +32,30 @@ auto UpdateScene(core::Scene & scene) -> void {
 auto LoadScene0() -> std::unique_ptr<core::Scene> {
     auto scene = make_unique<core::Scene>();
 	x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square/square.x3d", scene.get()).Read();
+    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
 	return move(scene);
 }
 
 auto LoadScene1() -> std::unique_ptr<core::Scene> {
     auto scene = make_unique<core::Scene>();
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square2/square2.x3d", scene.get()).Read();
+    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
     return move(scene);
 }
 
 auto LoadScene2() -> std::unique_ptr<core::Scene> {
     auto scene = make_unique<core::Scene>();
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/8/8.x3d", scene.get()).Read();
+    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
 	return move(scene);
 }
 
 auto LoadScene3() -> std::unique_ptr<core::Scene> {
     auto scene = make_unique<core::Scene>();
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_00.x3d", scene.get()).Read();
+    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.0f, 0.0f, 0.0f, 1 });
 
-    auto plainProgram = scene->GetStaticModelGroup().CreateShaderProgram("shader/plain.vert", "shader/plain.frag");
+    auto plainProgram = scene->GetStaticModelGroup().CreateShaderProgram("shader/noTexture.vert", "shader/noTexture.frag");
     for (auto & shape : scene->GetStaticModelGroup().GetShapes()) {
         shape->SetShaderProgram(plainProgram);
     }

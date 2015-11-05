@@ -1,9 +1,5 @@
 #version 430 core
 
-struct Textures {
-	sampler2D diffuseMap;
-}; 
-
 struct AmbientLight {
 	vec4 color;
 };
@@ -53,8 +49,6 @@ layout (std140,  binding = 2) uniform Material {
 	float transparency;
 } material;
 
-uniform Textures textures;
-
 in vec4 fragPosition;
 in vec4 fragNormal;
 in vec2 fragTexCoord;
@@ -89,7 +83,7 @@ vec4 processLights() {
 }
 
 vec4 processAmbientLight(AmbientLight light) {
-    return light.color * vec4(texture(textures.diffuseMap, fragTexCoord));
+    return light.color * material.diffuse;
 }
 
 vec4 processDirectionalLight(DirectionalLight light) {
@@ -97,7 +91,7 @@ vec4 processDirectionalLight(DirectionalLight light) {
     vec4 reflectDirection = reflect(light.direction, fragNormal);
     float specularCoefficient = pow(max(dot(viewDirection, reflectDirection), 0.0), material.shininess);
 	
-    vec4 diffuse = light.color * vec4(texture(textures.diffuseMap, fragTexCoord)) * diffuseCoefficient;
+    vec4 diffuse = light.color * material.diffuse * diffuseCoefficient;
     vec4 specular = light.color * material.specular * specularCoefficient ;
     return (specular + diffuse);
 }
@@ -114,7 +108,7 @@ vec4 processPointLight(PointLight light) {
     vec4 reflectDirection = reflect(lightDirection, fragNormal);
     float specularCoefficient = pow(max(dot(viewDirection, reflectDirection), 0.0), material.shininess);
 	
-    vec4 diffuse = light.color * vec4(texture(textures.diffuseMap, fragTexCoord)) * diffuseCoefficient;
+    vec4 diffuse = light.color * material.diffuse * diffuseCoefficient;
     vec4 specular = light.color * material.specular * specularCoefficient ;
     return (specular + diffuse) * attenuation;
 }
@@ -136,7 +130,7 @@ vec4 processSpotLight(SpotLight light) {
     vec4 reflectDirection = reflect(lightDirection, fragNormal);
     float specularCoefficient = pow(max(dot(viewDirection, reflectDirection), 0.0), material.shininess);
 	
-    vec4 diffuse = light.color * vec4(texture(textures.diffuseMap, fragTexCoord)) * diffuseCoefficient;
+    vec4 diffuse = light.color * material.diffuse * diffuseCoefficient;
     vec4 specular = light.color * material.specular * specularCoefficient ;
     return (specular + diffuse) * attenuation * angleFalloff;
 }

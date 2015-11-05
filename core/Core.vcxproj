@@ -105,6 +105,7 @@
     <ClCompile Include="Camera.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AmbientLight.h" />
     <ClInclude Include="Bvh.h" />
     <ClInclude Include="BvhNode.h" />
     <ClInclude Include="DirectionalLight.h" />
