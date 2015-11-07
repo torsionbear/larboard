@@ -10,7 +10,9 @@ class Camera : public Movable {
 public:
 	struct ShaderData {
     public:
-		Matrix4x4f viewTransform;
+		Matrix4x4f viewProjectTransform;
+        Matrix4x4f projectTransform;
+        Matrix4x4f rotationInverse;
 		Vector4f viewPosition;
     public:
         static auto Size() -> unsigned int;

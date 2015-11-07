@@ -15,6 +15,7 @@
 #include "PointLight.h"
 #include "DirectionalLight.h"
 #include "SpotLight.h"
+#include "Skybox.h"
 #include "Bvh.h"
 #include "StaticModelGroup.h"
 
@@ -76,6 +77,7 @@ private:
 	std::vector<std::unique_ptr<DirectionalLight>> _directionalLights;
 	std::vector<std::unique_ptr<SpotLight>> _spotLights;
 
+    std::unique_ptr<SkyBox> _skyBox = nullptr;
     std::unique_ptr<StaticModelGroup> _staticModelGroup = nullptr;
 
 	openglUint _cameraUbo;

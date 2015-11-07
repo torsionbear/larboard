@@ -7,6 +7,7 @@
 
 using std::string;
 using std::make_unique;
+using std::array;
 
 namespace core {
 
@@ -14,6 +15,7 @@ Scene::Scene() {
     // todo: send in resourceManager by argument
     _resourceManager = make_unique<ResourceManager>();
     _staticModelGroup = make_unique<StaticModelGroup>(_resourceManager.get());
+    _skyBox = make_unique<SkyBox>(array<string, 6>{"skybox/RT.png", "skybox/LF.png", "skybox/FR.png", "skybox/BK.png", "skybox/UP.png", "skybox/DN.png", });
 }
 
 auto Scene::CreateCamera() -> Camera * {
@@ -105,7 +107,7 @@ auto Scene::PrepareForDraw() -> void {
 	LoadLightData();
     _staticModelGroup->PrepareForDraw();
     _staticModelGroup->GetBvh()->PrepareForDraw(*_resourceManager);
-
+    _skyBox->PrepareForDraw();
 	// todo: sort shapes according to: 1. shader priority; 2. vbo/vao
 }
 
@@ -116,6 +118,7 @@ auto Scene::Draw() -> void {
 	LoadCameraData();
 	UseCameraData(_cameras.front().get());
 
+    _skyBox->Draw();
     _staticModelGroup->Draw();
     _staticModelGroup->GetBvh()->Draw();
 

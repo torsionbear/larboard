@@ -103,6 +103,16 @@ auto Movable::GetPosition() const -> Point4f {
 	return _sceneNode->_transform * Point4f{0, 0, 0, 1};
 }
 
+auto Movable::GetRotationInverse() const -> Matrix4x4f {
+    using std::swap;
+    auto rotation = _sceneNode->_transform;
+    rotation(0, 3) = rotation(1, 3) = rotation(2, 3) = 0;
+    swap(rotation(0, 1), rotation(1, 0));
+    swap(rotation(0, 2), rotation(2, 0));
+    swap(rotation(1, 2), rotation(2, 1));
+    return rotation;
+}
+
 auto Movable::GetMatrix() const -> Matrix4x4f const& {
 	return _sceneNode->_transform;
 }
@@ -113,19 +123,15 @@ auto Movable::GetRigidBodyMatrixInverse() const -> Matrix4x4f {
 
 	// rigid body matrix inverse: 
 	// 1. transpose rotation part (left-upper 3x3 submatrix)
-	auto rotation = matrix;
-	rotation(0, 3) = rotation(1, 3) = rotation(2, 3) = 0;
-	swap(rotation(0, 1), rotation(1, 0));
-	swap(rotation(0, 2), rotation(2, 0));
-	swap(rotation(1, 2), rotation(2, 1));
+    auto rotationInverse = GetRotationInverse();
 	// 2. negate translation part (first 3 elements of 4th column)
-	auto translation = Matrix4x4f{
+	auto translationInverse = Matrix4x4f{
 		1, 0, 0, -matrix(0, 3),
 		0, 1, 0, -matrix(1, 3),
 		0, 0, 1, -matrix(2, 3),
 		0, 0, 0, 1,
 	};
-	return rotation * translation;
+	return rotationInverse * translationInverse;
 }
 
 auto Movable::GetNormalTransform() const -> Matrix4x4f {

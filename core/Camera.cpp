@@ -71,6 +71,8 @@ auto Camera::SetPerspective(Float32 aspectRatio, Float32 fieldOfView, Float32 ne
 auto Camera::GetShaderData() -> ShaderData {
 	return ShaderData {
 		_projectionTransform * GetRigidBodyMatrixInverse(),
+        _projectionTransform,
+        GetRotationInverse(),
 		GetPosition(),
 	};
 }

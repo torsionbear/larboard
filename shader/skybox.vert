@@ -8,8 +8,10 @@ layout (std140, row_major, binding = 0) uniform Camera {
 } camera;
 
 layout(location = 0) in vec3 vertPosition;
+out vec3 fragTexCoord;
 
 void main()
 {
-    gl_Position = camera.viewProjectTransform * vec4(vertPosition, 1);
+    fragTexCoord = vertPosition;
+    gl_Position = camera.projectTransform * camera.rotationInverse * vec4(vertPosition, 1);	
 }

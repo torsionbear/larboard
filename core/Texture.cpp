@@ -19,7 +19,7 @@ void swap(Texture& first, Texture& second) {
 	std::swap(first._texture, second._texture);
 }
 
-auto core::Texture::LoadImpl() -> bool {
+auto Texture::LoadImpl() -> bool {
 	// todo: load image file according to file extension. Currently only png is supported
 	PngReader pngReader{_filename};
 	pngReader.ReadPng();
