@@ -97,6 +97,10 @@ auto Scene::ToggleWireframe() -> void {
 	_wireframeMode ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE) : glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
+auto Scene::ToggleBvh() -> void {
+    _drawBvh = !_drawBvh;
+}
+
 auto Scene::PrepareForDraw() -> void {
 
 	glEnable(GL_DEPTH_TEST);
@@ -120,7 +124,9 @@ auto Scene::Draw() -> void {
 
     _skyBox->Draw();
     _staticModelGroup->Draw();
-    _staticModelGroup->GetBvh()->Draw();
+    if (_drawBvh) {
+        _staticModelGroup->GetBvh()->Draw();
+    }
 
 	error = glGetError();
 }

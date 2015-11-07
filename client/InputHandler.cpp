@@ -69,6 +69,9 @@ auto InputHandler::operator()(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
         case VK_F2:
             _scene->ToggleWireframe();
             break;
+        case VK_F3:
+            _scene->ToggleBvh();
+            break;
         case 0x57:	// W key
             _scene->GetActiveCamera()->Forward(0.2f);
             break;

@@ -58,7 +58,8 @@ public:
     auto Picking(Ray & ray) -> bool;
 
 	auto ToggleBackFace() -> void;
-	auto ToggleWireframe() -> void;
+    auto ToggleWireframe() -> void;
+    auto ToggleBvh() -> void;
 	auto Draw() -> void;
     auto PrepareForDraw() -> void;
 
@@ -85,6 +86,7 @@ private:
 
 	bool _wireframeMode = false;
 	bool _renderBackFace = false;
+    bool _drawBvh = false;
 };
 
 }
