@@ -114,7 +114,7 @@ private:
 		_file.ignore(8);
 		return true;
 	}
-	auto ReadIhdr(unique_ptr<char[]> chunkData) -> void {
+	auto ReadIhdr(unique_ptr<char[]> && chunkData) -> void {
 		_width = Endian::ConvertBigEndian(*reinterpret_cast<unsigned int*>(&chunkData[0]));
 		_height = Endian::ConvertBigEndian(*reinterpret_cast<unsigned int*>(&chunkData[4]));
 		auto bitDepth = *reinterpret_cast<unsigned char*>(&chunkData[8]);
@@ -140,19 +140,19 @@ private:
 		_zStream.next_out = _cache.data();
 		auto result = inflateInit(&_zStream);
 	}
-	auto ReadSrgb(unique_ptr<char[]>) -> void {
+	auto ReadSrgb(unique_ptr<char[]> &&) -> void {
 		return;
 	}
-	auto ReadGama(unique_ptr<char[]>) -> void {
+	auto ReadGama(unique_ptr<char[]> &&) -> void {
 		return;
 	}
-	auto ReadPhys(unique_ptr<char[]>) -> void {
+	auto ReadPhys(unique_ptr<char[]> &&) -> void {
 		return;
 	}
-	auto ReadBkgd(unique_ptr<char[]>) -> void {
+	auto ReadBkgd(unique_ptr<char[]> &&) -> void {
 		return;
 	}
-	auto ReadIDAT(unique_ptr<char[]> chunkData, unsigned int length) -> void {
+	auto ReadIDAT(unique_ptr<char[]> && chunkData, unsigned int length) -> void {
 		_zStream.avail_in = length;
 		_zStream.next_in = reinterpret_cast<unsigned char*>(chunkData.get());
 		auto result = inflate(&_zStream, Z_SYNC_FLUSH);
