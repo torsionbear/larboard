@@ -36,7 +36,7 @@ auto SkyBox::Draw() -> void {
 
     glDepthMask(GL_FALSE);
     glDisable(GL_DEPTH_TEST);
-    glDrawElements(GL_TRIANGLES, _indexData.size(), GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(0));
+    glDrawElements(GL_QUADS, _indexData.size(), GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(0));
     glDepthMask(GL_TRUE);
     glEnable(GL_DEPTH_TEST);
 }
