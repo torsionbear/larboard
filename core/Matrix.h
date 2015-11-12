@@ -104,6 +104,7 @@ private:
 };
 using Matrix4x4f = Matrix<Float32, 4, 4>;
 using Vector2f = Matrix<Float32, 2, 1>;
+using Vector2i = Matrix<int, 2, 1>;
 using Vector3f = Matrix<Float32, 3, 1>;
 using Vector4f = Matrix<Float32, 4, 1>;
 using Point4f = Matrix<Float32, 4, 1>;
@@ -112,6 +113,11 @@ template<typename T, size_type ROW, size_type COL>
 struct Matrix_traits<Matrix<T, ROW, COL>> {
 	using value_type = T;
 };
+
+template<typename T>
+auto Length(Matrix<T, 4, 1> const& vector) -> T {
+    return sqrt(vector(0) * vector(0) + vector(1) * vector(1) + vector(2) * vector(2));
+}
 
 template<typename T>
 auto Normalize(Matrix<T, 4, 1> const& vector) -> Matrix<T, 4, 1> {
