@@ -22,6 +22,7 @@ public:
 		SpecularMap = 1,
 		NormalMap = 2,
 		ParallaxMap = 3,
+        HeightMap = 4,
 	};
 
 public:

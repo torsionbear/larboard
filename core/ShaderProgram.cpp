@@ -113,6 +113,10 @@ auto ShaderProgram::Use() const -> void {
 	if (location = glGetUniformLocation(_program, "textures.parallaxMap") != -1) {
 		glUniform1i(location, Texture::ParallaxMap);
 	}
+    if (location = glGetUniformLocation(_program, "textures.heightMap") != -1) {
+        glUniform1i(location, Texture::HeightMap);
+    }
+    auto error = glGetError();
 }
 
 auto ShaderProgram::GetHandler() -> GLuint {

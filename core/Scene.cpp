@@ -15,7 +15,6 @@ Scene::Scene() {
     // todo: send in resourceManager by argument
     _resourceManager = make_unique<ResourceManager>();
     _staticModelGroup = make_unique<StaticModelGroup>(_resourceManager.get());
-    _skyBox = make_unique<SkyBox>(array<string, 6>{"skybox/RT.png", "skybox/LF.png", "skybox/FR.png", "skybox/BK.png", "skybox/UP.png", "skybox/DN.png", });
 }
 
 auto Scene::CreateCamera() -> Camera * {
@@ -53,6 +52,14 @@ auto Scene::Unstage(Movable * movable) -> void {
 
 auto Scene::GetActiveCamera() const -> Camera * {
 	return _cameras.front().get();
+}
+
+auto Scene::CreateTerrain(Float32 tileSize, Vector2i mapOrigin, Vector2i mapSize, string diffuseMap, string heightMap) -> void {
+    _terrain = make_unique<Terrain>(tileSize, mapOrigin, mapSize, diffuseMap, heightMap);
+}
+
+auto Scene::CreateSkyBox(std::array<std::string, 6>&& filenames) -> void {
+    _skyBox = make_unique<SkyBox>(move(filenames));
 }
 
 auto Scene::Picking(Ray & ray) -> bool {
@@ -111,7 +118,12 @@ auto Scene::PrepareForDraw() -> void {
 	LoadLightData();
     _staticModelGroup->PrepareForDraw();
     _staticModelGroup->GetBvh()->PrepareForDraw(*_resourceManager);
-    _skyBox->PrepareForDraw();
+    if (nullptr != _skyBox) {
+        _skyBox->PrepareForDraw();
+    }
+    if (nullptr != _terrain) {
+        _terrain->PrepareForDraw(_cameras.front()->GetSightDistance());
+    }
 	// todo: sort shapes according to: 1. shader priority; 2. vbo/vao
 }
 
@@ -122,7 +134,12 @@ auto Scene::Draw() -> void {
 	LoadCameraData();
 	UseCameraData(_cameras.front().get());
 
-    _skyBox->Draw();
+    if (nullptr != _skyBox) {
+        _skyBox->Draw();
+    }
+    if (nullptr != _terrain) {
+        _terrain->Draw();
+    }
     _staticModelGroup->Draw();
     if (_drawBvh) {
         _staticModelGroup->GetBvh()->Draw();

@@ -35,6 +35,10 @@ auto Camera::GetRayTo(Vector2f windowCoordinate) const -> Ray {
     return ret;
 }
 
+auto Camera::GetSightDistance() const -> Float32 {
+    return Length(_lowerLeft) * _farPlane / _lowerLeft(2);
+}
+
 auto Camera::SetPerspective(Point4f lowerLeft, Point4f upperRight, Float32 farPlane) -> void {
     _lowerLeft = lowerLeft;
     _upperRight = upperRight;

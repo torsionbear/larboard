@@ -18,6 +18,7 @@
 #include "Skybox.h"
 #include "Bvh.h"
 #include "StaticModelGroup.h"
+#include "terrain.h"
 
 namespace core {
 
@@ -55,6 +56,8 @@ public:
     auto GetStaticModelGroup() -> StaticModelGroup & {
         return *_staticModelGroup;
     }
+    auto CreateTerrain(Float32 tileSize, Vector2i mapOrigin, Vector2i mapSize, std::string diffuseMap, std::string heightMap) -> void;
+    auto CreateSkyBox(std::array<std::string, 6> && filenames) -> void;
     auto Picking(Ray & ray) -> bool;
 
 	auto ToggleBackFace() -> void;
@@ -80,6 +83,7 @@ private:
 
     std::unique_ptr<SkyBox> _skyBox = nullptr;
     std::unique_ptr<StaticModelGroup> _staticModelGroup = nullptr;
+    std::unique_ptr<Terrain> _terrain = nullptr;
 
 	openglUint _cameraUbo;
 	openglUint _lightUbo;

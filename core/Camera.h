@@ -27,6 +27,7 @@ public:
     auto GetFarPlane() const -> Float32 {
         return _farPlane;
     }
+    auto GetSightDistance() const -> Float32;
     auto GetNearPlane() const -> Float32 {
         return _lowerLeft(2);
     }
