@@ -3,6 +3,7 @@
 #include <array>
 
 #include "Texture.h"
+#include "TextureArray.h"
 #include "Camera.h"
 #include "ShaderProgram.h"
 
@@ -10,7 +11,7 @@ namespace core {
 
 class Terrain {
 public:
-    Terrain(Float32 tileSize, Vector2i mapOrigin, Vector2i mapSize, std::string diffuseMap, std::string heightMap);
+    Terrain(Float32 tileSize, Vector2i mapOrigin, Vector2i mapSize, std::vector<std::string> && diffuseMapFiles, std::string heightMap);
 public:
     auto PrepareForDraw(Float32 sightDistance) -> void;
     auto Draw()  -> void;
@@ -22,7 +23,7 @@ private:
     Float32 _tileSize;
     int _tileCountInSight = 100u;
 
-    Texture _diffuseMap;
+    TextureArray _diffuseMap;
     Texture _heightMap;
     ShaderProgram _shaderProgram;
     openglUint _vao;

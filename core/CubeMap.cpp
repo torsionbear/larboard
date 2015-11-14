@@ -6,6 +6,7 @@
 
 #include "PngReader.h"
 #include "MessageLogger.h"
+#include "TextureUsage.h"
 
 using std::make_unique;
 
@@ -69,7 +70,7 @@ auto CubeMap::FreeFromCardImpl() -> bool {
 auto CubeMap::Use() -> void {
 	assert(status::SentToCard == _status);
 
-	glActiveTexture(GL_TEXTURE0 + 0);   // for now, cube map always use texture unit 0.
+	glActiveTexture(GL_TEXTURE0 + TextureUsage::CubeMap);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, _texture);
 
 }

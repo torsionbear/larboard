@@ -7,6 +7,7 @@
 
 #include "Matrix.h"
 #include "Resource.h"
+#include "TextureUsage.h"
 
 using std::vector;
 
@@ -15,18 +16,8 @@ namespace core {
 class Texture : public Resource {
 public:
 	friend class ResourceManager;
-
 public:
-	enum TextureType : int {
-		DiffuseMap = 0,
-		SpecularMap = 1,
-		NormalMap = 2,
-		ParallaxMap = 3,
-        HeightMap = 4,
-	};
-
-public:
-	explicit Texture(std::string const& filename, TextureType type = DiffuseMap)
+	explicit Texture(std::string const& filename, TextureUsage::TextureType type = TextureUsage::DiffuseMap)
 		: _filename(filename)
 		, _texture(0)
 		, _type(type) {
@@ -57,7 +48,7 @@ private:
 	unsigned int _width;
 	unsigned int _height;
 	openglUint _texture;
-	TextureType _type;
+    TextureUsage::TextureType _type;
 };
 
 }

@@ -106,6 +106,7 @@
     <ClCompile Include="terrain.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="TextureArray.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AmbientLight.h" />
@@ -139,6 +140,8 @@
     <ClInclude Include="terrain.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="TextureArray.h" />
+    <ClInclude Include="TextureUsage.h" />
     <ClInclude Include="Vertex.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

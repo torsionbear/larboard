@@ -41,11 +41,11 @@ auto Texture::SendToCardImpl() -> bool {
 	glTexStorage2D(GL_TEXTURE_2D, levelCount, GL_RGBA32F, _width, _height);
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, _width, _height, GL_RGBA, GL_FLOAT, _data.data());
 	glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     // mirror repeat texture (for terrain), should refactor this later
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	// todo: wrap glGetError(), in release code, calling it only once per frame untill error happpens
 	auto error = glGetError();

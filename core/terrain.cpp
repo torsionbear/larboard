@@ -6,15 +6,15 @@ using std::string;
 
 namespace core {
 
-Terrain::Terrain(Float32 tileSize, Vector2i mapOrigin, Vector2i mapSize, string diffuseMap, string heightMap)
+Terrain::Terrain(Float32 tileSize, Vector2i mapOrigin, Vector2i mapSize, vector<string> && diffuseMapFiles, string heightMap)
     : _mapOrigin(mapOrigin)
     , _mapSize(mapSize)
     , _tileSize(tileSize)
     , _shaderProgram("shader/terrain.vert", "shader/terrain.frag")
     , _tileVertexData{ Vector2f{ 0, 0 }, Vector2f{ tileSize, 0 }, Vector2f{ tileSize, tileSize }, Vector2f{ 0, tileSize } } 
     , _indexData{ 0, 1, 3, 1, 2, 3 }
-    , _diffuseMap(diffuseMap, Texture::DiffuseMap)
-    , _heightMap(heightMap, Texture::HeightMap) {
+    , _diffuseMap(move(diffuseMapFiles), TextureUsage::DiffuseTextureArray)
+    , _heightMap(heightMap, TextureUsage::HeightMap) {
 }
 
 auto Terrain::PrepareForDraw(Float32 sightDistance) -> void {
@@ -36,7 +36,7 @@ auto Terrain::PrepareForDraw(Float32 sightDistance) -> void {
 
     glBindVertexArray(0);
 
-    _diffuseMap.SendToCard();
+    _diffuseMap.Load();
     _heightMap.SendToCard();
     _shaderProgram.SendToCard();
     auto error = glGetError();

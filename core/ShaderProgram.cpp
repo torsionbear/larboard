@@ -101,22 +101,27 @@ auto ShaderProgram::Use() const -> void {
 	// You only need to call it once to tell the program which texture image unit each sampler uses.
 	// After you've done that all you need to do is bind textures to the right texture image units.
 	auto location = -1;
-	if (location = glGetUniformLocation(_program, "textures.diffuseMap") != -1) {
-		glUniform1i(location, Texture::DiffuseMap);
+	if ((location = glGetUniformLocation(_program, "textures.diffuseMap")) != -1) {
+		glUniform1i(location, TextureUsage::DiffuseMap);
 	}
-	if (location = glGetUniformLocation(_program, "textures.specularMap") != -1) {
-		glUniform1i(location, Texture::SpecularMap);
+	if ((location = glGetUniformLocation(_program, "textures.specularMap")) != -1) {
+		glUniform1i(location, TextureUsage::SpecularMap);
 	}
-	if (location = glGetUniformLocation(_program, "textures.normalMap") != -1) {
-		glUniform1i(location, Texture::NormalMap);
+	if ((location = glGetUniformLocation(_program, "textures.normalMap")) != -1) {
+		glUniform1i(location, TextureUsage::NormalMap);
 	}
-	if (location = glGetUniformLocation(_program, "textures.parallaxMap") != -1) {
-		glUniform1i(location, Texture::ParallaxMap);
+	if ((location = glGetUniformLocation(_program, "textures.parallaxMap")) != -1) {
+		glUniform1i(location, TextureUsage::ParallaxMap);
 	}
-    if (location = glGetUniformLocation(_program, "textures.heightMap") != -1) {
-        glUniform1i(location, Texture::HeightMap);
+    if ((location = glGetUniformLocation(_program, "textures.heightMap")) != -1) {
+        glUniform1i(location, TextureUsage::HeightMap);
     }
-    auto error = glGetError();
+    if ((location = glGetUniformLocation(_program, "textures.cubeMap")) != -1) {
+        glUniform1i(location, TextureUsage::CubeMap);
+    }
+    if ((location = glGetUniformLocation(_program, "textures.diffuseTextureArray")) != -1) {
+        glUniform1i(location, TextureUsage::DiffuseTextureArray);
+    }
 }
 
 auto ShaderProgram::GetHandler() -> GLuint {
