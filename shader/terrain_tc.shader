@@ -12,7 +12,9 @@ layout(vertices = 3) out;
 uniform int tileCountInSight;
 uniform int tileSize;
 uniform ivec2 mapOrigin;
-uniform ivec2 mapSize; 
+uniform ivec2 mapSize;
+uniform ivec2 diffuseMapOrigin;
+uniform ivec2 diffuseMapSize;
 
 //in vec3 vPosition[];
 in vec2 vHeightMapTexCoord[];
@@ -22,13 +24,20 @@ in vec2 vDiffuseMapTexCoord[];
 out vec2 tcHeightMapTexCoord[];
 out vec2 tcDiffuseMapTexCoord[];
 
+float CalculateOuterTessLevel(vec4 vertex0, vec4 vertex1) {
+	float edgeLength = length(vertex0 - vertex1);
+	float maxDistance = tileCountInSight * tileSize;
+	float distance0 = length(2 * camera.viewPosition - vertex0 - vertex1) / 2;
+	return max(edgeLength * maxDistance / 5 / distance0, 1.0);
+}
 void main() {
 	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
 	tcHeightMapTexCoord[gl_InvocationID] = vHeightMapTexCoord[gl_InvocationID];
 	tcDiffuseMapTexCoord[gl_InvocationID] = vDiffuseMapTexCoord[gl_InvocationID];
 	
-	gl_TessLevelInner[0] = 3;
-	gl_TessLevelOuter[0] = 3;
-	gl_TessLevelOuter[1] = 3;
-	gl_TessLevelOuter[2] = 3;
+	// see opengl4.5 specification (glspec45.core.pdf page395) for relation between edge index and vertex index
+	gl_TessLevelOuter[0] = CalculateOuterTessLevel(gl_in[1].gl_Position, gl_in[2].gl_Position);
+	gl_TessLevelOuter[1] = CalculateOuterTessLevel(gl_in[2].gl_Position, gl_in[0].gl_Position);
+	gl_TessLevelOuter[2] = CalculateOuterTessLevel(gl_in[0].gl_Position, gl_in[1].gl_Position);
+	gl_TessLevelInner[0] = (gl_TessLevelOuter[0] + gl_TessLevelOuter[1] + gl_TessLevelOuter[2]) / 3;
 }

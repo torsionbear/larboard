@@ -42,7 +42,7 @@ auto LoadScene1() -> std::unique_ptr<core::Scene> {
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square2/square2.x3d", scene.get()).Read();
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
     scene->CreateSkyBox(std::array<std::string, 6>{"media/skybox/mt_rt.png", "media/skybox/mt_lf.png", "media/skybox/mt_ft.png", "media/skybox/mt_bk.png", "media/skybox/mt_up.png", "media/skybox/mt_dn.png", });
-    scene->CreateTerrain({ "media/grass.png", "media/dirt.png", "media/rock.png" }, "media/terrain/heightMap.png");
+    scene->CreateTerrain({ "media/terrain/grass.png", "media/terrain/dirt.png", "media/terrain/rock.png" }, "media/terrain/heightMap.png");
     scene->GetTerrain()->SetTileSize(10);
     scene->GetTerrain()->SetHeightMapOrigin(core::Vector2i{ -5, -5 });
     scene->GetTerrain()->SetHeightMapSize(core::Vector2i{ 10, 10 });
