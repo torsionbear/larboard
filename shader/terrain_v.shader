@@ -14,18 +14,21 @@ layout (std140, row_major, binding = 0) uniform Camera {
 
 uniform int tileCountInSight;
 uniform int tileSize;
-uniform ivec2 mapOrigin;
-uniform ivec2 mapSize; 
+uniform ivec2 heightMapOrigin;
+uniform ivec2 heightMapSize;
+uniform ivec2 diffuseMapOrigin;
+uniform ivec2 diffuseMapSize;
 
 uniform Textures textures;
 
-layout(location = 0) in vec2 vertPosition;
+layout(location = 0) in vec2 position;
 //layout(location = 1) in vec3 vertNormal;
 //layout(location = 2) in vec2 vertTexCoord;
 
-out vec4 fragPosition;
+//out vec4 vPosition;
 //out vec4 fragNormal;
-out vec3 fragTexCoord;
+out vec2 vHeightMapTexCoord;
+out vec2 vDiffuseMapTexCoord;
 
 ivec2 GetTileCoord() {
 	ivec2 viewPos = ivec2(camera.viewPosition.xy / tileSize); // converting from float to int drops fractional part automatically
@@ -37,11 +40,9 @@ ivec2 GetTileCoord() {
 void main()
 {
 	ivec2 tileCoord = GetTileCoord();
-	fragTexCoord = vec3((vec2(tileCoord - mapOrigin) + vertPosition / float(tileSize)) / vec2(mapSize), 0);
-	float height = texture(textures.heightMap, fragTexCoord.xy).x * 30 - 10;
-	fragTexCoord.z = (height + 10) / 15;
-	fragPosition = vec4(vertPosition + tileCoord * tileSize, height, 1);
-    gl_Position = camera.viewProjectTransform * fragPosition;
+	vHeightMapTexCoord = (vec2(tileCoord - heightMapOrigin) + position / float(tileSize)) / vec2(heightMapSize);
+	vDiffuseMapTexCoord = (vec2(tileCoord - diffuseMapOrigin) + position / float(tileSize)) / vec2(diffuseMapSize);
+    gl_Position = vec4(position + tileCoord * tileSize, 0, 1);
 	
 	//fragNormal = transform.normalTransform * vec4(vertNormal, 0);
 }

@@ -81,10 +81,10 @@
     <ClCompile Include="SkyBox.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="terrain.cpp">
+    <ClCompile Include="TextureArray.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TextureArray.cpp">
+    <ClCompile Include="terrain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -182,13 +182,13 @@
     <ClInclude Include="CubeMap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="terrain.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="TextureArray.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="TextureUsage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="terrain.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -6,8 +6,16 @@ namespace core {
 
 class Shader {
 public:
+    enum Type {
+        Vertex,
+        Fragment,
+        Geometry,
+        TessellationControl,
+        TessellationEvaluation,
+    };
+public:
 	Shader(openglEnum type, std::string const& filename)
-		: m_Type(type)
+		: _type(type)
 		, _filename(filename) {
 	}
 
@@ -20,7 +28,7 @@ public:
 private:
 	std::string _filename;
 	std::string _source;
-	openglEnum m_Type;
+	openglEnum _type;
 	openglUint _shader;
 };
 

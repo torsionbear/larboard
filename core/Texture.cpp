@@ -49,10 +49,7 @@ auto Texture::SendToCardImpl() -> bool {
 	glBindTexture(GL_TEXTURE_2D, 0);
 	// todo: wrap glGetError(), in release code, calling it only once per frame untill error happpens
 	auto error = glGetError();
-	if (GL_NO_ERROR != error) {
-		exit(EXIT_FAILURE);
-		return false;
-	}
+    assert(GL_NO_ERROR == error);
 	return true;
 }
 

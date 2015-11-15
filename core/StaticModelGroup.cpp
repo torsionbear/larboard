@@ -118,7 +118,7 @@ auto StaticModelGroup::GetTexture(std::string const & textureName) const -> Text
 
 auto StaticModelGroup::GetDefaultShaderProgram() -> ShaderProgram * {
     if (_defaultShaderProgram == nullptr) {
-        _defaultShaderProgram = CreateShaderProgram("shader/default.vert", "shader/default.frag");
+        _defaultShaderProgram = CreateShaderProgram("shader/default_v.shader", "shader/default_f.shader");
     }
     return _defaultShaderProgram;
 }

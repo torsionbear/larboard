@@ -103,7 +103,7 @@
     <ClCompile Include="SkyBox.cpp" />
     <ClCompile Include="SpotLight.cpp" />
     <ClCompile Include="StaticModelGroup.cpp" />
-    <ClCompile Include="terrain.cpp" />
+    <ClCompile Include="Terrain.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="TextureArray.cpp" />
@@ -137,7 +137,7 @@
     <ClInclude Include="Skybox.h" />
     <ClInclude Include="SpotLight.h" />
     <ClInclude Include="StaticModelGroup.h" />
-    <ClInclude Include="terrain.h" />
+    <ClInclude Include="Terrain.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="TextureArray.h" />

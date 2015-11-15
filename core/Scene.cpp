@@ -54,8 +54,8 @@ auto Scene::GetActiveCamera() const -> Camera * {
 	return _cameras.front().get();
 }
 
-auto Scene::CreateTerrain(Float32 tileSize, Vector2i mapOrigin, Vector2i mapSize, vector<string> && diffuseMapFiles, string heightMap) -> void {
-    _terrain = make_unique<Terrain>(tileSize, mapOrigin, mapSize, move(diffuseMapFiles), heightMap);
+auto Scene::CreateTerrain(vector<string> && diffuseMapFiles, string const& heightMap) -> void {
+    _terrain = make_unique<Terrain>(move(diffuseMapFiles), heightMap);
 }
 
 auto Scene::CreateSkyBox(std::array<std::string, 6>&& filenames) -> void {

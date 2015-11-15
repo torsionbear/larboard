@@ -21,7 +21,7 @@ private:
 private:
     std::unique_ptr<BvhNode> _root = nullptr;
     openglUint _vao;
-    ShaderProgram _shaderProgram = ShaderProgram{ "shader/aabb.vert", "shader/aabb.frag" };
+    ShaderProgram _shaderProgram = ShaderProgram{ "shader/aabb_v.shader", "shader/aabb_f.shader" };
     int _indexCount = 0; // todo: get rid of this mess
 };
 

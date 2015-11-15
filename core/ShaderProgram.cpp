@@ -4,6 +4,8 @@
 
 #include "Texture.h"
 
+using std::string;
+
 namespace core {
 
 auto swap(ShaderProgram & first, ShaderProgram & second) -> void {
@@ -12,7 +14,7 @@ auto swap(ShaderProgram & first, ShaderProgram & second) -> void {
 	swap(first._shaders, second._shaders);
 }
 
-ShaderProgram::ShaderProgram(std::string const& vertexShaderFile, std::string const& fragmentShaderFile)
+ShaderProgram::ShaderProgram(string const& vertexShaderFile, string const& fragmentShaderFile)
 	: _program(0)
 	, _shaders{ Shader{ GL_VERTEX_SHADER, vertexShaderFile }, Shader{ GL_FRAGMENT_SHADER, fragmentShaderFile } } {
 }
@@ -29,6 +31,7 @@ auto ShaderProgram::operator=(ShaderProgram && other) -> ShaderProgram & {
 ShaderProgram::~ShaderProgram() = default;
 
 auto ShaderProgram::LoadImpl() -> bool {
+    assert(!_shaders.empty());
 	for (auto& shader : _shaders) {
 		if (!shader.Load()) {
 			return false;
@@ -58,7 +61,7 @@ auto ShaderProgram::SendToCardImpl() -> bool {
 
 		GLchar* log = new GLchar[len + 1];
 		glGetProgramInfoLog(_program, len, &len, log);
-		MessageLogger::Log(MessageLogger::Error, "Shader linking failed: " + std::string{ log });
+		MessageLogger::Log(MessageLogger::Error, "Shader linking failed: " + string{ log });
 		delete[] log;
 		_shaders.clear();
 		return false;
@@ -73,46 +76,49 @@ auto ShaderProgram::SendToCardImpl() -> bool {
 	//glUniformBlockBinding(_program, glGetUniformBlockIndex(_program, "Transform"), GetIndex(UniformBufferType::Transform));
 	//glUniformBlockBinding(_program, glGetUniformBlockIndex(_program, "Material"), GetIndex(UniformBufferType::Material));
 
-	return true;
+    return true;
 }
 auto ShaderProgram::FreeFromCardImpl() -> bool {
 	glDeleteProgram(_program);
 	return true;
 }
 
-auto ShaderProgram::SetVertexShader(std::string const& filename) -> void {
-	_shaders[0] = Shader{ GL_VERTEX_SHADER, filename };
+auto ShaderProgram::SetVertexShader(string const& filename) -> void {
+	_shaders.push_back(Shader{ GL_VERTEX_SHADER, filename });
 }
 
-auto ShaderProgram::SetFragmentShader(std::string const& filename) -> void {
-	_shaders[1] = Shader{ GL_VERTEX_SHADER, filename };
+auto ShaderProgram::SetFragmentShader(string const& filename) -> void {
+	_shaders.push_back(Shader{ GL_FRAGMENT_SHADER, filename });
 }
 
-auto ShaderProgram::AddShader(std::string const& filename) -> void {
-	throw "not implemented yet";
+auto ShaderProgram::SetTessellationControlShader(string const & filename) -> void {
+    _shaders.push_back(Shader{ GL_TESS_CONTROL_SHADER, filename });
+}
+
+auto ShaderProgram::SetTessellationEvaluationShader(string const & filename) -> void {
+    _shaders.push_back(Shader{ GL_TESS_EVALUATION_SHADER, filename });
 }
 
 auto ShaderProgram::Use() const -> void {
 	assert(status::SentToCard == _status);
-
 	glUseProgram(_program);
 
-	// Do all the glUniform1i calls after loading the program, then never again.
-	// You only need to call it once to tell the program which texture image unit each sampler uses.
-	// After you've done that all you need to do is bind textures to the right texture image units.
-	auto location = -1;
-	if ((location = glGetUniformLocation(_program, "textures.diffuseMap")) != -1) {
-		glUniform1i(location, TextureUsage::DiffuseMap);
-	}
-	if ((location = glGetUniformLocation(_program, "textures.specularMap")) != -1) {
-		glUniform1i(location, TextureUsage::SpecularMap);
-	}
-	if ((location = glGetUniformLocation(_program, "textures.normalMap")) != -1) {
-		glUniform1i(location, TextureUsage::NormalMap);
-	}
-	if ((location = glGetUniformLocation(_program, "textures.parallaxMap")) != -1) {
-		glUniform1i(location, TextureUsage::ParallaxMap);
-	}
+    // Do all the glUniform1i calls after loading the program, then never again.
+    // You only need to call it once to tell the program which texture image unit each sampler uses.
+    // After you've done that all you need to do is bind textures to the right texture image units.
+    auto location = -1;
+    if ((location = glGetUniformLocation(_program, "textures.diffuseMap")) != -1) {
+        glUniform1i(location, TextureUsage::DiffuseMap);
+    }
+    if ((location = glGetUniformLocation(_program, "textures.specularMap")) != -1) {
+        glUniform1i(location, TextureUsage::SpecularMap);
+    }
+    if ((location = glGetUniformLocation(_program, "textures.normalMap")) != -1) {
+        glUniform1i(location, TextureUsage::NormalMap);
+    }
+    if ((location = glGetUniformLocation(_program, "textures.parallaxMap")) != -1) {
+        glUniform1i(location, TextureUsage::ParallaxMap);
+    }
     if ((location = glGetUniformLocation(_program, "textures.heightMap")) != -1) {
         glUniform1i(location, TextureUsage::HeightMap);
     }

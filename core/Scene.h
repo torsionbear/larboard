@@ -56,7 +56,10 @@ public:
     auto GetStaticModelGroup() -> StaticModelGroup & {
         return *_staticModelGroup;
     }
-    auto CreateTerrain(Float32 tileSize, Vector2i mapOrigin, Vector2i mapSize, std::vector<std::string> && diffuseMapFiles, std::string heightMap) -> void;
+    auto GetTerrain() -> Terrain * {
+        return _terrain.get();
+    }
+    auto CreateTerrain(std::vector<std::string> && diffuseMapFiles, std::string const& heightMap) -> void;
     auto CreateSkyBox(std::array<std::string, 6> && filenames) -> void;
     auto Picking(Ray & ray) -> bool;
 

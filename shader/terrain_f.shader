@@ -3,7 +3,7 @@
 struct Textures {
 	sampler2D heightMap;
 	sampler2DArray diffuseTextureArray;
-}; 
+};
 
 layout (std140, row_major, binding = 0) uniform Camera {
 	mat4 viewProjectTransform;
@@ -23,16 +23,15 @@ layout (std140, row_major, binding = 0) uniform Camera {
 
 uniform Textures textures;
 
-in vec4 fragPosition;
+//in vec4 fragPosition;
 //in vec4 fragNormal;
-in vec3 fragTexCoord;
+in vec3 teDiffuseMapTexCoord;
 layout (location = 0)  out vec4 fragColor;
 
 void main()
 {
-	//vec4 viewDirection = normalize(camera.viewPosition - fragPosition);
-	vec4 fragColor0 = texture(textures.diffuseTextureArray, fragTexCoord - vec3(0, 0, 0.5));
-	vec4 fragColor1 = texture(textures.diffuseTextureArray, fragTexCoord + vec3(0, 0, 0.5));
-	float interp = fract(fragTexCoord.z);
+	vec4 fragColor0 = texture(textures.diffuseTextureArray, teDiffuseMapTexCoord - vec3(0, 0, 0.5));
+	vec4 fragColor1 = texture(textures.diffuseTextureArray, teDiffuseMapTexCoord + vec3(0, 0, 0.5));
+	float interp = fract(teDiffuseMapTexCoord.z);
 	fragColor = fragColor0 * (1 - interp) + fragColor1 * interp;
 }

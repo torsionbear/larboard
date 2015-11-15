@@ -26,6 +26,7 @@ auto inline GetIndex(UniformBufferType t) {
 class ShaderProgram : public Resource {
 public:
 	friend auto swap(ShaderProgram & first, ShaderProgram & second) -> void;
+    ShaderProgram() = default;
 	ShaderProgram(std::string const& vertexShaderFile, std::string const& fragmentShaderFile);
 	ShaderProgram(ShaderProgram const &) = delete;
 	ShaderProgram(ShaderProgram && other);
@@ -42,7 +43,8 @@ private:
 public:
 	auto SetVertexShader(std::string const& filename) -> void;
 	auto SetFragmentShader(std::string const& filename) -> void;
-	auto AddShader(std::string const& filename) -> void;
+    auto SetTessellationControlShader(std::string const& filename) -> void;
+    auto SetTessellationEvaluationShader(std::string const& filename) -> void;
 	auto Use() const -> void;
 	auto GetHandler() -> openglUint;
 	

@@ -15,7 +15,7 @@ class SkyBox {
 public:
     explicit SkyBox(std::array<std::string, 6> && filenames)
         : _cubeMap(std::make_unique<CubeMap>(move(filenames)))
-        , _shaderProgram(std::make_unique<ShaderProgram>("shader/skybox.vert", "shader/skybox.frag"))
+        , _shaderProgram(std::make_unique<ShaderProgram>("shader/skybox_v.shader", "shader/skybox_f.shader"))
         , _vertexData{
         Vector3f{ -1, 1, -1 },
         Vector3f{ -1, -1, -1 },

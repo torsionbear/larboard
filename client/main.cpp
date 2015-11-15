@@ -42,7 +42,11 @@ auto LoadScene1() -> std::unique_ptr<core::Scene> {
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square2/square2.x3d", scene.get()).Read();
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
     scene->CreateSkyBox(std::array<std::string, 6>{"media/skybox/mt_rt.png", "media/skybox/mt_lf.png", "media/skybox/mt_ft.png", "media/skybox/mt_bk.png", "media/skybox/mt_up.png", "media/skybox/mt_dn.png", });
-    scene->CreateTerrain(2, core::Vector2i{ -50, -50 }, core::Vector2i{ 100, 100 }, { "media/grass.png", "media/dirt.png", "media/rock.png" }, "media/terrain/heightMap.png");
+    scene->CreateTerrain({ "media/grass.png", "media/dirt.png", "media/rock.png" }, "media/terrain/heightMap.png");
+    scene->GetTerrain()->SetTileSize(10);
+    scene->GetTerrain()->SetHeightMapOrigin(core::Vector2i{ -5, -5 });
+    scene->GetTerrain()->SetHeightMapSize(core::Vector2i{ 10, 10 });
+    scene->GetTerrain()->SetDiffuseMapSize(core::Vector2i{ 2, 2 });
     return move(scene);
 }
 
@@ -60,7 +64,7 @@ auto LoadScene3() -> std::unique_ptr<core::Scene> {
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.0f, 0.0f, 0.0f, 1 });
     scene->CreateSkyBox(std::array<std::string, 6>{"media/skybox/RT.png", "media/skybox/LF.png", "media/skybox/FT.png", "media/skybox/BK.png", "media/skybox/UP.png", "media/skybox/DN.png", });
 
-    auto plainProgram = scene->GetStaticModelGroup().CreateShaderProgram("shader/noTexture.vert", "shader/noTexture.frag");
+    auto plainProgram = scene->GetStaticModelGroup().CreateShaderProgram("shader/noTexture_v.shader", "shader/noTexture_f.shader");
     for (auto & shape : scene->GetStaticModelGroup().GetShapes()) {
         shape->SetShaderProgram(plainProgram);
     }

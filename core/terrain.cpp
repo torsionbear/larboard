@@ -6,15 +6,13 @@ using std::string;
 
 namespace core {
 
-Terrain::Terrain(Float32 tileSize, Vector2i mapOrigin, Vector2i mapSize, vector<string> && diffuseMapFiles, string heightMap)
-    : _mapOrigin(mapOrigin)
-    , _mapSize(mapSize)
-    , _tileSize(tileSize)
-    , _shaderProgram("shader/terrain.vert", "shader/terrain.frag")
-    , _tileVertexData{ Vector2f{ 0, 0 }, Vector2f{ tileSize, 0 }, Vector2f{ tileSize, tileSize }, Vector2f{ 0, tileSize } } 
-    , _indexData{ 0, 1, 3, 1, 2, 3 }
-    , _diffuseMap(move(diffuseMapFiles), TextureUsage::DiffuseTextureArray)
+Terrain::Terrain(vector<string> && diffuseMapFiles, string heightMap)
+    : _diffuseMap(move(diffuseMapFiles), TextureUsage::DiffuseTextureArray)
     , _heightMap(heightMap, TextureUsage::HeightMap) {
+    _shaderProgram.SetVertexShader("shader/terrain_v.shader");
+    _shaderProgram.SetFragmentShader("shader/terrain_f.shader");
+    _shaderProgram.SetTessellationControlShader("shader/terrain_tc.shader");
+    _shaderProgram.SetTessellationEvaluationShader("shader/terrain_te.shader");
 }
 
 auto Terrain::PrepareForDraw(Float32 sightDistance) -> void {
@@ -25,11 +23,13 @@ auto Terrain::PrepareForDraw(Float32 sightDistance) -> void {
 
     glGenBuffers(1, &_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, _vbo);
-    glBufferData(GL_ARRAY_BUFFER, _tileVertexData.size() * sizeof(Vector2f), _tileVertexData.data(), GL_STATIC_DRAW);
+    auto tileVertexData = std::array<Vector2f, 4>{ Vector2f{ 0, 0 }, Vector2f{ _tileSize, 0 }, Vector2f{ _tileSize, _tileSize }, Vector2f{ 0, _tileSize } };
+    glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(Vector2f), tileVertexData.data(), GL_STATIC_DRAW);
 
     glGenBuffers(1, &_veo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _veo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, _indexData.size() * sizeof(unsigned int), _indexData.data(), GL_STATIC_DRAW);
+    auto indexData = std::array<unsigned int, 6>{ 0, 1, 3, 1, 2, 3 };
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indexData.data(), GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vector2f), (GLvoid*)0);
     glEnableVertexAttribArray(0);
@@ -47,16 +47,18 @@ auto Terrain::Draw() -> void {
     //uniforms
     glUniform1i(glGetUniformLocation(_shaderProgram.GetHandler(), "tileCountInSight"), _tileCountInSight);
     glUniform1i(glGetUniformLocation(_shaderProgram.GetHandler(), "tileSize"), _tileSize);
-    glUniform2iv(glGetUniformLocation(_shaderProgram.GetHandler(), "mapOrigin"), 1, _mapOrigin.data());
-    glUniform2iv(glGetUniformLocation(_shaderProgram.GetHandler(), "mapSize"), 1, _mapSize.data());
+    glUniform2iv(glGetUniformLocation(_shaderProgram.GetHandler(), "heightMapOrigin"), 1, _heightMapOrigin.data());
+    glUniform2iv(glGetUniformLocation(_shaderProgram.GetHandler(), "heightMapSize"), 1, _heightMapSize.data());
+    glUniform2iv(glGetUniformLocation(_shaderProgram.GetHandler(), "diffuseMapOrigin"), 1, _diffuseMapOrigin.data());
+    glUniform2iv(glGetUniformLocation(_shaderProgram.GetHandler(), "diffuseMapSize"), 1, _diffuseMapSize.data());
     auto error = glGetError();
 
     _diffuseMap.Use();
     _heightMap.Use();
     glBindVertexArray(_vao);
+    glPatchParameteri(GL_PATCH_VERTICES, 3);
+    glDrawElementsInstanced(GL_PATCHES, 6, GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(0), 4 *_tileCountInSight * _tileCountInSight);
 
-    glDrawElementsInstanced(GL_TRIANGLES, _indexData.size(), GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(0), 4 *_tileCountInSight * _tileCountInSight);
-    //glDrawElements(GL_TRIANGLES, _indexData.size(), GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(0));
     error = glGetError();
 }
 

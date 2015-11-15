@@ -22,7 +22,7 @@ auto Shader::Unload() -> void {
 	_source.clear();
 }
 auto Shader::Compile() -> GLuint {
-	_shader = glCreateShader(m_Type);
+	_shader = glCreateShader(_type);
 	char const* src = _source.c_str();
 	glShaderSource(_shader, 1, &src, nullptr);
 	glCompileShader(_shader);
