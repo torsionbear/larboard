@@ -61,13 +61,24 @@ auto LoadScene2() -> std::unique_ptr<core::Scene> {
 auto LoadScene3() -> std::unique_ptr<core::Scene> {
     auto scene = make_unique<core::Scene>();
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_00.x3d", scene.get()).Read();
-    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.0f, 0.0f, 0.0f, 1 });
-    scene->CreateSkyBox(std::array<std::string, 6>{"media/skybox/RT.png", "media/skybox/LF.png", "media/skybox/FT.png", "media/skybox/BK.png", "media/skybox/UP.png", "media/skybox/DN.png", });
 
     auto plainProgram = scene->GetStaticModelGroup().CreateShaderProgram("shader/noTexture_v.shader", "shader/noTexture_f.shader");
     for (auto & shape : scene->GetStaticModelGroup().GetShapes()) {
         shape->SetShaderProgram(plainProgram);
     }
+
+    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.0f, 0.0f, 0.0f, 1 });
+    scene->CreateSkyBox(std::array<std::string, 6>{"media/skybox/RT.png", "media/skybox/LF.png", "media/skybox/FT.png", "media/skybox/BK.png", "media/skybox/UP.png", "media/skybox/DN.png", });
+
+    scene->CreateTerrain({ "media/terrain/grass.png", "media/terrain/dirt.png", "media/terrain/rock.png" }, "media/terrain/heightMap.png");
+    scene->GetTerrain()->SetTileSize(20);
+    scene->GetTerrain()->SetHeightMapOrigin(core::Vector2i{ -33, -28 });
+    scene->GetTerrain()->SetHeightMapSize(core::Vector2i{ 60, 60 });
+    scene->GetTerrain()->SetDiffuseMapSize(core::Vector2i{ 20, 20 });
+    auto terrainSpecialTileScene = make_unique<core::Scene>();
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_01_terrainx3d.x3d", terrainSpecialTileScene.get()).Read();
+
+
     return move(scene);
 }
 
@@ -86,7 +97,7 @@ int main()
         exit(EXIT_FAILURE);
     }
 
-	auto scene = LoadScene1();
+	auto scene = LoadScene3();
 	scene->PrepareForDraw();
 
 	auto lastX = 0.0f;

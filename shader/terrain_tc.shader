@@ -28,9 +28,9 @@ out vec2 tcDiffuseMapTexCoord[];
 
 float CalculateOuterTessLevel(vec4 vertex0, vec4 vertex1) {
 	float edgeLength = length(vertex0 - vertex1);
-	float maxDistance = sightDistance;
+	float distanceFactor = sightDistance / 60;
 	float distance0 = length(2 * camera.viewPosition - vertex0 - vertex1) / 2;
-	return max(edgeLength * maxDistance / 5 / distance0, 1.0);
+	return max(edgeLength * 8 / distance0, 1.0);
 }
 void main() {
 	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;

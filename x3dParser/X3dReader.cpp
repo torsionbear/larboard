@@ -187,7 +187,7 @@ auto X3dReader::Read(ImageTexture const& imageTexture) -> core::Texture * {
 
 auto X3dReader::Read(Viewpoint const& viewpoint) -> Camera * {
 	auto ret = _scene->CreateCamera();
-	ret->SetPerspective(1, viewpoint.GetFieldOfView(), 0.1f, 200.0f);
+	ret->SetPerspective(1, viewpoint.GetFieldOfView(), 0.1f, 1000.0f);
 	return ret;
 }
 

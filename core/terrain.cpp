@@ -26,14 +26,26 @@ auto Terrain::PrepareForDraw(Float32 sightDistance) -> void {
     glBindBuffer(GL_ARRAY_BUFFER, _vbo);
     auto tileVertexData = std::array<Vector2f, 4>{ Vector2f{ 0, 0 }, Vector2f{ _tileSize, 0 }, Vector2f{ _tileSize, _tileSize }, Vector2f{ 0, _tileSize } };
     glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(Vector2f), tileVertexData.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vector2f), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glGenBuffers(1, &_veo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _veo);
     auto indexData = std::array<unsigned int, 6>{ 0, 1, 3, 1, 2, 3 };
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indexData.data(), GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vector2f), (GLvoid*)0);
-    glEnableVertexAttribArray(0);
+    glGenBuffers(1, &_vio);
+    glBindBuffer(GL_ARRAY_BUFFER, _vio);
+    auto tileCountUpperBound = (_sightDistance / _tileSize) * 2;
+    tileCountUpperBound *= tileCountUpperBound;
+    glBufferData(GL_ARRAY_BUFFER, tileCountUpperBound * sizeof(Vector2i), nullptr, GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(1, 2, GL_INT, GL_FALSE, sizeof(Vector2i), (GLvoid*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribDivisor(1, 1);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glBindVertexArray(0);
 
@@ -47,6 +59,15 @@ auto Terrain::Draw(Camera const* camera) -> void {
     auto coverage = GetViewFrustumCoverage(camera);
     auto gridOrigin = Vector2i{ static_cast<int>(floor(coverage[0](0) / _tileSize)), static_cast<int>(floor(coverage[0](1) / _tileSize)) };
     auto gridSize = Vector2i{ static_cast<int>(floor(coverage[1](0) / _tileSize)) + 1, static_cast<int>(floor(coverage[1](1) / _tileSize)) + 1 } - gridOrigin;
+    auto tileCoord = vector<Vector2i>{};
+    for (auto i = 0; i < gridSize(0); ++i) {
+        for (auto j = 0; j < gridSize(1); ++j) {
+            tileCoord.push_back(gridOrigin + Vector2i{i, j});
+        }
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, _vio);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vector2i) * tileCoord.size(), tileCoord.data());
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     _shaderProgram.Use();
     //uniforms

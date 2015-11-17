@@ -46,6 +46,7 @@ private:
     openglUint _vao;
     openglUint _vbo;
     openglUint _veo;
+    openglUint _vio;
 };
 
 }

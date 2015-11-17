@@ -25,6 +25,7 @@ uniform ivec2 diffuseMapSize;
 uniform Textures textures;
 
 layout(location = 0) in vec2 position;
+layout(location = 1) in vec2 tileCoord;
 //layout(location = 2) in vec2 vertTexCoord;
 
 //out vec4 vPosition;
@@ -32,15 +33,15 @@ layout(location = 0) in vec2 position;
 out vec2 vHeightMapTexCoord;
 out vec2 vDiffuseMapTexCoord;
 
-ivec2 GetTileCoord() {
-	int x = gl_InstanceID % gridWidth;
-	int y = gl_InstanceID / gridWidth;
-	return gridOrigin + ivec2(x, y);
-}
+//ivec2 GetTileCoord() {
+//	int x = gl_InstanceID % gridWidth;
+//	int y = gl_InstanceID / gridWidth;
+//	return gridOrigin + ivec2(x, y);
+//}
 
 void main()
 {
-	ivec2 tileCoord = GetTileCoord();
+	//ivec2 tileCoord = GetTileCoord();
 	vHeightMapTexCoord = (vec2(tileCoord - heightMapOrigin) + position / tileSize) / vec2(heightMapSize);
 	vDiffuseMapTexCoord = (vec2(tileCoord - diffuseMapOrigin) + position / tileSize) / vec2(diffuseMapSize);
     gl_Position = vec4(position + tileCoord * tileSize, 0, 1);
