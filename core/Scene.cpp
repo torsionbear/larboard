@@ -138,7 +138,7 @@ auto Scene::Draw() -> void {
         _skyBox->Draw();
     }
     if (nullptr != _terrain) {
-        _terrain->Draw();
+        _terrain->Draw(_cameras.front().get());
     }
     _staticModelGroup->Draw();
     if (_drawBvh) {

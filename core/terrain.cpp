@@ -1,8 +1,10 @@
 #include "terrain.h"
 
 #include <GL/glew.h>
+#include <array>
 
 using std::string;
+using std::array;
 
 namespace core {
 
@@ -16,8 +18,7 @@ Terrain::Terrain(vector<string> && diffuseMapFiles, string heightMap)
 }
 
 auto Terrain::PrepareForDraw(Float32 sightDistance) -> void {
-    _tileCountInSight = sightDistance / _tileSize;
-
+    _sightDistance = sightDistance;
     glGenVertexArrays(1, &_vao);
     glBindVertexArray(_vao);
 
@@ -42,11 +43,18 @@ auto Terrain::PrepareForDraw(Float32 sightDistance) -> void {
     auto error = glGetError();
 }
 
-auto Terrain::Draw() -> void {
+auto Terrain::Draw(Camera const* camera) -> void {
+    auto coverage = GetViewFrustumCoverage(camera);
+    auto gridOrigin = Vector2i{ static_cast<int>(floor(coverage[0](0) / _tileSize)), static_cast<int>(floor(coverage[0](1) / _tileSize)) };
+    auto gridSize = Vector2i{ static_cast<int>(floor(coverage[1](0) / _tileSize)) + 1, static_cast<int>(floor(coverage[1](1) / _tileSize)) + 1 } - gridOrigin;
+
     _shaderProgram.Use();
     //uniforms
-    glUniform1i(glGetUniformLocation(_shaderProgram.GetHandler(), "tileCountInSight"), _tileCountInSight);
-    glUniform1i(glGetUniformLocation(_shaderProgram.GetHandler(), "tileSize"), _tileSize);
+    glUniform1f(glGetUniformLocation(_shaderProgram.GetHandler(), "tileSize"), _tileSize);
+    glUniform1f(glGetUniformLocation(_shaderProgram.GetHandler(), "sightDistance"), _sightDistance);
+    glUniform2iv(glGetUniformLocation(_shaderProgram.GetHandler(), "gridOrigin"), 1, gridOrigin.data());
+    glUniform1i(glGetUniformLocation(_shaderProgram.GetHandler(), "gridWidth"), gridSize(0));
+
     glUniform2iv(glGetUniformLocation(_shaderProgram.GetHandler(), "heightMapOrigin"), 1, _heightMapOrigin.data());
     glUniform2iv(glGetUniformLocation(_shaderProgram.GetHandler(), "heightMapSize"), 1, _heightMapSize.data());
     glUniform2iv(glGetUniformLocation(_shaderProgram.GetHandler(), "diffuseMapOrigin"), 1, _diffuseMapOrigin.data());
@@ -57,9 +65,47 @@ auto Terrain::Draw() -> void {
     _heightMap.Use();
     glBindVertexArray(_vao);
     glPatchParameteri(GL_PATCH_VERTICES, 3);
-    glDrawElementsInstanced(GL_PATCHES, 6, GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(0), 4 *_tileCountInSight * _tileCountInSight);
+    glDrawElementsInstanced(GL_PATCHES, 6, GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(0), gridSize(0) * gridSize(1));
 
     error = glGetError();
+}
+
+auto Terrain::GetViewFrustumCoverage(Camera const * camera)->std::array<Vector2f, 2>
+{
+    auto near = camera->GetNearPlane();
+    auto far = camera->GetFarPlane();
+    auto halfWidth = camera->GetHalfWidth();
+    auto halfHeight = camera->GetHalfHeight();
+    auto farHalfWidth = halfWidth * far / near;
+    auto farHalfHeight = halfHeight * far / near;
+    auto transform = camera->GetTransform();
+    auto viewFrustumVertex = array<Point4f, 8>{
+        transform * Point4f{ -halfWidth, -halfHeight, -near, 1 },
+            transform * Point4f{ -halfWidth, halfHeight, -near, 1 },
+            transform * Point4f{ halfWidth, -halfHeight, -near, 1 },
+            transform * Point4f{ halfWidth, halfHeight, -near, 1 },
+            transform * Point4f{ -farHalfWidth, -farHalfHeight, -far, 1 },
+            transform * Point4f{ -farHalfWidth, farHalfHeight, -far, 1 },
+            transform * Point4f{ farHalfWidth, -farHalfHeight, -far, 1 },
+            transform * Point4f{ farHalfWidth, farHalfHeight, -far, 1 },
+    };
+    auto lowerLeft = Vector2f{ std::numeric_limits<Float32>::max(), std::numeric_limits<Float32>::max() };
+    auto upperRight = Vector2f{ std::numeric_limits<Float32>::lowest(), std::numeric_limits<Float32>::lowest() };
+    for (auto const& p : viewFrustumVertex) {
+        if (p(0) < lowerLeft(0)) {
+            lowerLeft(0) = p(0);
+        }
+        if (p(0) > upperRight(0)) {
+            upperRight(0) = p(0);
+        }
+        if (p(1) < lowerLeft(1)) {
+            lowerLeft(1) = p(1);
+        }
+        if (p(1) > upperRight(1)) {
+            upperRight(1) = p(1);
+        }
+    }
+    return array<Vector2f, 2>{lowerLeft, upperRight};
 }
 
 }

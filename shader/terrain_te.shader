@@ -24,7 +24,7 @@ void main() {
 	vec2 heightMapTexCoord = tcHeightMapTexCoord[0] * gl_TessCoord.x + tcHeightMapTexCoord[1] * gl_TessCoord.y + tcHeightMapTexCoord[2] * gl_TessCoord.z;
 	float height = texture(textures.heightMap, heightMapTexCoord).x * 20 - 5;
 	vec2 diffuseMapTexCoord = tcDiffuseMapTexCoord[0] * gl_TessCoord.x + tcDiffuseMapTexCoord[1] * gl_TessCoord.y + tcDiffuseMapTexCoord[2] * gl_TessCoord.z;
-	teDiffuseMapTexCoord = vec3(diffuseMapTexCoord, (height + 10) / 10);
+	teDiffuseMapTexCoord = vec3(diffuseMapTexCoord, (height + 8) / 10);
 	
 	vec4 pos = gl_in[0].gl_Position * gl_TessCoord.x + gl_in[1].gl_Position * gl_TessCoord.y + gl_in[2].gl_Position * gl_TessCoord.z;
 	pos.z = height;

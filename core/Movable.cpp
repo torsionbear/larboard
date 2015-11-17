@@ -113,7 +113,7 @@ auto Movable::GetRotationInverse() const -> Matrix4x4f {
     return rotation;
 }
 
-auto Movable::GetMatrix() const -> Matrix4x4f const& {
+auto Movable::GetTransform() const -> Matrix4x4f const& {
 	return _sceneNode->_transform;
 }
 

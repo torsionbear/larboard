@@ -24,7 +24,7 @@ auto Camera::GetProjectionTransform() const -> Matrix4x4f const & {
 
 auto Camera::GetRayTo(Vector2f windowCoordinate) const -> Ray {
     auto ret = Ray{};
-    ret.origin = GetMatrix() * Point4f{
+    ret.origin = GetTransform() * Point4f{
         (1 - windowCoordinate(0)) * _lowerLeft(0) + windowCoordinate(0) * _upperRight(0),
         (1 - windowCoordinate(1)) * _upperRight(1) + windowCoordinate(1) * _lowerLeft(1),
         -_lowerLeft(2),

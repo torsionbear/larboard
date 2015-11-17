@@ -15,7 +15,7 @@ auto Shape::GetAabb() -> Aabb const& {
     if (_aabb == nullptr) {
         _aabb = make_unique<Aabb>();
         for (auto const& vertex : _mesh->GetVertex()) {
-            auto transformedVertex = _model->GetMatrix() * Point4f { vertex.coord(0), vertex.coord(1), vertex.coord(2), 1.0f };
+            auto transformedVertex = _model->GetTransform() * Point4f { vertex.coord(0), vertex.coord(1), vertex.coord(2), 1.0f };
             _aabb->Expand(transformedVertex);
         }
     }

@@ -70,7 +70,7 @@ public:
 
 	auto GetPosition() const -> Point4f;
     auto GetRotationInverse() const -> Matrix4x4f;
-	auto GetMatrix() const->Matrix4x4f const&;
+	auto GetTransform() const -> Matrix4x4f const&;
 	auto GetRigidBodyMatrixInverse() const->Matrix4x4f;
 	auto GetNormalTransform() const -> Matrix4x4f;
 

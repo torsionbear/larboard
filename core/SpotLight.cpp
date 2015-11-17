@@ -30,7 +30,7 @@ auto SpotLight::GetShaderData() -> ShaderData {
 	return ShaderData{
 		_color,
 		GetPosition(),
-		GetMatrix() * _direction,
+        GetTransform() * _direction,
 		Vector4f{ _attenuation(0), _attenuation(1), _attenuation(2), _radius },
 		_beamWidth,
 		_cutOffAngle,

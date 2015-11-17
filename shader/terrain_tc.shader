@@ -9,10 +9,12 @@ layout (std140, row_major, binding = 0) uniform Camera {
 
 layout(vertices = 3) out;
 
-uniform int tileCountInSight;
-uniform int tileSize;
-uniform ivec2 mapOrigin;
-uniform ivec2 mapSize;
+uniform float tileSize;
+uniform float sightDistance;
+uniform ivec2 gridOrigin;
+uniform int gridWidth;
+uniform ivec2 heightMapOrigin;
+uniform ivec2 heightMapSize;
 uniform ivec2 diffuseMapOrigin;
 uniform ivec2 diffuseMapSize;
 
@@ -26,7 +28,7 @@ out vec2 tcDiffuseMapTexCoord[];
 
 float CalculateOuterTessLevel(vec4 vertex0, vec4 vertex1) {
 	float edgeLength = length(vertex0 - vertex1);
-	float maxDistance = tileCountInSight * tileSize;
+	float maxDistance = sightDistance;
 	float distance0 = length(2 * camera.viewPosition - vertex0 - vertex1) / 2;
 	return max(edgeLength * maxDistance / 5 / distance0, 1.0);
 }
