@@ -10,6 +10,11 @@ namespace core {
 
 class Mesh{
 public:
+    enum DrawMode {
+        triangles,
+        patches,
+    };
+public:
 	friend void swap(Mesh&, Mesh&);
     Mesh() = default;
     Mesh(std::vector<Vertex> && vertexData, std::vector<unsigned int> && index);
@@ -34,7 +39,7 @@ public:
 	auto SetIndexOffset(openglUint indexOffset) -> void {
 		_indexOffset = indexOffset;
 	}
-	auto Draw() const -> void;
+	auto Draw(DrawMode drawMode = triangles) const -> void;
 private:
 	std::vector<Vertex> _vertexes;
 	std::vector<unsigned int> _index;

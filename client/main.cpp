@@ -31,7 +31,7 @@ auto UpdateScene(core::Scene & scene) -> void {
 
 auto LoadScene0() -> std::unique_ptr<core::Scene> {
     auto scene = make_unique<core::Scene>();
-	x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square/square.x3d", scene.get()).Read();
+	x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square/square.x3d").Read(scene.get());
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
     scene->CreateSkyBox(std::array<std::string, 6>{"media/skybox/RT.png", "media/skybox/LF.png", "media/skybox/FT.png", "media/skybox/BK.png", "media/skybox/UP.png", "media/skybox/DN.png", });
     return move(scene);
@@ -39,7 +39,7 @@ auto LoadScene0() -> std::unique_ptr<core::Scene> {
 
 auto LoadScene1() -> std::unique_ptr<core::Scene> {
     auto scene = make_unique<core::Scene>();
-    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square2/square2.x3d", scene.get()).Read();
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square2/square2.x3d").Read(scene.get());
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
     scene->CreateSkyBox(std::array<std::string, 6>{"media/skybox/mt_rt.png", "media/skybox/mt_lf.png", "media/skybox/mt_ft.png", "media/skybox/mt_bk.png", "media/skybox/mt_up.png", "media/skybox/mt_dn.png", });
     scene->CreateTerrain({ "media/terrain/grass.png", "media/terrain/dirt.png", "media/terrain/rock.png" }, "media/terrain/heightMap.png");
@@ -52,7 +52,7 @@ auto LoadScene1() -> std::unique_ptr<core::Scene> {
 
 auto LoadScene2() -> std::unique_ptr<core::Scene> {
     auto scene = make_unique<core::Scene>();
-    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/8/8.x3d", scene.get()).Read();
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/8/8.x3d").Read(scene.get());
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
     scene->CreateSkyBox(std::array<std::string, 6>{"media/skybox/RT.png", "media/skybox/LF.png", "media/skybox/FT.png", "media/skybox/BK.png", "media/skybox/UP.png", "media/skybox/DN.png", });
 	return move(scene);
@@ -60,24 +60,24 @@ auto LoadScene2() -> std::unique_ptr<core::Scene> {
 
 auto LoadScene3() -> std::unique_ptr<core::Scene> {
     auto scene = make_unique<core::Scene>();
-    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_00.x3d", scene.get()).Read();
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_01_house.x3d").Read(scene.get());
 
     auto plainProgram = scene->GetStaticModelGroup().CreateShaderProgram("shader/noTexture_v.shader", "shader/noTexture_f.shader");
     for (auto & shape : scene->GetStaticModelGroup().GetShapes()) {
         shape->SetShaderProgram(plainProgram);
     }
 
-    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.0f, 0.0f, 0.0f, 1 });
+    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.2f, 0.2f, 0.2f, 1 });
     scene->CreateSkyBox(std::array<std::string, 6>{"media/skybox/RT.png", "media/skybox/LF.png", "media/skybox/FT.png", "media/skybox/BK.png", "media/skybox/UP.png", "media/skybox/DN.png", });
 
     scene->CreateTerrain({ "media/terrain/grass.png", "media/terrain/dirt.png", "media/terrain/rock.png" }, "media/terrain/heightMap.png");
-    scene->GetTerrain()->SetTileSize(20);
-    scene->GetTerrain()->SetHeightMapOrigin(core::Vector2i{ -33, -28 });
+    scene->GetTerrain()->SetTileSize(10);
+    scene->GetTerrain()->SetHeightMapOrigin(core::Vector2i{ -30, -24 });
     scene->GetTerrain()->SetHeightMapSize(core::Vector2i{ 60, 60 });
     scene->GetTerrain()->SetDiffuseMapSize(core::Vector2i{ 20, 20 });
     auto terrainSpecialTileScene = make_unique<core::Scene>();
-    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_01_terrainx3d.x3d", terrainSpecialTileScene.get()).Read();
-
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_01_terrainx3d.x3d").Read(terrainSpecialTileScene.get());
+    scene->GetTerrain()->AddSpecialTiles(terrainSpecialTileScene->GetStaticModelGroup().AcquireShapes(), terrainSpecialTileScene->GetStaticModelGroup().AcquireMeshes());
 
     return move(scene);
 }

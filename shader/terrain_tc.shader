@@ -19,22 +19,22 @@ uniform ivec2 diffuseMapOrigin;
 uniform ivec2 diffuseMapSize;
 
 //in vec3 vPosition[];
-in vec2 vHeightMapTexCoord[];
+//in vec2 vHeightMapTexCoord[];
 in vec2 vDiffuseMapTexCoord[];
 
 //out vec4 tcPosition[];
-out vec2 tcHeightMapTexCoord[];
+//out vec2 tcHeightMapTexCoord[];
 out vec2 tcDiffuseMapTexCoord[];
 
 float CalculateOuterTessLevel(vec4 vertex0, vec4 vertex1) {
 	float edgeLength = length(vertex0 - vertex1);
 	float distanceFactor = sightDistance / 60;
 	float distance0 = length(2 * camera.viewPosition - vertex0 - vertex1) / 2;
-	return max(edgeLength * 8 / distance0, 1.0);
+	return max(edgeLength * 12 / distance0, 1.0);
 }
 void main() {
 	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
-	tcHeightMapTexCoord[gl_InvocationID] = vHeightMapTexCoord[gl_InvocationID];
+	//tcHeightMapTexCoord[gl_InvocationID] = vHeightMapTexCoord[gl_InvocationID];
 	tcDiffuseMapTexCoord[gl_InvocationID] = vDiffuseMapTexCoord[gl_InvocationID];
 	
 	// see opengl4.5 specification (glspec45.core.pdf page395) for relation between edge index and vertex index

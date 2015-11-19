@@ -3,8 +3,11 @@
 #include <GL/glew.h>
 #include <array>
 
+#include "ResourceManager.h"
+
 using std::string;
 using std::array;
+using std::unique_ptr;
 
 namespace core {
 
@@ -37,10 +40,10 @@ auto Terrain::PrepareForDraw(Float32 sightDistance) -> void {
 
     glGenBuffers(1, &_vio);
     glBindBuffer(GL_ARRAY_BUFFER, _vio);
-    auto tileCountUpperBound = (_sightDistance / _tileSize) * 2;
+    auto tileCountUpperBound = static_cast<int>(ceil(_sightDistance / _tileSize) * 2);
     tileCountUpperBound *= tileCountUpperBound;
     glBufferData(GL_ARRAY_BUFFER, tileCountUpperBound * sizeof(Vector2i), nullptr, GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(1, 2, GL_INT, GL_FALSE, sizeof(Vector2i), (GLvoid*)0);
+    glVertexAttribIPointer(1, 2, GL_INT, sizeof(Vector2i), (GLvoid*)0);
     glEnableVertexAttribArray(1);
     glVertexAttribDivisor(1, 1);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -52,6 +55,9 @@ auto Terrain::PrepareForDraw(Float32 sightDistance) -> void {
     _diffuseMap.Load();
     _heightMap.SendToCard();
     _shaderProgram.SendToCard();
+
+    // load special tiles
+    LoadSpecialTiles();
     auto error = glGetError();
 }
 
@@ -62,8 +68,16 @@ auto Terrain::Draw(Camera const* camera) -> void {
     auto tileCoord = vector<Vector2i>{};
     for (auto i = 0; i < gridSize(0); ++i) {
         for (auto j = 0; j < gridSize(1); ++j) {
-            tileCoord.push_back(gridOrigin + Vector2i{i, j});
+            auto coord = Vector2i{ i, j };
+            tileCoord.push_back(gridOrigin + coord);
         }
+    }
+    for (auto const& hole : _holeTiles) {
+        auto delta = hole - gridOrigin;
+        auto index = delta(0) * gridSize(1) + delta(1);
+        // quick delete
+        tileCoord[index] = tileCoord.back();
+        tileCoord.pop_back();
     }
     glBindBuffer(GL_ARRAY_BUFFER, _vio);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vector2i) * tileCoord.size(), tileCoord.data());
@@ -86,9 +100,21 @@ auto Terrain::Draw(Camera const* camera) -> void {
     _heightMap.Use();
     glBindVertexArray(_vao);
     glPatchParameteri(GL_PATCH_VERTICES, 3);
-    glDrawElementsInstanced(GL_PATCHES, 6, GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(0), gridSize(0) * gridSize(1));
+    glDrawElementsInstanced(GL_PATCHES, 6, GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(0), tileCoord.size());
+    glBindVertexArray(0);
 
+    // draw special tiles
+    DrawSpecialTiles();
     error = glGetError();
+}
+
+auto Terrain::AddSpecialTiles(std::vector<std::unique_ptr<Shape>> && shapes, vector<unique_ptr<Mesh>>&& meshes) -> void {
+    _specialTileShapes = move(shapes);
+    _specialTileMeshes = move(meshes);
+    for (auto & shape : _specialTileShapes) {
+        auto center = shape->GetAabb().GetCenter();
+        _holeTiles.push_back(Vector2i{static_cast<int>(floor(center(0) / _tileSize)), static_cast<int>(floor(center(1) / _tileSize)) });
+    }
 }
 
 auto Terrain::GetViewFrustumCoverage(Camera const * camera)->std::array<Vector2f, 2>
@@ -127,6 +153,54 @@ auto Terrain::GetViewFrustumCoverage(Camera const * camera)->std::array<Vector2f
         }
     }
     return array<Vector2f, 2>{lowerLeft, upperRight};
+}
+
+auto Terrain::LoadSpecialTiles() -> void {
+    glGenVertexArrays(1, &_specialTilesVao);
+    glBindVertexArray(_specialTilesVao);
+
+    glGenBuffers(1, &_specialTilesVbo);
+    glBindBuffer(GL_ARRAY_BUFFER, _specialTilesVbo);
+
+    glGenBuffers(1, &_specialTilesVeo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _specialTilesVeo);
+
+    auto vertexData = vector<Vector2f>();
+    auto indexData = vector<unsigned int>();
+    for (auto const& mesh : _specialTileMeshes) {
+        mesh->SetVertexArrayObject(_specialTilesVao);
+        mesh->SetBaseVertex(vertexData.size());
+        mesh->SetIndexOffset(indexData.size() * sizeof(unsigned int));
+        for (auto const& vertex : mesh->GetVertex()) {
+            vertexData.push_back(Vector2f{ vertex.coord(0), vertex.coord(1) });
+        }
+        indexData.insert(indexData.end(), mesh->GetIndex().cbegin(), mesh->GetIndex().cend());
+    }
+    auto tileCoordData = vector<Vector2i>(vertexData.size(), Vector2i{ 0, 0 });
+    glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(Vector2f) + tileCoordData.size() * sizeof(Vector2i), vertexData.data(), GL_STATIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, vertexData.size() * sizeof(Vector2f), vertexData.data());
+    glBufferSubData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(Vector2f), tileCoordData.size() * sizeof(Vector2i), tileCoordData.data());
+
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexData.size() * sizeof(unsigned int), indexData.data(), GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vector2f), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribIPointer(1, 2, GL_INT, sizeof(Vector2i), (GLvoid*)(vertexData.size() * sizeof(Vector2f)));
+    glEnableVertexAttribArray(1);
+
+    //glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(sizeof(Vector3f)));
+    //glEnableVertexAttribArray(1);
+    //glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(2 * sizeof(Vector3f)));
+    //glEnableVertexAttribArray(2);
+
+    glBindVertexArray(0);
+    auto error = glGetError();
+}
+
+auto Terrain::DrawSpecialTiles() -> void {
+    for (auto & mesh : _specialTileMeshes) {
+        mesh->Draw(Mesh::patches);
+    }
 }
 
 }

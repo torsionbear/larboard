@@ -74,6 +74,14 @@ auto StaticModelGroup::GetShapes() -> std::vector<std::unique_ptr<Shape>>& {
     return _shapes;
 }
 
+auto StaticModelGroup::AcquireShapes() -> std::vector<std::unique_ptr<Shape>> {
+    return move(_shapes);
+}
+
+auto StaticModelGroup::AcquireMeshes() -> std::vector<std::unique_ptr<Mesh>> {
+    return move(_meshes);
+}
+
 auto StaticModelGroup::CreateMovable() -> Movable * {
     _movables.push_back(make_unique<Movable>());
     return _movables.back().get();

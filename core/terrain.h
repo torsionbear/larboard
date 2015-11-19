@@ -6,6 +6,8 @@
 #include "TextureArray.h"
 #include "Camera.h"
 #include "ShaderProgram.h"
+#include "Shape.h"
+#include "Mesh.h"
 
 namespace core {
 
@@ -30,8 +32,11 @@ public:
     auto SetDiffuseMapSize(Vector2i diffuseMapSize) -> void {
         _diffuseMapSize = diffuseMapSize;
     }
+    auto AddSpecialTiles(std::vector<std::unique_ptr<Shape>> && shapes, std::vector<std::unique_ptr<Mesh>> && meshes) -> void;
 private:
     auto GetViewFrustumCoverage(Camera const* camera) -> std::array<Vector2f, 2>;
+    auto LoadSpecialTiles() -> void;
+    auto DrawSpecialTiles() -> void;
 private:
     Float32 _tileSize = 10.0f;
     Vector2i _heightMapOrigin = Vector2i{ -5, -5 };
@@ -39,6 +44,13 @@ private:
     Vector2i _diffuseMapOrigin = Vector2i{ 0, 0 };
     Vector2i _diffuseMapSize = Vector2i{ 1, 1 };
     Float32 _sightDistance = 200.0f;
+
+    std::vector<Vector2i> _holeTiles;
+    std::vector<std::unique_ptr<Shape>> _specialTileShapes;
+    std::vector<std::unique_ptr<Mesh>> _specialTileMeshes;
+    openglUint _specialTilesVao;
+    openglUint _specialTilesVbo;
+    openglUint _specialTilesVeo;
 
     TextureArray _diffuseMap;
     Texture _heightMap;

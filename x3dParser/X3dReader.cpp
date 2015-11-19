@@ -30,14 +30,15 @@ auto inline ToVector2(Float2 const& in) -> core::Vector2f {
     return {in.x, in.y};
 }
 
-auto X3dReader::Read() -> void {
+auto X3dReader::Read(core::Scene * scene) -> void {
+    _scene = scene;
 	std::ifstream file{ _pathName.generic_string() };
 	assert(file);
 	auto nodes = X3dParser().Parse(file);
-	Read(*static_cast<X3d*>(nodes[0].get()));
+	ReadX3d(*static_cast<X3d*>(nodes[0].get()));
 }
 
-auto X3dReader::Read(IndexedFaceSet const& indexedFaceSet) ->  Mesh * {
+auto X3dReader::ReadIndexedFaceSet(IndexedFaceSet const& indexedFaceSet, core::StaticModelGroup & staticModelGroup) ->  Mesh * {
     if(!indexedFaceSet.GetNormalPerVertex()) {
         throw "normalPerVertex is false";
     }
@@ -54,10 +55,10 @@ auto X3dReader::Read(IndexedFaceSet const& indexedFaceSet) ->  Mesh * {
 		vertexData.push_back({ ToVector3(coordinate.at(coordIndex[i].b)), ToVector3(normal.at(coordIndex[i].b)), ToVector2(textureCoordinate.at(texCoordIndex[i].b))});
 		vertexData.push_back({ ToVector3(coordinate.at(coordIndex[i].c)), ToVector3(normal.at(coordIndex[i].c)), ToVector2(textureCoordinate.at(texCoordIndex[i].c))});
     }
-	return _scene->GetStaticModelGroup().CreateMesh(move(vertexData));;
+	return staticModelGroup.CreateMesh(move(vertexData));;
 }
 
-auto X3dReader::Read(IndexedTriangleSet const& indexedTriangleSet) ->  Mesh * {
+auto X3dReader::ReadIndexedTriangleSet(IndexedTriangleSet const& indexedTriangleSet, core::StaticModelGroup & staticModelGroup) ->  Mesh * {
 	if (!indexedTriangleSet.GetNormalPerVertex()) {
 		throw "normalPerVertex is false";
 	}
@@ -71,10 +72,10 @@ auto X3dReader::Read(IndexedTriangleSet const& indexedTriangleSet) ->  Mesh * {
 	for (auto i = 0u; i < coordinate.size(); ++i) {
 		vertexData.push_back({ ToVector3(coordinate[i]), ToVector3(normal[i]), ToVector2(textureCoordinate[i]) });
 	}
-	return _scene->GetStaticModelGroup().CreateMesh(move(vertexData), move(index));
+	return staticModelGroup.CreateMesh(move(vertexData), move(index));
 }
 
-auto X3dReader::Read(Transform const& transform) -> Movable *
+auto X3dReader::ReadTransform(Transform const& transform, core::StaticModelGroup & staticModelGroup) -> Movable *
 {
 	Movable * ret = nullptr;
 	auto group = transform.GetGroup();
@@ -85,22 +86,22 @@ auto X3dReader::Read(Transform const& transform) -> Movable *
 	auto spotLight = transform.GetSpotLight();
 	if (nullptr != group) {
 		auto& shapes = group->GetShape();
-		ret = Read(shapes);
+		ret = ReadShapes(shapes, staticModelGroup);
 	} else if (nullptr != viewpoint) {
-		ret = Read(*viewpoint);
+		ret = ReadViewpoint(*viewpoint);
 	} else if (nullptr != pointLight) {
-		ret = Read(*pointLight);
+		ret = ReadPointLight(*pointLight);
 	} else if (nullptr != directionalLight) {
-		ret = Read(*directionalLight);
+		ret = ReadDirectionalLight(*directionalLight);
 	} else if (nullptr != spotLight) {
-		ret = Read(*spotLight);
+		ret = ReadSpotLight(*spotLight);
 	} else if (!transformChildren.empty()) {
-		ret = _scene->GetStaticModelGroup().CreateMovable();
+		ret = staticModelGroup.CreateMovable();
 		for (auto& transformChild : transformChildren) {
-			Read(*transformChild)->AttachTo(*ret);
+            ReadTransform(*transformChild, staticModelGroup)->AttachTo(*ret);
 		}
 	} else {
-		ret = _scene->GetStaticModelGroup().CreateMovable();
+		ret = staticModelGroup.CreateMovable();
 	}
 
 	// Does not support scale yet.
@@ -113,37 +114,37 @@ auto X3dReader::Read(Transform const& transform) -> Movable *
 	return ret;
 }
 
-auto X3dReader::Read(Scene const& scene) -> void {
+auto X3dReader::ReadScene(Scene const& scene) -> void {
 	auto& transforms = scene.GetTransform();
 	for (auto& transform : transforms) {
-		_scene->Stage(Read(*transform));
+		_scene->Stage(ReadTransform(*transform, _scene->GetStaticModelGroup()));
 	}
 }
 
-auto X3dReader::Read(X3d const& x3d) -> void {
-	Read(*x3d.GetScene());
+auto X3dReader::ReadX3d(X3d const& x3d) -> void {
+	ReadScene(*x3d.GetScene());
 }
 
-auto X3dReader::Read(vector<Shape*> const& shapes) -> core::Model* {
-	auto ret = _scene->GetStaticModelGroup().CreateModel();
+auto X3dReader::ReadShapes(vector<Shape*> const& shapes, core::StaticModelGroup & staticModelGroup) -> core::Model* {
+	auto ret = staticModelGroup.CreateModel();
 	for (auto const& shape : shapes) {
-		auto newShape = _scene->GetStaticModelGroup().CreateShape(ret);
-		newShape->SetShaderProgram(_scene->GetStaticModelGroup().GetDefaultShaderProgram());
+		auto newShape = staticModelGroup.CreateShape(ret);
+		newShape->SetShaderProgram(staticModelGroup.GetDefaultShaderProgram());
 
 		auto appearance = shape->GetAppearance();
 		auto imageTexture = appearance->GetImageTexture();
 		if (nullptr != imageTexture) {
-			newShape->AddTexture(Read(*imageTexture));
+			newShape->AddTexture(ReadImageTexture(*imageTexture, staticModelGroup));
 		}
 		auto material = appearance->GetMaterial();
 		if (nullptr != material) {
-			newShape->SetMaterial(Read(*material));
+			newShape->SetMaterial(ReadMaterial(*material, staticModelGroup));
 		}
 		auto indexedTriangleSet = shape->GetIndexedTriangleSet();
 		if (indexedTriangleSet != nullptr) {
-			newShape->SetMesh(Read(*indexedTriangleSet));
+			newShape->SetMesh(ReadIndexedTriangleSet(*indexedTriangleSet, staticModelGroup));
 		} else {
-			auto mesh = Read(*shape->GetIndexedFaceSet());
+			auto mesh = ReadIndexedFaceSet(*shape->GetIndexedFaceSet(), staticModelGroup);
 			newShape->SetMesh(mesh);
 		}
 	}
@@ -151,13 +152,13 @@ auto X3dReader::Read(vector<Shape*> const& shapes) -> core::Model* {
 	return ret;
 }
 
-auto X3dReader::Read(Material const & material) -> core::Material * {
+auto X3dReader::ReadMaterial(Material const & material, core::StaticModelGroup & staticModelGroup) -> core::Material * {
 	auto use = material.GetUse();
 	if (!use.empty()) {
-		return _scene->GetStaticModelGroup().GetMaterial(use);
+		return staticModelGroup.GetMaterial(use);
 	}
 	auto materialName = material.GetDef();
-	auto ret = _scene->GetStaticModelGroup().CreateMaterial(materialName);
+	auto ret = staticModelGroup.CreateMaterial(materialName);
 
 	auto diffuse = material.GetDiffuseColor();
 	ret->SetDiffuse({ diffuse.x, diffuse.y, diffuse.z, 1.0f });
@@ -172,26 +173,26 @@ auto X3dReader::Read(Material const & material) -> core::Material * {
 	return ret;
 }
 
-auto X3dReader::Read(ImageTexture const& imageTexture) -> core::Texture * {
+auto X3dReader::ReadImageTexture(ImageTexture const& imageTexture, core::StaticModelGroup & staticModelGroup) -> core::Texture * {
 	auto use = imageTexture.GetUse();
 	if (!use.empty()) {
-		return _scene->GetStaticModelGroup().GetTexture(use);
+		return staticModelGroup.GetTexture(use);
 	}
 	auto textureName = imageTexture.GetDef();
 	auto urls = imageTexture.GetUrl();
 	// todo: support multiple urls. for now only use first url 
 	// which is relative path in x3d file generated from blender
 	auto pathName = _pathName.parent_path().append(urls[0]);
-	return _scene->GetStaticModelGroup().CreateTexture(textureName, pathName.generic_string());
+	return staticModelGroup.CreateTexture(textureName, pathName.generic_string());
 }
 
-auto X3dReader::Read(Viewpoint const& viewpoint) -> Camera * {
+auto X3dReader::ReadViewpoint(Viewpoint const& viewpoint) -> Camera * {
 	auto ret = _scene->CreateCamera();
 	ret->SetPerspective(1, viewpoint.GetFieldOfView(), 0.1f, 1000.0f);
 	return ret;
 }
 
-auto X3dReader::Read(PointLight const& pointLight) -> core::PointLight * {
+auto X3dReader::ReadPointLight(PointLight const& pointLight) -> core::PointLight * {
 	auto ret = _scene->CreatePointLight();
 	// ignore ambientIntensity. Use standalone ambient light instead
 	//ret->SetAmbientIntensity(pointLight.GetAmbientIntensity());
@@ -204,7 +205,7 @@ auto X3dReader::Read(PointLight const& pointLight) -> core::PointLight * {
 	return ret;
 }
 
-auto X3dReader::Read(DirectionalLight const & directionalLight) -> core::DirectionalLight * {
+auto X3dReader::ReadDirectionalLight(DirectionalLight const & directionalLight) -> core::DirectionalLight * {
 	auto ret = _scene->CreateDirectionalLight();
 	// ignore ambientIntensity. Use standalone ambient light instead
 	ret->SetColor(ToVector3(directionalLight.GetColor()) * directionalLight.GetIntensity());
@@ -213,7 +214,7 @@ auto X3dReader::Read(DirectionalLight const & directionalLight) -> core::Directi
 	return ret;
 }
 
-auto X3dReader::Read(SpotLight const & spotLight) -> core::SpotLight * {
+auto X3dReader::ReadSpotLight(SpotLight const & spotLight) -> core::SpotLight * {
 	auto ret = _scene->CreateSpotLight();
 	// ignore ambientIntensity. Use standalone ambient light instead
 	auto color = spotLight.GetColor();

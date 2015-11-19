@@ -20,6 +20,8 @@ public:
     auto PrepareForDraw() -> void;
     auto Draw() -> void;
     auto GetShapes() -> std::vector<std::unique_ptr<Shape>>&;
+    auto AcquireShapes() -> std::vector<std::unique_ptr<Shape>>;
+    auto AcquireMeshes() -> std::vector<std::unique_ptr<Mesh>>;
 
     auto CreateMovable()->Movable *;
     auto CreateModel()->Model *;

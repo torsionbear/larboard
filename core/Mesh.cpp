@@ -46,9 +46,18 @@ Mesh& Mesh::operator=(Mesh && rhs) {
 	return *this;
 }
 
-auto Mesh::Draw() const -> void {
+auto Mesh::Draw(DrawMode drawMode) const -> void {
+    GLenum mode;
+    switch (drawMode) {
+    case triangles:
+        mode = GL_TRIANGLES;
+        break;
+    case patches:
+        mode = GL_PATCHES;
+        break;
+    }
 	glBindVertexArray(_vao);
-	glDrawElementsBaseVertex(GL_TRIANGLES, _index.size(), GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(_indexOffset), _baseVertex);
+	glDrawElementsBaseVertex(mode, _index.size(), GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(_indexOffset), _baseVertex);
 }
 
 }
