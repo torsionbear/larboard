@@ -74,7 +74,7 @@ auto LoadScene3() -> std::unique_ptr<core::Scene> {
     scene->GetTerrain()->SetTileSize(10);
     scene->GetTerrain()->SetHeightMapOrigin(core::Vector2i{ -30, -24 });
     scene->GetTerrain()->SetHeightMapSize(core::Vector2i{ 60, 60 });
-    scene->GetTerrain()->SetDiffuseMapSize(core::Vector2i{ 20, 20 });
+    scene->GetTerrain()->SetDiffuseMapSize(core::Vector2i{ 5, 5 });
     auto terrainSpecialTileScene = make_unique<core::Scene>();
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_01_terrainx3d.x3d").Read(terrainSpecialTileScene.get());
     scene->GetTerrain()->AddSpecialTiles(terrainSpecialTileScene->GetStaticModelGroup().AcquireShapes(), terrainSpecialTileScene->GetStaticModelGroup().AcquireMeshes());

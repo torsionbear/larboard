@@ -42,8 +42,8 @@ auto Terrain::PrepareForDraw(Float32 sightDistance) -> void {
     glBindBuffer(GL_ARRAY_BUFFER, _vio);
     auto tileCountUpperBound = static_cast<int>(ceil(_sightDistance / _tileSize) * 2);
     tileCountUpperBound *= tileCountUpperBound;
-    glBufferData(GL_ARRAY_BUFFER, tileCountUpperBound * sizeof(Vector2i), nullptr, GL_DYNAMIC_DRAW);
-    glVertexAttribIPointer(1, 2, GL_INT, sizeof(Vector2i), (GLvoid*)0);
+    glBufferData(GL_ARRAY_BUFFER, tileCountUpperBound * sizeof(Vector3f), nullptr, GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3f), (GLvoid*)0);
     glEnableVertexAttribArray(1);
     glVertexAttribDivisor(1, 1);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -64,23 +64,23 @@ auto Terrain::PrepareForDraw(Float32 sightDistance) -> void {
 auto Terrain::Draw(Camera const* camera) -> void {
     auto coverage = GetViewFrustumCoverage(camera);
     auto gridOrigin = Vector2i{ static_cast<int>(floor(coverage[0](0) / _tileSize)), static_cast<int>(floor(coverage[0](1) / _tileSize)) };
-    auto gridSize = Vector2i{ static_cast<int>(floor(coverage[1](0) / _tileSize)) + 1, static_cast<int>(floor(coverage[1](1) / _tileSize)) + 1 } - gridOrigin;
-    auto tileCoord = vector<Vector2i>{};
+    auto gridSize = Vector2i{
+        static_cast<int>(floor(coverage[1](0) / _tileSize)) + 1 - static_cast<int>(floor(coverage[0](0) / _tileSize)),
+        static_cast<int>(floor(coverage[1](1) / _tileSize)) + 1 - static_cast<int>(floor(coverage[0](1) / _tileSize)) };
+    auto tileCoord = vector<Vector3f>{};
     for (auto i = 0; i < gridSize(0); ++i) {
         for (auto j = 0; j < gridSize(1); ++j) {
-            auto coord = Vector2i{ i, j };
-            tileCoord.push_back(gridOrigin + coord);
+            auto coord = Vector3f{ (i + gridOrigin(0)) * _tileSize, (j + gridOrigin(1)) * _tileSize, 0 };
+            tileCoord.push_back(coord);
         }
     }
     for (auto const& hole : _holeTiles) {
         auto delta = hole - gridOrigin;
         auto index = delta(0) * gridSize(1) + delta(1);
-        // quick delete
-        tileCoord[index] = tileCoord.back();
-        tileCoord.pop_back();
+        tileCoord[index](2) = -10;
     }
     glBindBuffer(GL_ARRAY_BUFFER, _vio);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vector2i) * tileCoord.size(), tileCoord.data());
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vector3f) * tileCoord.size(), tileCoord.data());
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     _shaderProgram.Use();

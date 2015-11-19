@@ -25,7 +25,7 @@ uniform ivec2 diffuseMapSize;
 uniform Textures textures;
 
 layout(location = 0) in vec2 position;
-layout(location = 1) in ivec2 tileCoord;
+layout(location = 1) in vec3 tileCoord;
 //layout(location = 2) in vec2 vertTexCoord;
 
 //out vec4 vPosition;
@@ -43,8 +43,8 @@ void main()
 {
 	//ivec2 tileCoord = GetTileCoord();
 	//vHeightMapTexCoord = (vec2(tileCoord - heightMapOrigin) + position / tileSize) / vec2(heightMapSize);
-	vDiffuseMapTexCoord = (vec2(tileCoord - diffuseMapOrigin) + position / tileSize) / vec2(diffuseMapSize);
-    gl_Position = vec4(position + tileCoord * tileSize, 0, 1);
+	vDiffuseMapTexCoord = ((tileCoord.xy + position) / tileSize - diffuseMapOrigin) / vec2(diffuseMapSize);
+    gl_Position = vec4(tileCoord.xy + position, tileCoord.z, 1);
 	
 	//fragNormal = transform.normalTransform * vec4(vertNormal, 0);
 }
