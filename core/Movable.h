@@ -59,7 +59,7 @@ public:
     auto Translate(Vector4f const&) -> void;
 	auto Rotate(Float32, Float32, Float32, Float32) -> void;
 	auto Rotate(Vector4f const& pivot, Float32 angle) -> void;
-	auto Rotate(Vector4f const& center, Vector4f const& pivot, Float32 angle) -> void;
+	auto Rotate(Point4f const& center, Vector4f const& pivot, Float32 angle) -> void;
 
 	auto GetRightDirection() -> Vector4f;
 	auto GetForwardDirection() -> Vector4f;

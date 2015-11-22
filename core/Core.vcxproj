@@ -86,6 +86,7 @@
     <ClCompile Include="Aabb.cpp" />
     <ClCompile Include="Bvh.cpp" />
     <ClCompile Include="BvhNode.cpp" />
+    <ClCompile Include="CameraController.cpp" />
     <ClCompile Include="CubeMap.cpp" />
     <ClCompile Include="DirectionalLight.cpp" />
     <ClCompile Include="Material.cpp" />
@@ -112,6 +113,7 @@
     <ClInclude Include="AmbientLight.h" />
     <ClInclude Include="Bvh.h" />
     <ClInclude Include="BvhNode.h" />
+    <ClInclude Include="CameraController.h" />
     <ClInclude Include="CubeMap.h" />
     <ClInclude Include="DirectionalLight.h" />
     <ClInclude Include="Endian.h" />

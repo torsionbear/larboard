@@ -72,7 +72,7 @@ auto Movable::Rotate(Vector4f const& pivot, Float32 angle) -> void {
 	Rotate(pivot(0), pivot(1), pivot(2), angle);
 }
 
-auto Movable::Rotate(Vector4f const& center, Vector4f const& pivot, Float32 angle) -> void {
+auto Movable::Rotate(Point4f const& center, Vector4f const& pivot, Float32 angle) -> void {
 	Translate(-center);
 	Rotate(pivot, angle);
 	Translate(center);

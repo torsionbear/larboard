@@ -5,19 +5,23 @@
 #include "core/Matrix.h"
 
 class InputHandler {
+private:
     enum Status { none, rotate, pan };
 public:
     InputHandler(core::Scene * scene, int width, int height)
         : _scene(scene)
+        , _center{ width / 2, height / 2 }
         , _widthInverse(1.0f / static_cast<float>(width))
         , _heightInverse(1.0f / static_cast<float>(height)) {
     }
 public:
     auto operator()(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) -> void;
 private:
-    auto GetClientSpaceCoordinates(HWND hWnd, WPARAM wParam, LPARAM lParam, bool isScreenSpaceCoordinate) -> core::Vector2f;
+    auto GetClientSpaceCoordinates(HWND hWnd, WPARAM wParam, LPARAM lParam, bool isScreenSpaceCoordinate) -> POINT;
 private:
+    bool _isFpsMode = false;
     core::Scene * _scene;
+    POINT const _center;
     core::Float32 _widthInverse;
     core::Float32 _heightInverse;
     core::Vector2f _lastCoordinate;

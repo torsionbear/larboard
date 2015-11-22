@@ -109,6 +109,7 @@ auto Scene::ToggleBvh() -> void {
 }
 
 auto Scene::PrepareForDraw() -> void {
+    _cameraController = make_unique<CameraController>(this);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -128,6 +129,8 @@ auto Scene::PrepareForDraw() -> void {
 }
 
 auto Scene::Draw() -> void {
+    _cameraController->Step();
+
 	auto error = glGetError();
 
 	// 0. feed model independent data (camera) to shader via ubo

@@ -19,6 +19,7 @@
 #include "Bvh.h"
 #include "StaticModelGroup.h"
 #include "terrain.h"
+#include "CameraController.h"
 
 namespace core {
 
@@ -53,6 +54,9 @@ public:
 	auto Unstage(Movable *) -> void;
 
     auto GetActiveCamera() const -> Camera *;
+    auto GetCameraController() const -> CameraController * {
+        return _cameraController.get();
+    }
     auto GetStaticModelGroup() -> StaticModelGroup & {
         return *_staticModelGroup;
     }
@@ -79,6 +83,7 @@ private:
 	std::unique_ptr<ResourceManager> _resourceManager;
 	Movable _root;
 	std::vector<std::unique_ptr<Camera>> _cameras;
+    std::unique_ptr<CameraController> _cameraController = nullptr;
     std::vector<std::unique_ptr<AmbientLight>> _ambientLights;
 	std::vector<std::unique_ptr<PointLight>> _pointLights;
 	std::vector<std::unique_ptr<DirectionalLight>> _directionalLights;

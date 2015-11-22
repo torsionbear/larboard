@@ -22,6 +22,7 @@ LRESULT CALLBACK RenderWindow::RenderWindowProc(HWND hWnd, UINT uMsg, WPARAM wPa
 	case WM_SIZE:
 	case WM_MOUSEWHEEL:
 	case WM_MOUSEMOVE:
+    case WM_KEYUP:
 	case WM_KEYDOWN:
 		if (currentRenderWindow->_inputHandler) {
 			currentRenderWindow->_inputHandler(hWnd, uMsg, wParam, lParam);
@@ -126,7 +127,7 @@ bool RenderWindow::Step()
     SwapBuffers(m_DeviceContextHandle);
 
     MSG msg;
-    if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+    while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
     {
         if (msg.message == WM_QUIT)
         {
