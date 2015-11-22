@@ -28,6 +28,7 @@ auto SkyBox::PrepareForDraw() -> void {
 
     _cubeMap->SendToCard();
     _shaderProgram->SendToCard();
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 }
 auto SkyBox::Draw() -> void {
     _shaderProgram->Use();
