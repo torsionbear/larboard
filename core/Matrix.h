@@ -304,6 +304,11 @@ auto inline operator*(MatrixExpression<T> const& expression, typename T::value_t
 }
 
 template<typename T>
+auto inline operator/(MatrixExpression<T> const& expression, typename T::value_type scalar) {
+    return MatrixScalarMultiply<T>(expression, 1/scalar);
+}
+
+template<typename T>
 auto inline operator*(typename T::value_type scalar, MatrixExpression<T> const& expression) {
 	return MatrixScalarMultiply<T>(expression, scalar);
 }

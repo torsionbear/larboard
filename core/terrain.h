@@ -33,6 +33,7 @@ public:
         _diffuseMapSize = diffuseMapSize;
     }
     auto AddSpecialTiles(std::vector<std::unique_ptr<Shape>> && shapes, std::vector<std::unique_ptr<Mesh>> && meshes) -> void;
+    auto GetHeight(Vector2f coord) const->Float32;
 private:
     auto GetViewFrustumCoverage(Camera const* camera) -> std::array<Vector2f, 2>;
     auto LoadSpecialTiles() -> void;

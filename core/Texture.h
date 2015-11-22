@@ -42,6 +42,15 @@ private:
 
 public:
 	auto Use() -> void;
+    auto GetBilinearFilteredTexel(Float32 x, Float32 y) const -> Vector4f;
+    auto GetWidth() const -> unsigned int {
+        return _width;
+    }
+    auto GetHeight() const -> unsigned int {
+        return _height;
+    }
+private:
+    auto GetTexel(int x, int y) const->Vector4f;
 private:
 	std::string _filename;
 	std::vector<Vector4f> _data;

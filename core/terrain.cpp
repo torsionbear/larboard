@@ -76,6 +76,10 @@ auto Terrain::Draw(Camera const* camera) -> void {
     }
     for (auto const& hole : _holeTiles) {
         auto delta = hole - gridOrigin;
+        // hole tile out of scope
+        if (delta(0) < 0 || delta(0) >= gridSize(0) || delta(1) < 0 || delta(1) >= gridSize(1)) {
+            continue;
+        }
         auto index = delta(0) * gridSize(1) + delta(1);
         tileCoord[index](2) = -10;
     }
@@ -115,6 +119,12 @@ auto Terrain::AddSpecialTiles(std::vector<std::unique_ptr<Shape>> && shapes, vec
         auto center = shape->GetAabb().GetCenter();
         _holeTiles.push_back(Vector2i{static_cast<int>(floor(center(0) / _tileSize)), static_cast<int>(floor(center(1) / _tileSize)) });
     }
+}
+
+auto Terrain::GetHeight(Vector2f coord) const -> Float32 {
+    auto heightMapCoord = static_cast<Vector2f>(coord / _tileSize -_heightMapOrigin);
+    auto texel = _heightMap.GetBilinearFilteredTexel(heightMapCoord(0) / _heightMapSize(0), heightMapCoord(1) / _heightMapSize(1));
+    return texel(0) * 30 - 0.6; // todo: get rid of this dirty hard-coded expression
 }
 
 auto Terrain::GetViewFrustumCoverage(Camera const * camera)->std::array<Vector2f, 2>
