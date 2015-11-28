@@ -40,10 +40,10 @@ struct LightShaderData {
 
 class Scene {
 public:
-    Scene();
+    Scene(unsigned int width, unsigned int height);
 	Scene(Scene const&) = delete;
 	Scene& operator=(Scene const&) = delete;
-	~Scene() = default;
+	~Scene();
 public:
 	auto CreateCamera() -> Camera *;
     auto CreateAmbientLight() -> AmbientLight *;
@@ -70,14 +70,18 @@ public:
 	auto ToggleBackFace() -> void;
     auto ToggleWireframe() -> void;
     auto ToggleBvh() -> void;
-	auto Draw() -> void;
+
     auto PrepareForDraw() -> void;
+    auto Draw() -> void;
 
 private:
 	auto InitCameraData() -> void;
 	auto LoadCameraData() -> void;
 	auto UseCameraData(Camera const* camera) -> void;
 	auto LoadLightData() -> void;
+    auto InitFbo() -> void;
+    auto DetachFbo() -> void;
+    auto UseFbo() -> void;
 
 private:
 	std::unique_ptr<ResourceManager> _resourceManager;
@@ -92,6 +96,17 @@ private:
     std::unique_ptr<SkyBox> _skyBox = nullptr;
     std::unique_ptr<StaticModelGroup> _staticModelGroup = nullptr;
     std::unique_ptr<Terrain> _terrain = nullptr;
+
+    unsigned int const _screenWidth;
+    unsigned int const _screenHeight;
+    openglUint _fbo;
+    openglUint _fboColorBuffer;
+    openglUint _fboNormalBuffer;
+    openglUint _fboDepthBuffer;
+    openglUint _deferredPassVao;
+    openglUint _deferredPassVbo;
+    ShaderProgram _deferredPassShaderProgram;
+
 
 	openglUint _cameraUbo;
 	openglUint _lightUbo;

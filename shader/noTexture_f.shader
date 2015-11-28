@@ -51,12 +51,13 @@ layout (std140,  binding = 2) uniform Material {
 	float transparency;
 } material;
 
-in vec4 fragPosition;
-in vec4 fragNormal;
-in vec2 fragTexCoord;
-layout (location = 0)  out vec4 fragColor;
+in vec4 vPosition;
+in vec4 vNormal;
+in vec2 vTexCoord;
+layout (location = 0)  out vec4 fColor;
+layout (location = 1)  out vec4 fNormal;
 
-vec4 viewDirection = normalize(camera.viewPosition - fragPosition);
+vec4 viewDirection = normalize(camera.viewPosition - vPosition);
 
 vec4 processLights();
 vec4 processAmbientLight(AmbientLight light);
@@ -66,7 +67,8 @@ vec4 processSpotLight(SpotLight light);
 
 void main()
 {
-	fragColor = processLights();
+	fNormal = vNormal;
+	fColor = processLights();
 }
 
 vec4 processLights() {
@@ -89,8 +91,8 @@ vec4 processAmbientLight(AmbientLight light) {
 }
 
 vec4 processDirectionalLight(DirectionalLight light) {
-    float diffuseCoefficient = max(dot(fragNormal, -light.direction), 0.0);
-    vec4 reflectDirection = reflect(light.direction, fragNormal);
+    float diffuseCoefficient = max(dot(vNormal, -light.direction), 0.0);
+    vec4 reflectDirection = reflect(light.direction, vNormal);
     float specularCoefficient = pow(max(dot(viewDirection, reflectDirection), 0.0), material.shininess);
 	
     vec4 diffuse = light.color * material.diffuse * diffuseCoefficient;
@@ -99,15 +101,15 @@ vec4 processDirectionalLight(DirectionalLight light) {
 }
 
 vec4 processPointLight(PointLight light) {
-    float distance = length(light.position - fragPosition);
+    float distance = length(light.position - vPosition);
 	if(distance > light.attenuation[3]) {
 		return vec4(0, 0, 0, 1);
 	}
     float attenuation = 1.0f / (light.attenuation[0] + light.attenuation[1] * distance + light.attenuation[2] * (distance * distance));
 
-    vec4 lightDirection = normalize(fragPosition - light.position);
-    float diffuseCoefficient = max(dot(fragNormal, -lightDirection), 0.0);
-    vec4 reflectDirection = reflect(lightDirection, fragNormal);
+    vec4 lightDirection = normalize(vPosition - light.position);
+    float diffuseCoefficient = max(dot(vNormal, -lightDirection), 0.0);
+    vec4 reflectDirection = reflect(lightDirection, vNormal);
     float specularCoefficient = pow(max(dot(viewDirection, reflectDirection), 0.0), material.shininess);
 	
     vec4 diffuse = light.color * material.diffuse * diffuseCoefficient;
@@ -116,20 +118,20 @@ vec4 processPointLight(PointLight light) {
 }
 
 vec4 processSpotLight(SpotLight light) {
-    float distance = length(light.position - fragPosition);
+    float distance = length(light.position - vPosition);
 	if(distance > light.attenuation[3]) {
 		return vec4(0, 0, 0, 1);
 	}
     float attenuation = 1.0f / (light.attenuation[0] + light.attenuation[1] * distance + light.attenuation[2] * (distance * distance));
 
-    vec4 lightDirection = normalize(fragPosition - light.position);
+    vec4 lightDirection = normalize(vPosition - light.position);
 	float angle = acos(dot(lightDirection, light.direction));
 	if(angle > light.cutOffAngle) {
 		return vec4(0, 0, 0, 1);
 	}
 	float angleFalloff = angle > light.beamWidth ? (light.cutOffAngle - angle) / (light.cutOffAngle - light.beamWidth) : 1.0;
-    float diffuseCoefficient = max(dot(fragNormal, -lightDirection), 0.0);
-    vec4 reflectDirection = reflect(lightDirection, fragNormal);
+    float diffuseCoefficient = max(dot(vNormal, -lightDirection), 0.0);
+    vec4 reflectDirection = reflect(lightDirection, vNormal);
     float specularCoefficient = pow(max(dot(viewDirection, reflectDirection), 0.0), material.shininess);
 	
     vec4 diffuse = light.color * material.diffuse * diffuseCoefficient;

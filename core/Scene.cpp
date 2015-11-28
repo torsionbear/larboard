@@ -11,10 +11,20 @@ using std::array;
 
 namespace core {
 
-Scene::Scene() {
+Scene::Scene(unsigned int width, unsigned int height)
+    : _screenWidth(width)
+    , _screenHeight(height) {
     // todo: send in resourceManager by argument
     _resourceManager = make_unique<ResourceManager>();
     _staticModelGroup = make_unique<StaticModelGroup>(_resourceManager.get());
+    _deferredPassShaderProgram = ShaderProgram("shader/deferred_v.shader", "shader/deferred_f.shader");
+}
+
+Scene::~Scene() {
+    glDeleteFramebuffers(1, &_fbo);
+    glDeleteBuffers(1, &_cameraUbo);
+    glDeleteBuffers(1, &_lightUbo);
+    glDeleteFramebuffers(1, &_fbo);
 }
 
 auto Scene::CreateCamera() -> Camera * {
@@ -101,7 +111,6 @@ auto Scene::ToggleBackFace() -> void {
 
 auto Scene::ToggleWireframe() -> void {
 	_wireframeMode = !_wireframeMode;
-	_wireframeMode ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE) : glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 auto Scene::ToggleBvh() -> void {
@@ -114,7 +123,7 @@ auto Scene::PrepareForDraw() -> void {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
-	// 0. setup ubo
+	// setup ubo
 	InitCameraData();
 	LoadLightData();
     _staticModelGroup->PrepareForDraw();
@@ -126,12 +135,42 @@ auto Scene::PrepareForDraw() -> void {
         _terrain->PrepareForDraw(_cameras.front()->GetSightDistance());
     }
 	// todo: sort shapes according to: 1. shader priority; 2. vbo/vao
+
+    InitFbo();
+    _deferredPassShaderProgram.SendToCard();
+    glUseProgram(_deferredPassShaderProgram.GetHandler());
+    glUniform1i(glGetUniformLocation(_deferredPassShaderProgram.GetHandler(), "gBuffer.color"), 0);
+    glUniform1i(glGetUniformLocation(_deferredPassShaderProgram.GetHandler(), "gBuffer.normal"), 1);
+    glUniform1i(glGetUniformLocation(_deferredPassShaderProgram.GetHandler(), "gBuffer.depth"), 2);
+
+    auto vertexes = vector<Vector2f>{ Vector2f{-1, -1}, Vector2f{ 1, -1 }, Vector2f{ 1, 1 }, Vector2f{ -1, 1 } };
+    glGenVertexArrays(1, &_deferredPassVao);
+    glBindVertexArray(_deferredPassVao);
+
+    glGenBuffers(1, &_deferredPassVbo);
+    glBindBuffer(GL_ARRAY_BUFFER, _deferredPassVbo);
+    glBufferData(GL_ARRAY_BUFFER, vertexes.size() * sizeof(vertexes), vertexes.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vector2f), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0);
+
+    auto error = glGetError();
 }
 
 auto Scene::Draw() -> void {
-    _cameraController->Step();
+    auto error = glGetError();
 
-	auto error = glGetError();
+    // switch to fbo
+    UseFbo();
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    //glViewport(0, 0, texWidth, texHeight);
+
+    // wireline mode not applicable to deferred pass
+	_wireframeMode ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE) : glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    _cameraController->Step();
 
 	// 0. feed model independent data (camera) to shader via ubo
 	LoadCameraData();
@@ -148,7 +187,28 @@ auto Scene::Draw() -> void {
         _staticModelGroup->GetBvh()->Draw();
     }
 
-	error = glGetError();
+    // deferred pass
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    DetachFbo();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    //glViewport(0, 0, screenWidth, screenHeight);
+    glBindVertexArray(_deferredPassVao);
+
+    _deferredPassShaderProgram.Use();
+
+    glActiveTexture(GL_TEXTURE0 + 0);
+    glBindTexture(GL_TEXTURE_2D, _fboColorBuffer);
+    glActiveTexture(GL_TEXTURE0 + 1);
+    glBindTexture(GL_TEXTURE_2D, _fboNormalBuffer);
+    glActiveTexture(GL_TEXTURE0 + 2);
+    glBindTexture(GL_TEXTURE_2D, _fboDepthBuffer);
+
+    glDrawArrays(GL_QUADS, 0, 4);
+    glBindVertexArray(0);
+
+    error = glGetError();
+
 }
 
 // store all camera's data in _cameraUbo. 
@@ -206,6 +266,66 @@ auto Scene::LoadLightData() -> void {
 	glBindBuffer(GL_UNIFORM_BUFFER, _lightUbo);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(data), &data, GL_DYNAMIC_DRAW);
 	glBindBufferBase(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Light), _lightUbo);
+}
+
+auto Scene::InitFbo() -> void {
+
+    // color
+    glGenTextures(1, &_fboColorBuffer);
+    glBindTexture(GL_TEXTURE_2D, _fboColorBuffer);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, _screenWidth, _screenHeight);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // normal
+    glGenTextures(1, &_fboNormalBuffer);
+    glBindTexture(GL_TEXTURE_2D, _fboNormalBuffer);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB10_A2, _screenWidth, _screenHeight);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // depth
+    glGenTextures(1, &_fboDepthBuffer);
+    glBindTexture(GL_TEXTURE_2D, _fboDepthBuffer);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, _screenWidth, _screenHeight);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // fbo
+    glGenFramebuffers(1, &_fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, _fboColorBuffer, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, _fboNormalBuffer, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, _fboDepthBuffer, 0);
+    auto drawBuffers = array<GLenum, 2>{ GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, };
+    glDrawBuffers(drawBuffers.size(), drawBuffers.data());
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    auto error = glGetError();
+}
+
+auto Scene::DetachFbo() -> void {
+    //glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 0, 0);
+    //glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, 0, 0);
+    //glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, 0, 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+auto Scene::UseFbo() -> void {
+    glBindFramebuffer(GL_FRAMEBUFFER, _fbo);
+    auto fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    assert(fboStatus == GL_FRAMEBUFFER_COMPLETE);
 }
 
 }
