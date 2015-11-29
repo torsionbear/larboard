@@ -43,12 +43,8 @@ layout (std140, row_major, binding = 0) uniform Camera {
 } camera;
 
 layout (std140,  binding = 2) uniform Material {
-    vec4 diffuse;
-    vec4 specular;
-	vec4 emissive;
-	float ambientIntensity;
-    float shininess;
-	float transparency;
+    vec4 diffuseEmissive;
+    vec4 specularShininess;
 } material;
 
 in vec4 vPosition;
@@ -87,16 +83,16 @@ vec4 processLights() {
 }
 
 vec4 processAmbientLight(AmbientLight light) {
-    return light.color * material.diffuse;
+    return light.color * material.diffuseEmissive.rgb;
 }
 
 vec4 processDirectionalLight(DirectionalLight light) {
     float diffuseCoefficient = max(dot(vNormal, -light.direction), 0.0);
     vec4 reflectDirection = reflect(light.direction, vNormal);
-    float specularCoefficient = pow(max(dot(viewDirection, reflectDirection), 0.0), material.shininess);
+    float specularCoefficient = pow(max(dot(viewDirection, reflectDirection), 0.0), material.specularShininess.a);
 	
-    vec4 diffuse = light.color * material.diffuse * diffuseCoefficient;
-    vec4 specular = light.color * material.specular * specularCoefficient ;
+    vec4 diffuse = light.color * vec4(material.diffuseEmissive.rgb, 1) * diffuseCoefficient;
+    vec4 specular = light.color * vec4(material.specularShininess.rgb, 1) * specularCoefficient ;
     return (specular + diffuse);
 }
 
@@ -110,10 +106,10 @@ vec4 processPointLight(PointLight light) {
     vec4 lightDirection = normalize(vPosition - light.position);
     float diffuseCoefficient = max(dot(vNormal, -lightDirection), 0.0);
     vec4 reflectDirection = reflect(lightDirection, vNormal);
-    float specularCoefficient = pow(max(dot(viewDirection, reflectDirection), 0.0), material.shininess);
+    float specularCoefficient = pow(max(dot(viewDirection, reflectDirection), 0.0), material.specularShininess.a);
 	
-    vec4 diffuse = light.color * material.diffuse * diffuseCoefficient;
-    vec4 specular = light.color * material.specular * specularCoefficient ;
+    vec4 diffuse = light.color * vec4(material.diffuseEmissive.rbg, 1) * diffuseCoefficient;
+    vec4 specular = light.color * vec4(material.specularShininess.rgb, 1) * specularCoefficient ;
     return (specular + diffuse) * attenuation;
 }
 
@@ -132,9 +128,9 @@ vec4 processSpotLight(SpotLight light) {
 	float angleFalloff = angle > light.beamWidth ? (light.cutOffAngle - angle) / (light.cutOffAngle - light.beamWidth) : 1.0;
     float diffuseCoefficient = max(dot(vNormal, -lightDirection), 0.0);
     vec4 reflectDirection = reflect(lightDirection, vNormal);
-    float specularCoefficient = pow(max(dot(viewDirection, reflectDirection), 0.0), material.shininess);
+    float specularCoefficient = pow(max(dot(viewDirection, reflectDirection), 0.0), material.specularShininess.a);
 	
-    vec4 diffuse = light.color * material.diffuse * diffuseCoefficient;
-    vec4 specular = light.color * material.specular * specularCoefficient ;
+    vec4 diffuse = light.color * vec4(material.diffuseEmissive.rgb, 1) * diffuseCoefficient;
+    vec4 specular = light.color * vec4(material.specularShininess.rgb, 1) * specularCoefficient ;
     return (specular + diffuse) * attenuation * angleFalloff;
 }

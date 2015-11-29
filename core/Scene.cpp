@@ -159,22 +159,24 @@ auto Scene::PrepareForDraw() -> void {
 }
 
 auto Scene::Draw() -> void {
-    auto error = glGetError();
+    ForwardPass();
+    DeferredPass();
+}
 
+auto Scene::ForwardPass() -> void {
     // switch to fbo
     UseFbo();
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     //glViewport(0, 0, texWidth, texHeight);
 
-    // wireline mode not applicable to deferred pass
-	_wireframeMode ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE) : glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    _wireframeMode ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE) : glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     _cameraController->Step();
 
-	// 0. feed model independent data (camera) to shader via ubo
-	LoadCameraData();
-	UseCameraData(_cameras.front().get());
+    // feed model independent data (camera) to shader via ubo
+    LoadCameraData();
+    UseCameraData(_cameras.front().get());
 
     if (nullptr != _skyBox) {
         _skyBox->Draw();
@@ -187,7 +189,11 @@ auto Scene::Draw() -> void {
         _staticModelGroup->GetBvh()->Draw();
     }
 
-    // deferred pass
+    auto error = glGetError();
+}
+
+auto Scene::DeferredPass() -> void {
+    // wireline mode not applicable to deferred pass
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     DetachFbo();
@@ -207,8 +213,7 @@ auto Scene::Draw() -> void {
     glDrawArrays(GL_QUADS, 0, 4);
     glBindVertexArray(0);
 
-    error = glGetError();
-
+    auto error = glGetError();
 }
 
 // store all camera's data in _cameraUbo. 
@@ -276,8 +281,8 @@ auto Scene::InitFbo() -> void {
     glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, _screenWidth, _screenHeight);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // normal
@@ -286,8 +291,8 @@ auto Scene::InitFbo() -> void {
     glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB10_A2, _screenWidth, _screenHeight);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // depth
@@ -296,8 +301,8 @@ auto Scene::InitFbo() -> void {
     glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, _screenWidth, _screenHeight);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // fbo

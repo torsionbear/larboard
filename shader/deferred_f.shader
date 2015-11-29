@@ -49,12 +49,8 @@ layout (std140, row_major, binding = 0) uniform Camera {
 } camera;
 
 layout (std140,  binding = 2) uniform Material {
-    vec4 diffuse;
-    vec4 specular;
-	vec4 emissive;
-	float ambientIntensity;
-    float shininess;
-	float transparency;
+    vec4 diffuseEmissive;
+    vec4 specularShininess;
 } material;
 
 uniform GBuffer gBuffer;
@@ -75,6 +71,6 @@ void main()
 {
 	fColor = texture(gBuffer.color, vTexCoord);
 	
-	fColor = visualizeDepth(texture(gBuffer.depth, vTexCoord).r);
+	//fColor = visualizeDepth(texture(gBuffer.depth, vTexCoord).r);
 	//fColor = texture(gBuffer.normal, vTexCoord);
 }

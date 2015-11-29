@@ -43,11 +43,7 @@ auto LoadScene1() -> std::unique_ptr<core::Scene> {
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square2/square2.x3d").Read(scene.get());
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
     scene->CreateSkyBox(std::array<std::string, 6>{"media/skybox/mt_rt.png", "media/skybox/mt_lf.png", "media/skybox/mt_ft.png", "media/skybox/mt_bk.png", "media/skybox/mt_up.png", "media/skybox/mt_dn.png", });
-    scene->CreateTerrain({ "media/terrain/grass.png", "media/terrain/dirt.png", "media/terrain/rock.png" }, "media/terrain/heightMap.png");
-    scene->GetTerrain()->SetTileSize(10);
-    scene->GetTerrain()->SetHeightMapOrigin(core::Vector2i{ -5, -5 });
-    scene->GetTerrain()->SetHeightMapSize(core::Vector2i{ 10, 10 });
-    scene->GetTerrain()->SetDiffuseMapSize(core::Vector2i{ 2, 2 });
+
     return move(scene);
 }
 
@@ -71,7 +67,7 @@ auto LoadScene3() -> std::unique_ptr<core::Scene> {
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.2f, 0.2f, 0.2f, 1 });
     scene->CreateSkyBox(std::array<std::string, 6>{"media/skybox/RT.png", "media/skybox/LF.png", "media/skybox/FT.png", "media/skybox/BK.png", "media/skybox/UP.png", "media/skybox/DN.png", });
 
-    scene->CreateTerrain({ "media/terrain/grass2.png", "media/terrain/dirt2.png", "media/terrain/rock2.png" }, "media/terrain/heightMap.png");
+    scene->CreateTerrain({ "media/terrain/grass.png", "media/terrain/dirt.png", "media/terrain/rock.png" }, "media/terrain/heightMap.png");
     scene->GetTerrain()->SetTileSize(10);
     scene->GetTerrain()->SetHeightMapOrigin(core::Vector2i{ -30, -24 });
     scene->GetTerrain()->SetHeightMapSize(core::Vector2i{ 60, 60 });

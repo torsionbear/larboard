@@ -8,12 +8,8 @@ layout (std140, row_major, binding = 0) uniform Camera {
 } camera;
 
 layout (std140,  binding = 2) uniform Material {
-    vec4 diffuse;
-    vec4 specular;
-	vec4 emissive;
-	float ambientIntensity;
-    float shininess;
-	float transparency;
+    vec4 diffuseEmissive;
+    vec4 specularShininess;
 } material;
 
 in vec4 fragPosition;
@@ -24,5 +20,5 @@ layout (location = 0)  out vec4 fragColor;
 void main()
 {
 	vec4 viewDirection = normalize(camera.viewPosition - fragPosition);
-	fragColor = max(dot(viewDirection, fragNormal), 0.0) * material.diffuse;
+	fragColor = max(dot(viewDirection, fragNormal), 0.0) * vec4(material.diffuseEmissive.rgb, 1);
 }

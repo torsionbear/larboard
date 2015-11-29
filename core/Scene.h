@@ -75,6 +75,8 @@ public:
     auto Draw() -> void;
 
 private:
+    auto ForwardPass() -> void;
+    auto DeferredPass() -> void;
 	auto InitCameraData() -> void;
 	auto LoadCameraData() -> void;
 	auto UseCameraData(Camera const* camera) -> void;

@@ -47,12 +47,8 @@ layout (std140, row_major, binding = 0) uniform Camera {
 } camera;
 
 layout (std140,  binding = 2) uniform Material {
-    vec4 diffuse;
-    vec4 specular;
-	vec4 emissive;
-	float ambientIntensity;
-    float shininess;
-	float transparency;
+    vec4 diffuseEmissive;
+    vec4 specularShininess;
 } material;
 
 uniform Textures textures;
@@ -97,10 +93,10 @@ vec4 processAmbientLight(AmbientLight light) {
 vec4 processDirectionalLight(DirectionalLight light) {
     float diffuseCoefficient = max(dot(fragNormal, -light.direction), 0.0);
     vec4 reflectDirection = reflect(light.direction, fragNormal);
-    float specularCoefficient = pow(max(dot(viewDirection, reflectDirection), 0.0), material.shininess);
+    float specularCoefficient = pow(max(dot(viewDirection, reflectDirection), 0.0), material.specularShininess.a);
 	
     vec4 diffuse = light.color * vec4(texture(textures.diffuseMap, fragTexCoord)) * diffuseCoefficient;
-    vec4 specular = light.color * material.specular * specularCoefficient ;
+    vec4 specular = light.color * vec4(material.specularShininess.rgb, 1) * specularCoefficient ;
     return (specular + diffuse);
 }
 
@@ -114,10 +110,10 @@ vec4 processPointLight(PointLight light) {
     vec4 lightDirection = normalize(fragPosition - light.position);
     float diffuseCoefficient = max(dot(fragNormal, -lightDirection), 0.0);
     vec4 reflectDirection = reflect(lightDirection, fragNormal);
-    float specularCoefficient = pow(max(dot(viewDirection, reflectDirection), 0.0), material.shininess);
+    float specularCoefficient = pow(max(dot(viewDirection, reflectDirection), 0.0), material.specularShininess.a);
 	
     vec4 diffuse = light.color * vec4(texture(textures.diffuseMap, fragTexCoord)) * diffuseCoefficient;
-    vec4 specular = light.color * material.specular * specularCoefficient ;
+    vec4 specular = light.color * vec4(material.specularShininess.rgb, 1) * specularCoefficient ;
     return (specular + diffuse) * attenuation;
 }
 
@@ -136,9 +132,9 @@ vec4 processSpotLight(SpotLight light) {
 	float angleFalloff = angle > light.beamWidth ? (light.cutOffAngle - angle) / (light.cutOffAngle - light.beamWidth) : 1.0;
     float diffuseCoefficient = max(dot(fragNormal, -lightDirection), 0.0);
     vec4 reflectDirection = reflect(lightDirection, fragNormal);
-    float specularCoefficient = pow(max(dot(viewDirection, reflectDirection), 0.0), material.shininess);
+    float specularCoefficient = pow(max(dot(viewDirection, reflectDirection), 0.0), material.specularShininess.a);
 	
     vec4 diffuse = light.color * vec4(texture(textures.diffuseMap, fragTexCoord)) * diffuseCoefficient;
-    vec4 specular = light.color * material.specular * specularCoefficient ;
+    vec4 specular = light.color * vec4(material.specularShininess.rgb, 1) * specularCoefficient ;
     return (specular + diffuse) * attenuation * angleFalloff;
 }

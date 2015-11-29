@@ -165,8 +165,7 @@ auto X3dReader::ReadMaterial(Material const & material, core::StaticModelGroup &
 	auto specular = material.GetSpecularColor();
 	ret->SetSpecular({ specular.x, specular.y, specular.z, 1.0f });
 	auto emissive = material.GetEmissiveColor();
-	ret->SetEmissive({ emissive.x, emissive.y, emissive.z, 1.0f });
-	ret->SetAmbientIntensity(material.GetAmbientIntensity());
+	ret->SetEmissive(1.0f);
 	ret->SetShininess(material.GetShininess() * 128);	// multiple 128 to x3d shininess. see http://www.web3d.org/documents/specifications/19775-1/V3.3/Part01/components/lighting.html#Lightingmodel
 	ret->SetTransparency(material.GetTransparency());
 
