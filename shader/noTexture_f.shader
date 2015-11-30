@@ -36,7 +36,7 @@ layout (std140, binding = 3) uniform Lights {
 } lights;
 
 layout (std140, row_major, binding = 0) uniform Camera {
-	mat4 viewProjectTransform;
+	mat4 viewTransform;
 	mat4 projectTransform;
 	mat4 rotationInverse;
 	vec4 viewPosition;
@@ -83,7 +83,7 @@ vec4 processLights() {
 }
 
 vec4 processAmbientLight(AmbientLight light) {
-    return light.color * material.diffuseEmissive.rgb;
+    return light.color * material.diffuseEmissive;
 }
 
 vec4 processDirectionalLight(DirectionalLight light) {

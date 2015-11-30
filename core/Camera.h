@@ -10,7 +10,7 @@ class Camera : public Movable {
 public:
 	struct ShaderData {
     public:
-		Matrix4x4f viewProjectTransform;
+        Matrix4x4f viewTransform;
         Matrix4x4f projectTransform;
         Matrix4x4f rotationInverse;
 		Vector4f viewPosition;
@@ -46,7 +46,7 @@ public:
 		_uboOffset = offset;
 	}
 private:
-	Matrix4x4f _projectionTransform;
+	Matrix4x4f _projectTransform;
     Point4f _lowerLeft;
     Point4f _upperRight;
     Float32 _farPlane;

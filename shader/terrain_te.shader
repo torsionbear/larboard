@@ -19,7 +19,7 @@ uniform ivec2 diffuseMapSize;
 uniform Textures textures;
 
 layout (std140, row_major, binding = 0) uniform Camera {
-	mat4 viewProjectTransform;
+	mat4 viewTransform;
 	mat4 projectTransform;
 	mat4 rotationInverse;
 	vec4 viewPosition;
@@ -45,7 +45,7 @@ void main() {
 	teDiffuseMapTexCoord = vec3(diffuseMapTexCoord, (height + 10) / 15);
 	
 	tePosition.z += height;
-	gl_Position = camera.viewProjectTransform * tePosition ;
+	gl_Position = camera.projectTransform * camera.viewTransform * tePosition ;
 
 	// normal
     float step = tileSize / gl_TessLevelInner[0];

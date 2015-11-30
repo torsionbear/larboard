@@ -19,7 +19,7 @@ Camera::Camera()
 }
 
 auto Camera::GetProjectionTransform() const -> Matrix4x4f const & {
-	return _projectionTransform;
+	return _projectTransform;
 }
 
 auto Camera::GetRayTo(Vector2f windowCoordinate) const -> Ray {
@@ -44,7 +44,7 @@ auto Camera::SetPerspective(Point4f lowerLeft, Point4f upperRight, Float32 farPl
     _upperRight = upperRight;
     _farPlane = farPlane;
 	// third column has been negate to transform right-hand world space to left-hand screen space.
-	_projectionTransform = Matrix4x4f{
+    _projectTransform = Matrix4x4f{
 		2 * lowerLeft(2) / (upperRight(0) - lowerLeft(0)), 0, (upperRight(0) + lowerLeft(0)) / (upperRight(0) - lowerLeft(0)), 0,
 		0, 2 * lowerLeft(2) / (upperRight(1) - lowerLeft(1)), (upperRight(1) + lowerLeft(1)) / (upperRight(1) - lowerLeft(1)), 0,
 		0, 0, -(farPlane + lowerLeft(2)) / (farPlane - lowerLeft(2)), -2 * farPlane*lowerLeft(2) / (farPlane - lowerLeft(2)),
@@ -73,9 +73,10 @@ auto Camera::SetPerspective(Float32 aspectRatio, Float32 fieldOfView, Float32 ne
 }
 
 auto Camera::GetShaderData() -> ShaderData {
+    auto viewTransform = GetRigidBodyMatrixInverse();
 	return ShaderData {
-		_projectionTransform * GetRigidBodyMatrixInverse(),
-        _projectionTransform,
+        GetRigidBodyMatrixInverse(),
+        _projectTransform,
         GetRotationInverse(),
 		GetPosition(),
 	};

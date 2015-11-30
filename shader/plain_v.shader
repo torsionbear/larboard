@@ -1,7 +1,7 @@
 #version 430 core
 
 layout (std140, row_major, binding = 0) uniform Camera {
-	mat4 viewProjectTransform;
+	mat4 viewTransform;
 	mat4 projectTransform;
 	mat4 rotationInverse;
 	vec4 viewPosition;
@@ -23,7 +23,7 @@ out vec2 fragTexCoord;
 void main()
 {
 	fragPosition = transform.worldTransform * vec4(vertPosition, 1);
-    gl_Position = camera.viewProjectTransform * fragPosition;
+    gl_Position = camera.projectTransform * camera.viewTransform * fragPosition;
 	fragNormal = transform.normalTransform * vec4(vertNormal, 0);
 	fragTexCoord = vertTexCoord;
 }

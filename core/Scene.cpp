@@ -143,6 +143,9 @@ auto Scene::PrepareForDraw() -> void {
     glUniform1i(glGetUniformLocation(_deferredPassShaderProgram.GetHandler(), "gBuffer.normal"), 1);
     glUniform1i(glGetUniformLocation(_deferredPassShaderProgram.GetHandler(), "gBuffer.depth"), 2);
 
+    glUniform4f(glGetUniformLocation(_deferredPassShaderProgram.GetHandler(), "viewport"), 0, 0, _screenWidth, _screenHeight);
+    glUniform3f(glGetUniformLocation(_deferredPassShaderProgram.GetHandler(), "nearPlane"), _cameras.front()->GetHalfWidth(), _cameras.front()->GetHalfHeight(), _cameras.front()->GetNearPlane());
+
     auto vertexes = vector<Vector2f>{ Vector2f{-1, -1}, Vector2f{ 1, -1 }, Vector2f{ 1, 1 }, Vector2f{ -1, 1 } };
     glGenVertexArrays(1, &_deferredPassVao);
     glBindVertexArray(_deferredPassVao);
@@ -288,7 +291,7 @@ auto Scene::InitFbo() -> void {
     // normal
     glGenTextures(1, &_fboNormalBuffer);
     glBindTexture(GL_TEXTURE_2D, _fboNormalBuffer);
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB10_A2, _screenWidth, _screenHeight);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8_SNORM, _screenWidth, _screenHeight);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
