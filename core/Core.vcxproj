@@ -103,6 +103,7 @@
     <ClCompile Include="Shape.cpp" />
     <ClCompile Include="SkyBox.cpp" />
     <ClCompile Include="SpotLight.cpp" />
+    <ClCompile Include="Ssao.cpp" />
     <ClCompile Include="StaticModelGroup.cpp" />
     <ClCompile Include="Terrain.cpp" />
     <ClCompile Include="Texture.cpp" />
@@ -138,6 +139,7 @@
     <ClInclude Include="Shape.h" />
     <ClInclude Include="Skybox.h" />
     <ClInclude Include="SpotLight.h" />
+    <ClInclude Include="Ssao.h" />
     <ClInclude Include="StaticModelGroup.h" />
     <ClInclude Include="Terrain.h" />
     <ClInclude Include="Texture.h" />

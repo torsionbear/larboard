@@ -19,9 +19,8 @@ layout (std140,  binding = 2) uniform Material {
 } material;
 
 uniform GBuffer gBuffer;
-uniform vec4 viewport;
 
-//in vec2 vPosition;
+in vec2 vTexCoord;
 in vec3 viewDirection;
 layout (location = 0)  out vec4 fColor;
 
@@ -33,12 +32,16 @@ vec4 CalculateViewSpacePosition(float depth) {
 
 void main()
 {
-	vec2 texCoord = (gl_FragCoord.xy - viewport.xy) / viewport.zw;
-	fColor = texture(gBuffer.color, texCoord);
+	fColor = texture(gBuffer.color, vTexCoord);
 
-	vec4 viewSpcePosition = CalculateViewSpacePosition(texture(gBuffer.depth, texCoord).r);
-	fColor = vec4(vec3(-viewSpcePosition.z / 40), 1);
+	vec4 viewSpacePosition = CalculateViewSpacePosition(texture(gBuffer.depth, vTexCoord).r);
+	if(-0.1 - viewSpacePosition.z < 0.001) {
+		fColor = vec4(1, 0, 0, 1);
+	} else {
+		fColor = vec4(vec3(-viewSpacePosition.z / 40), 1);
+	}
+	//fColor = vec4(vec3(-viewSpacePosition.z / 40), 1);
 	
-	vec4 viewSpaceNormal = camera.viewTransform * texture(gBuffer.normal, texCoord);
-	fColor = abs(viewSpaceNormal);
+	vec4 viewSpaceNormal = camera.viewTransform * texture(gBuffer.normal, vTexCoord);
+	//fColor = abs(viewSpaceNormal);
 }

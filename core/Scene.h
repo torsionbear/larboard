@@ -20,6 +20,7 @@
 #include "StaticModelGroup.h"
 #include "terrain.h"
 #include "CameraController.h"
+#include "Ssao.h"
 
 namespace core {
 
@@ -75,15 +76,10 @@ public:
     auto Draw() -> void;
 
 private:
-    auto ForwardPass() -> void;
-    auto DeferredPass() -> void;
 	auto InitCameraData() -> void;
 	auto LoadCameraData() -> void;
 	auto UseCameraData(Camera const* camera) -> void;
 	auto LoadLightData() -> void;
-    auto InitFbo() -> void;
-    auto DetachFbo() -> void;
-    auto UseFbo() -> void;
 
 private:
 	std::unique_ptr<ResourceManager> _resourceManager;
@@ -99,16 +95,7 @@ private:
     std::unique_ptr<StaticModelGroup> _staticModelGroup = nullptr;
     std::unique_ptr<Terrain> _terrain = nullptr;
 
-    unsigned int const _screenWidth;
-    unsigned int const _screenHeight;
-    openglUint _fbo;
-    openglUint _fboColorBuffer;
-    openglUint _fboNormalBuffer;
-    openglUint _fboDepthBuffer;
-    openglUint _deferredPassVao;
-    openglUint _deferredPassVbo;
-    ShaderProgram _deferredPassShaderProgram;
-
+    Ssao _ssao;
 
 	openglUint _cameraUbo;
 	openglUint _lightUbo;
