@@ -14,11 +14,10 @@ auto SkyBox::PrepareForDraw() -> void {
 
     glGenBuffers(1, &_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, _vbo);
+    glBufferData(GL_ARRAY_BUFFER, _vertexData.size() * sizeof(Vector3f), _vertexData.data(), GL_STATIC_DRAW);
 
     glGenBuffers(1, &_veo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _veo);
-
-    glBufferData(GL_ARRAY_BUFFER, _vertexData.size() * sizeof(Vector3f), _vertexData.data(), GL_STATIC_DRAW);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, _indexData.size() * sizeof(unsigned int), _indexData.data(), GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3f), (GLvoid*)0);

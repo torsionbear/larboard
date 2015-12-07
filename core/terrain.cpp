@@ -124,7 +124,7 @@ auto Terrain::AddSpecialTiles(std::vector<std::unique_ptr<Shape>> && shapes, vec
 auto Terrain::GetHeight(Vector2f coord) const -> Float32 {
     auto heightMapCoord = static_cast<Vector2f>(coord / _tileSize -_heightMapOrigin);
     auto texel = _heightMap.GetBilinearFilteredTexel(heightMapCoord(0) / _heightMapSize(0), heightMapCoord(1) / _heightMapSize(1));
-    return texel(0) * 30 - 0.6; // todo: get rid of this dirty hard-coded expression
+    return texel(0) * 30.0f - 0.6f; // todo: get rid of this dirty hard-coded expression
 }
 
 auto Terrain::GetViewFrustumCoverage(Camera const * camera)->std::array<Vector2f, 2>

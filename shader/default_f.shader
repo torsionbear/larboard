@@ -56,7 +56,8 @@ uniform Textures textures;
 in vec4 fragPosition;
 in vec4 fragNormal;
 in vec2 fragTexCoord;
-layout (location = 0)  out vec4 fragColor;
+layout (location = 0) out vec4 fragColor;
+layout (location = 1) out vec4 fNormal;
 
 vec4 viewDirection = normalize(camera.viewPosition - fragPosition);
 
@@ -68,6 +69,7 @@ vec4 processSpotLight(SpotLight light);
 
 void main()
 {
+	fNormal = fragNormal;
 	fragColor = processLights();
 }
 

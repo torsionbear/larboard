@@ -34,8 +34,8 @@ public:
 private:
     std::unique_ptr<CubeMap> _cubeMap;
     std::unique_ptr<ShaderProgram> _shaderProgram;
-    std::vector<Vector3f> _vertexData;
-    std::vector<unsigned int> _indexData;
+    std::array<Vector3f, 8> const _vertexData;
+    std::array<unsigned int, 24> const _indexData;
     openglUint _vao;
     openglUint _vbo;
     openglUint _veo;

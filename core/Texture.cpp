@@ -73,8 +73,8 @@ auto Texture::GetTexel(int x, int y) const -> Vector4f {
 }
 
 auto Texture::GetBilinearFilteredTexel(Float32 coord0, Float32 coord1) const -> Vector4f {
-    auto coordX = coord0 * _width - 0.5;
-    auto coordY = coord1 * _height - 0.5;
+    auto coordX = coord0 * _width - 0.5f;
+    auto coordY = coord1 * _height - 0.5f;
 
     auto indexX = static_cast<int>(floor(coordX));
     auto indexY = static_cast<int>(floor(coordY));

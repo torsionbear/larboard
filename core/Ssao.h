@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Primitive.h"
+#include "Matrix.h"
 #include "ShaderProgram.h"
 
 namespace core {
@@ -12,20 +13,26 @@ public:
 public:
     auto PrepareForDraw() -> void;
     auto BindGBuffer() -> void;
-    auto UnbindGBuffer() -> void;
-    auto DeferredPass() -> void;
+    auto SsaoPass() -> void;
+    auto LightingPass() -> void;
 private:
-    auto InitFbo() -> void;
+    auto InitSsaoFbo() -> void;
+    auto GenerateSamples(unsigned int sampleCount, Vector2f sampleDistanceRange) -> void;
+    auto GenerateRandomTexture(unsigned int textureSize) -> void;
 private:
     unsigned int const _screenWidth;
     unsigned int const _screenHeight;
-    openglUint _gBuffer;
-    openglUint _fboColorBuffer;
-    openglUint _fboNormalBuffer;
-    openglUint _fboDepthBuffer;
-    openglUint _deferredPassVao;
-    openglUint _deferredPassVbo;
-    ShaderProgram _deferredPassShaderProgram;
+    openglUint _ssaoFbo;
+    openglUint _ssaoColorBuffer;
+    openglUint _ssaoNormalBuffer;
+    openglUint _ssaoOcclusionBuffer;
+    openglUint _ssaoDepthBuffer;
+    ShaderProgram _ssaoShaderProgram;
+    ShaderProgram _lightingShaderProgram;
+
+    openglUint _screenQuadVao;
+    openglUint _screenQuadVbo;
+    openglUint _randomVectorTexture;
 };
 
 }

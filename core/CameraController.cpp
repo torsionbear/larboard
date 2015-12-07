@@ -13,7 +13,7 @@ auto CameraController::Step() -> void {
         auto camera = _scene->GetActiveCamera();
         auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(now - _lastTimePoint).count();
         auto speed = static_cast<core::Vector4f>(camera->GetForwardDirection() * _forwardSpeed + camera->GetRightDirection() * _rightSpeed);
-        auto displacement = static_cast<core::Vector4f>(speed * elapsedTime / 1000.0);
+        auto displacement = static_cast<core::Vector4f>(speed * static_cast<Float32>(elapsedTime) / 1000.0f);
         camera->Translate(displacement);
 
         auto position = camera->GetPosition();

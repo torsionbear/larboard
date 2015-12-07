@@ -160,7 +160,8 @@ auto Scene::Draw() -> void {
     if (_drawBvh) {
         _staticModelGroup->GetBvh()->Draw();
     }
-    _ssao.DeferredPass();
+    _ssao.SsaoPass();
+    _ssao.LightingPass();
 }
 
 // store all camera's data in _cameraUbo. 
