@@ -23,7 +23,7 @@ auto StaticModelGroup::PrepareForDraw() -> void {
 
     // 1. shader program
     for (auto & s : _shaderProgram) {
-        s->SendToCard();
+        s.second->SendToCard();
     }
 
     // 2. texture
@@ -111,9 +111,16 @@ auto StaticModelGroup::CreateTexture(string const& textureName, string const& fi
     return ret;
 }
 
-auto StaticModelGroup::CreateShaderProgram(string const& vertexShaderFile, string const& fragmentShaderFile) -> ShaderProgram * {
-    _shaderProgram.push_back(make_unique<ShaderProgram>(vertexShaderFile, fragmentShaderFile));
-    return _shaderProgram.back().get();
+auto StaticModelGroup::GetShaderProgram(std::string name) const -> ShaderProgram * {
+    if (_shaderProgram.find(name) == _shaderProgram.end()) {
+        return nullptr;
+    }
+    return _shaderProgram.at(name).get();
+}
+
+auto StaticModelGroup::CreateShaderProgram(string name, string const& vertexShaderFile, string const& fragmentShaderFile) -> ShaderProgram * {
+    _shaderProgram[name] = make_unique<ShaderProgram>(vertexShaderFile, fragmentShaderFile);
+    return _shaderProgram.at(name).get();
 }
 
 auto StaticModelGroup::GetMaterial(std::string const & materialName) const -> Material * {
@@ -122,13 +129,6 @@ auto StaticModelGroup::GetMaterial(std::string const & materialName) const -> Ma
 
 auto StaticModelGroup::GetTexture(std::string const & textureName) const -> Texture * {
     return _textures.at(textureName).get();
-}
-
-auto StaticModelGroup::GetDefaultShaderProgram() -> ShaderProgram * {
-    if (_defaultShaderProgram == nullptr) {
-        _defaultShaderProgram = CreateShaderProgram("shader/default_v.shader", "shader/default_f.shader");
-    }
-    return _defaultShaderProgram;
 }
 
 auto StaticModelGroup::InitTransformData() -> void {

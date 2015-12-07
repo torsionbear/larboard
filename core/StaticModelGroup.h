@@ -3,6 +3,7 @@
 #include <vector>
 #include <memory>
 #include <map>
+#include <unordered_map>
 
 #include "Model.h"
 #include "Shape.h"
@@ -33,10 +34,10 @@ public:
         _meshes.push_back(make_unique<Mesh>(std::forward<Args>(args)...));
         return _meshes.back().get();
     }
-    auto CreateShaderProgram(std::string const& vertexShaderFile, std::string const& fragmentShaderFile)->ShaderProgram *;
-    auto GetMaterial(std::string const& materialName) const->Material *;
-    auto GetTexture(std::string const& textureName) const->Texture *;
-    auto GetDefaultShaderProgram()->ShaderProgram *;
+    auto CreateShaderProgram(std::string name, std::string const& vertexShaderFile, std::string const& fragmentShaderFile) -> ShaderProgram *;
+    auto GetShaderProgram(std::string name) const -> ShaderProgram*;
+    auto GetMaterial(std::string const& materialName) const -> Material *;
+    auto GetTexture(std::string const& textureName) const -> Texture *;
     auto GetBvh() const -> Bvh * {
         return _bvh.get();
     }
@@ -57,8 +58,7 @@ private:
     std::map<std::string, std::unique_ptr<Material>> _materials;
     std::map<std::string, std::unique_ptr<Texture>> _textures;
     std::vector<std::unique_ptr<Mesh>> _meshes;
-    std::vector<std::unique_ptr<ShaderProgram>> _shaderProgram;
-    ShaderProgram * _defaultShaderProgram = nullptr;
+    std::unordered_map<std::string, std::unique_ptr < ShaderProgram >> _shaderProgram;
     std::unique_ptr<Bvh> _bvh = nullptr;
 
     openglUint _vao;

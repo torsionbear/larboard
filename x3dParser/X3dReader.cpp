@@ -129,13 +129,21 @@ auto X3dReader::ReadShapes(vector<Shape*> const& shapes, core::StaticModelGroup 
 	auto ret = staticModelGroup.CreateModel();
 	for (auto const& shape : shapes) {
 		auto newShape = staticModelGroup.CreateShape(ret);
-		newShape->SetShaderProgram(staticModelGroup.GetDefaultShaderProgram());
 
 		auto appearance = shape->GetAppearance();
 		auto imageTexture = appearance->GetImageTexture();
 		if (nullptr != imageTexture) {
 			newShape->AddTexture(ReadImageTexture(*imageTexture, staticModelGroup));
-		}
+            if (staticModelGroup.GetShaderProgram("textured") == nullptr) {
+                staticModelGroup.CreateShaderProgram("textured", "shader/textured_v.shader", "shader/textured_f.shader");
+            }
+            newShape->SetShaderProgram(staticModelGroup.GetShaderProgram("textured"));
+        } else {
+            if (staticModelGroup.GetShaderProgram("untextured") == nullptr) {
+                staticModelGroup.CreateShaderProgram("untextured", "shader/untextured_v.shader", "shader/untextured_f.shader");
+            }
+            newShape->SetShaderProgram(staticModelGroup.GetShaderProgram("untextured"));
+        }
 		auto material = appearance->GetMaterial();
 		if (nullptr != material) {
 			newShape->SetMaterial(ReadMaterial(*material, staticModelGroup));
