@@ -77,7 +77,7 @@ auto Camera::GetShaderData() -> ShaderData {
 	return ShaderData {
         GetRigidBodyMatrixInverse(),
         _projectTransform,
-        GetRotationInverse(),
+        GetTransform(),
 		GetPosition(),
 	};
 }

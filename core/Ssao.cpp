@@ -27,10 +27,12 @@ Ssao::~Ssao() {
 auto Ssao::PrepareForDraw() -> void {
     InitSsaoFbo();
     _ssaoShaderProgram.SendToCard();
-    glUseProgram(_ssaoShaderProgram.GetHandler());
-    glUniform1i(glGetUniformLocation(_ssaoShaderProgram.GetHandler(), "gBuffer.color"), 0);
-    glUniform1i(glGetUniformLocation(_ssaoShaderProgram.GetHandler(), "gBuffer.normal"), 1);
-    glUniform1i(glGetUniformLocation(_ssaoShaderProgram.GetHandler(), "gBuffer.depth"), 2);
+    //glUseProgram(_ssaoShaderProgram.GetHandler());
+    glProgramUniform1i(_ssaoShaderProgram.GetHandler(), glGetUniformLocation(_ssaoShaderProgram.GetHandler(), "gBuffer.diffuseEmissive"), TextureBindingPoint::diffuseEmissive);
+    glProgramUniform1i(_ssaoShaderProgram.GetHandler(), glGetUniformLocation(_ssaoShaderProgram.GetHandler(), "gBuffer.specularShininess"), TextureBindingPoint::specularShininess);
+    glProgramUniform1i(_ssaoShaderProgram.GetHandler(), glGetUniformLocation(_ssaoShaderProgram.GetHandler(), "gBuffer.normal"), TextureBindingPoint::normal);
+    glProgramUniform1i(_ssaoShaderProgram.GetHandler(), glGetUniformLocation(_ssaoShaderProgram.GetHandler(), "gBuffer.depth"), TextureBindingPoint::depth);
+    glProgramUniform2i(_ssaoShaderProgram.GetHandler(), glGetUniformLocation(_ssaoShaderProgram.GetHandler(), "occlusionTextureSize"), _screenWidth, _screenHeight);
 
     // samples
     GenerateSamples(64, Vector2f{ 0.1f, 1.0f });
@@ -38,14 +40,15 @@ auto Ssao::PrepareForDraw() -> void {
     // random vector texture
     auto randomVectorTextureSize = 4u;
     GenerateRandomTexture(randomVectorTextureSize);
-    glUniform1i(glGetUniformLocation(_ssaoShaderProgram.GetHandler(), "randomVectorTex"), 3);
-    glUniform1f(glGetUniformLocation(_ssaoShaderProgram.GetHandler(), "randomVectorTexSize"), static_cast<Float32>(randomVectorTextureSize));
+    glProgramUniform1i(_ssaoShaderProgram.GetHandler(), glGetUniformLocation(_ssaoShaderProgram.GetHandler(), "randomVectorTex"), TextureBindingPoint::randomVector);
+    glProgramUniform1i(_ssaoShaderProgram.GetHandler(), glGetUniformLocation(_ssaoShaderProgram.GetHandler(), "randomVectorTexSize"), static_cast<Float32>(randomVectorTextureSize));
 
     _lightingShaderProgram.SendToCard();
-    glProgramUniform1i(_lightingShaderProgram.GetHandler(), glGetUniformLocation(_lightingShaderProgram.GetHandler(), "gBuffer.color"), 0);
-    glProgramUniform1i(_lightingShaderProgram.GetHandler(), glGetUniformLocation(_lightingShaderProgram.GetHandler(), "gBuffer.normal"), 1);
-    glProgramUniform1i(_lightingShaderProgram.GetHandler(), glGetUniformLocation(_lightingShaderProgram.GetHandler(), "gBuffer.depth"), 2);
-    glProgramUniform1i(_lightingShaderProgram.GetHandler(), glGetUniformLocation(_lightingShaderProgram.GetHandler(), "gBuffer.occlusion"), 3);
+    glProgramUniform1i(_lightingShaderProgram.GetHandler(), glGetUniformLocation(_lightingShaderProgram.GetHandler(), "gBuffer.diffuseEmissive"), TextureBindingPoint::diffuseEmissive);
+    glProgramUniform1i(_lightingShaderProgram.GetHandler(), glGetUniformLocation(_lightingShaderProgram.GetHandler(), "gBuffer.specularShininess"), TextureBindingPoint::specularShininess);
+    glProgramUniform1i(_lightingShaderProgram.GetHandler(), glGetUniformLocation(_lightingShaderProgram.GetHandler(), "gBuffer.normal"), TextureBindingPoint::normal);
+    glProgramUniform1i(_lightingShaderProgram.GetHandler(), glGetUniformLocation(_lightingShaderProgram.GetHandler(), "gBuffer.occlusion"), TextureBindingPoint::occlusion);
+    glProgramUniform1i(_lightingShaderProgram.GetHandler(), glGetUniformLocation(_lightingShaderProgram.GetHandler(), "gBuffer.depth"), TextureBindingPoint::depth);
     glProgramUniform1i(_lightingShaderProgram.GetHandler(), glGetUniformLocation(_lightingShaderProgram.GetHandler(), "randomVectorTexSize"), randomVectorTextureSize);
 
 
@@ -81,24 +84,28 @@ auto Ssao::SsaoPass() -> void {
     // unbind texture to be used
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 0, 0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, 0, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, 0, 0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, 0, 0);
 
-    glActiveTexture(GL_TEXTURE0 + 0);
-    glBindTexture(GL_TEXTURE_2D, _ssaoColorBuffer);
-    glActiveTexture(GL_TEXTURE0 + 1);
+    glActiveTexture(GL_TEXTURE0 + TextureBindingPoint::diffuseEmissive);
+    glBindTexture(GL_TEXTURE_2D, _diffuseEmissiveBuffer);
+    glActiveTexture(GL_TEXTURE0 + TextureBindingPoint::specularShininess);
+    glBindTexture(GL_TEXTURE_2D, _specularShininessBuffer);
+    glActiveTexture(GL_TEXTURE0 + TextureBindingPoint::normal);
     glBindTexture(GL_TEXTURE_2D, _ssaoNormalBuffer);
-    glActiveTexture(GL_TEXTURE0 + 2);
-    glBindTexture(GL_TEXTURE_2D, _ssaoDepthBuffer);
-    glActiveTexture(GL_TEXTURE0 + 3);
+    glActiveTexture(GL_TEXTURE0 + TextureBindingPoint::randomVector);
     glBindTexture(GL_TEXTURE_2D, _randomVectorTexture);
+    glActiveTexture(GL_TEXTURE0 + TextureBindingPoint::depth);
+    glBindTexture(GL_TEXTURE_2D, _ssaoDepthBuffer);
 
     glBindVertexArray(_screenQuadVao);
     glDrawArrays(GL_QUADS, 0, 4);
     glBindVertexArray(0);
 
     // finish using textures, bind them back to fbo
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, _ssaoColorBuffer, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, _ssaoNormalBuffer, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, _diffuseEmissiveBuffer, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, _specularShininessBuffer, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, _ssaoNormalBuffer, 0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, _ssaoDepthBuffer, 0);
 
     auto error = glGetError();
@@ -111,14 +118,16 @@ auto Ssao::LightingPass() -> void {
     glBindVertexArray(_screenQuadVao);
     _lightingShaderProgram.Use();
 
-    glActiveTexture(GL_TEXTURE0 + 0);
-    glBindTexture(GL_TEXTURE_2D, _ssaoColorBuffer);
-    glActiveTexture(GL_TEXTURE0 + 1);
+    glActiveTexture(GL_TEXTURE0 + TextureBindingPoint::diffuseEmissive);
+    glBindTexture(GL_TEXTURE_2D, _diffuseEmissiveBuffer);
+    glActiveTexture(GL_TEXTURE0 + TextureBindingPoint::specularShininess);
+    glBindTexture(GL_TEXTURE_2D, _specularShininessBuffer);
+    glActiveTexture(GL_TEXTURE0 + TextureBindingPoint::normal);
     glBindTexture(GL_TEXTURE_2D, _ssaoNormalBuffer);
-    glActiveTexture(GL_TEXTURE0 + 2);
-    glBindTexture(GL_TEXTURE_2D, _ssaoDepthBuffer);
-    glActiveTexture(GL_TEXTURE0 + 3);
+    glActiveTexture(GL_TEXTURE0 + TextureBindingPoint::occlusion);
     glBindTexture(GL_TEXTURE_2D, _ssaoOcclusionBuffer);
+    glActiveTexture(GL_TEXTURE0 + TextureBindingPoint::depth);
+    glBindTexture(GL_TEXTURE_2D, _ssaoDepthBuffer);
 
     glDrawArrays(GL_QUADS, 0, 4);
     glBindVertexArray(0);
@@ -128,10 +137,20 @@ auto Ssao::LightingPass() -> void {
 
 auto Ssao::InitSsaoFbo() -> void {
 
-    // color
-    glGenTextures(1, &_ssaoColorBuffer);
-    glBindTexture(GL_TEXTURE_2D, _ssaoColorBuffer);
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, _screenWidth, _screenHeight);
+    // diffuseEmissive
+    glGenTextures(1, &_diffuseEmissiveBuffer);
+    glBindTexture(GL_TEXTURE_2D, _diffuseEmissiveBuffer);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, _screenWidth, _screenHeight);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // specularShininess
+    glGenTextures(1, &_specularShininessBuffer);
+    glBindTexture(GL_TEXTURE_2D, _specularShininessBuffer);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, _screenWidth, _screenHeight);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -171,11 +190,12 @@ auto Ssao::InitSsaoFbo() -> void {
     // fbo
     glGenFramebuffers(1, &_ssaoFbo);
     glBindFramebuffer(GL_FRAMEBUFFER, _ssaoFbo);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, _ssaoColorBuffer, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, _ssaoNormalBuffer, 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, _ssaoOcclusionBuffer, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, _diffuseEmissiveBuffer, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, _specularShininessBuffer, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, _ssaoNormalBuffer, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, _ssaoOcclusionBuffer, 0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, _ssaoDepthBuffer, 0);
-    auto drawBuffers = array<GLenum, 3>{ GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+    auto drawBuffers = array<GLenum, 4>{ GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
     glDrawBuffers(drawBuffers.size(), drawBuffers.data());
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

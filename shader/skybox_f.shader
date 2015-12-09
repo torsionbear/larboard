@@ -6,11 +6,16 @@ struct Textures {
 
 uniform Textures textures;
 
-in vec3 vTexCoord;
+in vec3 vPosition;
 
-layout (location = 0)  out vec4 fColor;
+layout (location = 0) out vec4 fDiffuseEmissive;
+layout (location = 1) out vec4 fSpecularShininess;
+layout (location = 2) out vec4 fNormal;
 
 void main()
 {
-	fColor = texture(textures.cubeMap, vTexCoord);
+	// set emissive to compensate ambient value so (emissive + ambient) = 1.0
+	fDiffuseEmissive = vec4(texture(textures.cubeMap, vPosition).rgb, 0.5);
+	fSpecularShininess = vec4(0);
+	fNormal = vec4(normalize(-vPosition), 0);
 }

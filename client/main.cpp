@@ -59,7 +59,7 @@ auto LoadScene3() -> std::unique_ptr<core::Scene> {
     auto scene = make_unique<core::Scene>(width, height);
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_02/xsh_02_house.x3d").Read(scene.get());
 
-    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.5f, 0.5f, 0.5f, 1 });
+    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.2f, 0.2f, 0.2f, 1 });
     scene->CreateSkyBox(std::array<std::string, 6>{"media/skybox/RT.png", "media/skybox/LF.png", "media/skybox/FT.png", "media/skybox/BK.png", "media/skybox/UP.png", "media/skybox/DN.png", });
 
     scene->CreateTerrain({ "media/terrain/grass.png", "media/terrain/dirt.png", "media/terrain/rock.png" }, "media/terrain/heightMap.png");

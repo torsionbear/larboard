@@ -1,33 +1,30 @@
 #version 430 core
 
 struct GBuffer {
-	sampler2D color;
+	sampler2D diffuseEmissive;
+	sampler2D specularShininess;
 	sampler2D normal;
-	sampler2D depth;
 	sampler2D occlusion;
+	sampler2D depth;
 };
 
 layout (std140, row_major, binding = 0) uniform Camera {
 	mat4 viewTransform;
 	mat4 projectTransform;
-	mat4 rotationInverse;
+	mat4 viewTransformInverse;
 	vec4 viewPosition;
 } camera;
-
-layout (std140,  binding = 2) uniform Material {
-    vec4 diffuseEmissive;
-    vec4 specularShininess;
-} material;
 
 uniform GBuffer gBuffer;
 uniform vec3 samples[64];
 uniform sampler2D randomVectorTex;
 uniform float randomVectorTexSize;
+uniform ivec2 occlusionTextureSize;
 
 in vec2 vTexCoord;
 in vec3 viewDirection;
 
-layout (location = 2)  out float occlusion;
+layout (location = 3)  out float occlusion;
 
 float screenSpaceDepthToViewSpaceDepth(float screenSpaceDepth) {
 	float ndcDepth = screenSpaceDepth * 2 - 1;
@@ -43,8 +40,6 @@ const float occlusionRange = 2.0;
 
 void main()
 {
-	//fColor = texture(gBuffer.color, vTexCoord);
-
 	float screenSpaceDepth = texture(gBuffer.depth, vTexCoord).r;
 	
 	occlusion = 0;
@@ -60,7 +55,7 @@ void main()
 		vec4 viewSpaceNormal = camera.viewTransform * texture(gBuffer.normal, vTexCoord);
 		//fColor = viewSpaceNormal;
 		vec3 normal = viewSpaceNormal.xyz;
-		vec4 randomVector = texture(randomVectorTex, vTexCoord * textureSize(gBuffer.occlusion, 0) / randomVectorTexSize);
+		vec4 randomVector = texture(randomVectorTex, vTexCoord * occlusionTextureSize / randomVectorTexSize);
 		
 		vec3 tangent = normalize(randomVector.xyz - normal * dot(randomVector.xyz, normal));
 		vec3 bitangent = cross(normal, tangent);

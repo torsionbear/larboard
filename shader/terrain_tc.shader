@@ -3,7 +3,7 @@
 layout (std140, row_major, binding = 0) uniform Camera {
 	mat4 viewTransform;
 	mat4 projectTransform;
-	mat4 rotationInverse;
+	mat4 viewTransformInverse;
 	vec4 viewPosition;
 } camera;
 

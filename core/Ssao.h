@@ -7,6 +7,14 @@
 namespace core {
 
 class Ssao {
+    enum TextureBindingPoint : int {
+        diffuseEmissive = 0,
+        specularShininess = 1,
+        normal = 2,
+        occlusion = 3,
+        randomVector = 4,
+        depth = 9,
+    };
 public:
     Ssao(unsigned int width, unsigned int height);
     ~Ssao();
@@ -23,7 +31,8 @@ private:
     unsigned int const _screenWidth;
     unsigned int const _screenHeight;
     openglUint _ssaoFbo;
-    openglUint _ssaoColorBuffer;
+    openglUint _diffuseEmissiveBuffer;
+    openglUint _specularShininessBuffer;
     openglUint _ssaoNormalBuffer;
     openglUint _ssaoOcclusionBuffer;
     openglUint _ssaoDepthBuffer;

@@ -12,7 +12,7 @@ public:
     public:
         Matrix4x4f viewTransform;
         Matrix4x4f projectTransform;
-        Matrix4x4f rotationInverse;
+        Matrix4x4f viewTransformInverse;
 		Vector4f viewPosition;
     public:
         static auto Size() -> unsigned int;

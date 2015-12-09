@@ -7,7 +7,7 @@ struct Textures {
 layout (std140, row_major, binding = 0) uniform Camera {
 	mat4 viewTransform;
 	mat4 projectTransform;
-	mat4 rotationInverse;
+	mat4 viewTransformInverse;
 	vec4 viewPosition;
 } camera;
 
@@ -18,15 +18,16 @@ layout (std140,  binding = 2) uniform Material {
 
 uniform Textures textures;
 
-in vec4 fragPosition;
-in vec4 fragNormal;
-in vec2 fragTexCoord;
-
-layout (location = 0) out vec4 fragColor;
-layout (location = 1) out vec4 fNormal;
+in vec4 vPosition;
+in vec4 vNormal;
+in vec2 vTexCoord;
+layout (location = 0) out vec4 fDiffuseEmissive;
+layout (location = 1) out vec4 fSpecularShininess;
+layout (location = 2) out vec4 fNormal;
 
 void main()
 {
-	fNormal = fragNormal;
-	fragColor = vec4(texture(textures.diffuseMap, fragTexCoord));
+	fNormal = vNormal;
+	fDiffuseEmissive = vec4(texture(textures.diffuseMap, vTexCoord).rgb, material.diffuseEmissive.a);
+	fSpecularShininess = material.specularShininess;
 }
