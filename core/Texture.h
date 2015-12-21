@@ -13,9 +13,7 @@ using std::vector;
 
 namespace core {
 
-class Texture : public Resource {
-public:
-	friend class ResourceManager;
+class Texture {
 public:
 	explicit Texture(std::string const& filename, TextureUsage::TextureType type = TextureUsage::DiffuseMap)
 		: _filename(filename)
@@ -33,21 +31,28 @@ public:
 	}
 	~Texture() = default;
 	friend void swap(Texture& lhs, Texture& rhs);
-
-private:
-	auto LoadImpl() -> bool override;
-	auto UnloadImpl() -> bool override;
-	auto SendToCardImpl() -> bool override;
-	auto FreeFromCardImpl() -> bool override;
+public:
+    auto Load() -> void;
 
 public:
-	auto Use() -> void;
     auto GetBilinearFilteredTexel(Float32 x, Float32 y) const -> Vector4f;
     auto GetWidth() const -> unsigned int {
         return _width;
     }
     auto GetHeight() const -> unsigned int {
         return _height;
+    }
+    auto GetTexture() const -> openglUint {
+        return _texture;
+    }
+    auto SetTexture(openglUint texture) {
+        _texture = texture;
+    }
+    auto GetData() const -> std::vector<Vector4f> const& {
+        return _data;
+    }
+    auto GetType() const {
+        return _type;
     }
 private:
     auto GetTexel(int x, int y) const->Vector4f;

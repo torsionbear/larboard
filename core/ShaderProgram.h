@@ -17,6 +17,7 @@ enum class UniformBufferType : unsigned int {
 	Transform = 1u,
 	Material = 2u,
 	Light = 3u,
+    Terrain = 4u,
 };
 
 auto inline GetIndex(UniformBufferType t) {
@@ -46,7 +47,7 @@ public:
     auto SetTessellationControlShader(std::string const& filename) -> void;
     auto SetTessellationEvaluationShader(std::string const& filename) -> void;
 	auto Use() const -> void;
-	auto GetHandler() -> openglUint;
+	auto GetHandler() const -> openglUint;
 	
 private:
 	openglUint _program = 0;

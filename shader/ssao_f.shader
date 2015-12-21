@@ -18,7 +18,7 @@ layout (std140, row_major, binding = 0) uniform Camera {
 uniform GBuffer gBuffer;
 uniform vec3 samples[64];
 uniform sampler2D randomVectorTex;
-uniform float randomVectorTexSize;
+uniform int randomVectorTexSize;
 uniform ivec2 occlusionTextureSize;
 
 in vec2 vTexCoord;
@@ -55,7 +55,7 @@ void main()
 		vec4 viewSpaceNormal = camera.viewTransform * texture(gBuffer.normal, vTexCoord);
 		//fColor = viewSpaceNormal;
 		vec3 normal = viewSpaceNormal.xyz;
-		vec4 randomVector = texture(randomVectorTex, vTexCoord * occlusionTextureSize / randomVectorTexSize);
+		vec4 randomVector = texture(randomVectorTex, vTexCoord * float(occlusionTextureSize) / float(randomVectorTexSize));
 		
 		vec3 tangent = normalize(randomVector.xyz - normal * dot(randomVector.xyz, normal));
 		vec3 bitangent = cross(normal, tangent);

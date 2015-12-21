@@ -12,7 +12,7 @@ using std::vector;
 
 namespace core {
 
-class CubeMap : public Resource {
+class CubeMap {
 public:
 	explicit CubeMap(std::array<std::string, 6> && filenames)  // right, left, front, back, top, bottom
 		: _filenames(filenames)
@@ -29,15 +29,23 @@ public:
 	}
 	~CubeMap() = default;
 	friend void swap(CubeMap& lhs, CubeMap& rhs);
-
-private:
-	auto LoadImpl() -> bool override;
-	auto UnloadImpl() -> bool override;
-	auto SendToCardImpl() -> bool override;
-	auto FreeFromCardImpl() -> bool override;
-
 public:
-	auto Use() -> void;
+    auto Load() -> void;
+    auto GetTexture() const -> openglUint {
+        return _texture;
+    }
+    auto SetTexture(openglUint texture) -> void {
+        _texture = texture;
+    }
+    auto GetWidth() const {
+        return _width;
+    }
+    auto GetHeight() const {
+        return _height;
+    }
+    auto GetData() const ->std::array<std::vector<Vector4f>, 6> const& {
+        return _data;
+    }
 private:
 	std::array<std::string, 6> _filenames;
     std::array<std::vector<Vector4f>, 6> _data;

@@ -18,6 +18,9 @@ public:
     auto GetAabb() const -> Aabb const& {
         return _aabb;
     }
+    auto GetAabb() -> Aabb & {
+        return _aabb;
+    }
     auto IsLeaf() const -> bool {
         return _leftChild == nullptr && _rightChild == nullptr;
     }

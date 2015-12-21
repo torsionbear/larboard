@@ -14,9 +14,16 @@ public:
         triangles,
         patches,
     };
+    struct RenderData {
+        openglUint _vao;
+        openglUint _indexOffset;
+        openglInt _baseVertex;
+    };
 public:
 	friend void swap(Mesh&, Mesh&);
-    Mesh() = default;
+    Mesh(DrawMode drawMode = triangles)
+        : _drawMode(drawMode) {
+    }
     Mesh(std::vector<Vertex> && vertexData, std::vector<unsigned int> && index);
     Mesh(std::vector<Vertex> && vertexData);
 	Mesh(Mesh&& other);
@@ -24,28 +31,24 @@ public:
 	Mesh& operator=(Mesh);
 	Mesh& operator=(Mesh && rhs);
 public:
-	auto GetVertex() -> std::vector<Vertex> const& {
+	auto GetVertex() const -> std::vector<Vertex> const& {
 		return _vertexes;
 	}
-	auto GetIndex() -> std::vector<unsigned int> const& {
+	auto GetIndex() const -> std::vector<unsigned int> const& {
 		return _index;
 	}
-	auto SetVertexArrayObject(openglUint vao) -> void {
-		_vao = vao;
-	}
-	auto SetBaseVertex(openglInt baseVertex) -> void {
-		_baseVertex = baseVertex;
-	}
-	auto SetIndexOffset(openglUint indexOffset) -> void {
-		_indexOffset = indexOffset;
-	}
-	auto Draw(DrawMode drawMode = triangles) const -> void;
+    auto GetRenderData() const -> RenderData const& {
+        return _renderData;
+    }
+    auto SetRenderData(RenderData renderData) -> void {
+        _renderData = renderData;
+    }
 private:
 	std::vector<Vertex> _vertexes;
 	std::vector<unsigned int> _index;
-	openglUint _vao;
-	openglUint _indexOffset;	// represents an offset, in bytes, into the element array buffer where the indices begin
-	openglInt _baseVertex;	// last paramerter for glDrawElementsBaseVertex()
+    DrawMode _drawMode;
+
+    RenderData _renderData;
 };
 
 }

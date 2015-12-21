@@ -5,6 +5,7 @@
 #include <map>
 #include <unordered_map>
 
+#include "Renderer.h"
 #include "Model.h"
 #include "Shape.h"
 #include "Bvh.h"
@@ -13,8 +14,9 @@ namespace core {
 
 class StaticModelGroup {
 public:
-    StaticModelGroup(ResourceManager* resourceManager)
-        :_resourceManager(resourceManager) {
+    StaticModelGroup(ResourceManager* resourceManager, Renderer * renderer)
+        : _resourceManager(resourceManager)
+        , _renderer(renderer) {
     }
     ~StaticModelGroup();
 public:
@@ -38,19 +40,17 @@ public:
     auto GetShaderProgram(std::string name) const -> ShaderProgram*;
     auto GetMaterial(std::string const& materialName) const -> Material *;
     auto GetTexture(std::string const& textureName) const -> Texture *;
-    auto GetBvh() const -> Bvh * {
+    auto GetBvh() -> Bvh * {
         return _bvh.get();
     }
 
 private:
-    auto InitTransformData() -> void;
     auto LoadTransformData() -> void;
-    auto UseTransformData(Model const* model) -> void;
     auto LoadMaterialData() -> void;
-    auto UseMaterialData(Material const* material) -> void;
 
 private:
-    ResourceManager* _resourceManager;
+    ResourceManager * _resourceManager;
+    Renderer * _renderer;
     Movable _root;
     std::vector<std::unique_ptr<Movable>> _movables;
     std::vector<std::unique_ptr<Model>> _models;
@@ -61,12 +61,6 @@ private:
     std::unordered_map<std::string, std::unique_ptr < ShaderProgram >> _shaderProgram;
     std::unique_ptr<Bvh> _bvh = nullptr;
 
-    openglUint _vao;
-    openglUint _vbo;
-    openglUint _veo;
-
-    openglUint _transformUbo;
-    openglUint _materialUbo;
     size_t _vertexCount = 0;
 };
 

@@ -2,8 +2,6 @@
 
 #include <limits>
 
-#include <GL/glew.h>
-
 using std::vector;
 using std::move;
 using std::make_unique;
@@ -13,7 +11,7 @@ namespace core {
 void swap(Mesh& first, Mesh& second) {
 	using std::swap;
 	swap(first._vertexes, second._vertexes);
-	swap(first._vao, second._vao);
+	swap(first._renderData, second._renderData);
 }
 
 Mesh::Mesh(std::vector<Vertex>&& vertexData, std::vector<unsigned int>&& index)
@@ -44,20 +42,6 @@ Mesh& Mesh::operator=(Mesh rhs) {
 Mesh& Mesh::operator=(Mesh && rhs) {
 	swap(*this, rhs);
 	return *this;
-}
-
-auto Mesh::Draw(DrawMode drawMode) const -> void {
-    GLenum mode;
-    switch (drawMode) {
-    case triangles:
-        mode = GL_TRIANGLES;
-        break;
-    case patches:
-        mode = GL_PATCHES;
-        break;
-    }
-	glBindVertexArray(_vao);
-	glDrawElementsBaseVertex(mode, _index.size(), GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(_indexOffset), _baseVertex);
 }
 
 }

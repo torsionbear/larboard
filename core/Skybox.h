@@ -15,30 +15,32 @@ class SkyBox {
 public:
     explicit SkyBox(std::array<std::string, 6> && filenames)
         : _cubeMap(std::make_unique<CubeMap>(move(filenames)))
-        , _shaderProgram(std::make_unique<ShaderProgram>("shader/skybox_v.shader", "shader/skybox_f.shader"))
-        , _vertexData{
-        Vector3f{ -1, 1, -1 },
-        Vector3f{ -1, -1, -1 },
-        Vector3f{ 1, -1, -1 },
-        Vector3f{ 1, 1, -1 },
-        Vector3f{ -1, 1, 1 },
-        Vector3f{ -1, -1, 1 },
-        Vector3f{ 1, -1, 1 },
-        Vector3f{ 1, 1, 1 } }
-        , _indexData{0, 1, 2, 3, 0, 4, 5, 1, 0, 3, 7, 4, 2, 6, 7, 3, 1, 5, 6, 2, 7, 6, 5, 4} {
+        , _shaderProgram(std::make_unique<ShaderProgram>("shader/skybox_v.shader", "shader/skybox_f.shader")) {
     }
-    ~SkyBox();
 public:
-    auto PrepareForDraw() -> void;
-    auto Draw() -> void;
+    auto GetShaderProgram() -> ShaderProgram * {
+        return _shaderProgram.get();
+    }
+    auto GetShaderProgram() const -> ShaderProgram const * {
+        return _shaderProgram.get();
+    }
+    auto GetCubeMap() -> CubeMap * {
+        return _cubeMap.get();
+    }
+    auto GetCubeMap() const -> CubeMap const * {
+        return _cubeMap.get();
+    }
+    auto GetVao() const -> openglUint {
+        return _vao;
+    }
+    auto SetVao(openglUint vao) -> void {
+        _vao = vao;
+    }
 private:
     std::unique_ptr<CubeMap> _cubeMap;
     std::unique_ptr<ShaderProgram> _shaderProgram;
-    std::array<Vector3f, 8> const _vertexData;
-    std::array<unsigned int, 24> const _indexData;
+
     openglUint _vao;
-    openglUint _vbo;
-    openglUint _veo;
 };
 
 }

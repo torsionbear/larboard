@@ -15,7 +15,8 @@ Scene::Scene(unsigned int width, unsigned int height)
     : _ssao(width, height) {
     // todo: send in resourceManager by argument
     _resourceManager = make_unique<ResourceManager>();
-    _staticModelGroup = make_unique<StaticModelGroup>(_resourceManager.get());
+    _renderer = make_unique<Renderer>(_resourceManager.get());
+    _staticModelGroup = make_unique<StaticModelGroup>(_resourceManager.get(), _renderer.get());
 }
 
 Scene::~Scene() {
@@ -123,17 +124,45 @@ auto Scene::PrepareForDraw() -> void {
 	InitCameraData();
 	LoadLightData();
     _staticModelGroup->PrepareForDraw();
-    _staticModelGroup->GetBvh()->PrepareForDraw(*_resourceManager);
-    if (nullptr != _skyBox) {
-        _skyBox->PrepareForDraw();
+
+    // bvh
+    auto bvh = _staticModelGroup->GetBvh();    
+    auto shaderProgram = bvh->GetShaderProgram();
+    shaderProgram->SendToCard();
+    auto aabbs = bvh->GetAabbs();
+    for (auto aabb : aabbs) {
+        aabb->SetShaderProgram(shaderProgram);
     }
+    _resourceManager->LoadAabbs(aabbs);
+
+    // sky box
+    if (nullptr != _skyBox) {
+        _resourceManager->LoadSkyBoxMesh(_skyBox.get());
+        _skyBox->GetCubeMap()->Load();
+        _resourceManager->LoadCubeMap(_skyBox->GetCubeMap());
+        _skyBox->GetShaderProgram()->SendToCard();
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+    }
+
+    // terrain
     if (nullptr != _terrain) {
-        _terrain->PrepareForDraw(_cameras.front()->GetSightDistance());
+        auto diffuseMap = _terrain->GetDiffuseMap();
+        auto heightMap = _terrain->GetHeightMap();
+        diffuseMap->Load();
+        heightMap->Load();
+        _resourceManager->LoadTextureArray(diffuseMap);
+        _resourceManager->LoadTexture(heightMap);
+
+        _terrain->SetSightDistance(_cameras.front()->GetSightDistance());
+        _resourceManager->LoadTerrain(_terrain.get());
+        _terrain->GetShaderProgram()->SendToCard();
+        _resourceManager->LoadTerrainSpecialTiles(_terrain->GetSpecialTiles());
     }
 	// todo: sort shapes according to: 1. shader priority; 2. vbo/vao
 
     _ssao.PrepareForDraw();
     auto error = glGetError();
+    assert(error == GL_NO_ERROR);
 }
 
 auto Scene::Draw() -> void {
@@ -151,14 +180,20 @@ auto Scene::Draw() -> void {
     UseCameraData(_cameras.front().get());
 
     if (nullptr != _skyBox) {
-        _skyBox->Draw();
+        _renderer->RenderSkyBox(_skyBox.get());
     }
     if (nullptr != _terrain) {
-        _terrain->Draw(_cameras.front().get());
+        _resourceManager->UpdateTerrainTileCoordUbo(_terrain->GetVio(), _terrain->GetTileCoordinate(_cameras.front().get()));
+        _renderer->UseTextureArray(_terrain->GetDiffuseMap(), TextureUsage::DiffuseTextureArray);
+        _renderer->UseTexture(_terrain->GetHeightMap(), TextureUsage::HeightMap);
+        _renderer->DrawTerrain(_terrain.get());
     }
     _staticModelGroup->Draw();
     if (_drawBvh) {
-        _staticModelGroup->GetBvh()->Draw();
+        auto const& aabbs = _staticModelGroup->GetBvh()->GetAabbs();
+        for (auto aabb : aabbs) {
+            _renderer->RenderAabb(aabb);
+        }
     }
     _ssao.SsaoPass();
     _ssao.LightingPass();

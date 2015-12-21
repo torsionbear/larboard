@@ -74,6 +74,12 @@ public:
 	auto GetRigidBodyMatrixInverse() const->Matrix4x4f;
 	auto GetNormalTransform() const -> Matrix4x4f;
 
+    auto SetUbo(openglUint ubo) -> void {
+        _ubo = ubo;
+    }
+    auto GetUbo() const -> openglUint {
+        return _ubo;
+    }
 	auto GetUboOffset() const -> int {
 		return _uboOffset;
 	}
@@ -88,6 +94,7 @@ protected:
 	Vector4f _upwardDirection = Vector4f{ 0.0f, 0.0f, 1.0f, 0.0f };
 	Vector4f _rightDirection = Vector4f{ 1.0f, 0.0f, 0.0f, 0.0f };
 
+    openglUint _ubo;
 	openglInt _uboOffset;
 };
 

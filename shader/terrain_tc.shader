@@ -7,28 +7,23 @@ layout (std140, row_major, binding = 0) uniform Camera {
 	vec4 viewPosition;
 } camera;
 
+layout (std140, binding = 4) uniform Terrain {	
+	ivec2 heightMapOrigin;
+	ivec2 heightMapSize;
+	ivec2 diffuseMapOrigin;
+	ivec2 diffuseMapSize;
+	float tileSize;
+	float sightDistance;	
+} terrain;
+
 layout(vertices = 3) out;
 
-uniform float tileSize;
-uniform float sightDistance;
-uniform ivec2 gridOrigin;
-uniform int gridWidth;
-uniform ivec2 heightMapOrigin;
-uniform ivec2 heightMapSize;
-uniform ivec2 diffuseMapOrigin;
-uniform ivec2 diffuseMapSize;
-
-//in vec3 vPosition[];
-//in vec2 vHeightMapTexCoord[];
 in vec2 vDiffuseMapTexCoord[];
-
-//out vec4 tcPosition[];
-//out vec2 tcHeightMapTexCoord[];
 out vec2 tcDiffuseMapTexCoord[];
 
 float CalculateOuterTessLevel(vec4 vertex0, vec4 vertex1) {
 	float edgeLength = length(vertex0 - vertex1);
-	float distanceFactor = sightDistance / 60;
+	float distanceFactor = terrain.sightDistance / 60;
 	float distance0 = length(2 * camera.viewPosition - vertex0 - vertex1) / 2;
 	return max(edgeLength * 12 / distance0, 1.0);
 }

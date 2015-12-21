@@ -25,7 +25,12 @@ public:
 	auto GetSpecular() -> Vector4f;
 	auto GetShininess() -> Float32;
 	auto GetTransparency() -> Float32;
-
+    auto SetUbo(openglUint ubo) -> void {
+        _ubo = ubo;
+    }
+    auto GetUbo() const -> openglUint {
+        return _ubo;
+    }
 	auto GetUboOffset() const -> int {
 		return _uboOffset;
 	}
@@ -38,6 +43,7 @@ public:
 private:
     Float32 _transparency;
 	ShaderData _shaderData;
+    openglUint _ubo;
 	openglInt _uboOffset;
 
 };

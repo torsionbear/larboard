@@ -41,7 +41,7 @@ auto Ssao::PrepareForDraw() -> void {
     auto randomVectorTextureSize = 4u;
     GenerateRandomTexture(randomVectorTextureSize);
     glProgramUniform1i(_ssaoShaderProgram.GetHandler(), glGetUniformLocation(_ssaoShaderProgram.GetHandler(), "randomVectorTex"), TextureBindingPoint::randomVector);
-    glProgramUniform1i(_ssaoShaderProgram.GetHandler(), glGetUniformLocation(_ssaoShaderProgram.GetHandler(), "randomVectorTexSize"), static_cast<Float32>(randomVectorTextureSize));
+    glProgramUniform1i(_ssaoShaderProgram.GetHandler(), glGetUniformLocation(_ssaoShaderProgram.GetHandler(), "randomVectorTexSize"), static_cast<int>(randomVectorTextureSize));
 
     _lightingShaderProgram.SendToCard();
     glProgramUniform1i(_lightingShaderProgram.GetHandler(), glGetUniformLocation(_lightingShaderProgram.GetHandler(), "gBuffer.diffuseEmissive"), TextureBindingPoint::diffuseEmissive);
@@ -50,7 +50,6 @@ auto Ssao::PrepareForDraw() -> void {
     glProgramUniform1i(_lightingShaderProgram.GetHandler(), glGetUniformLocation(_lightingShaderProgram.GetHandler(), "gBuffer.occlusion"), TextureBindingPoint::occlusion);
     glProgramUniform1i(_lightingShaderProgram.GetHandler(), glGetUniformLocation(_lightingShaderProgram.GetHandler(), "gBuffer.depth"), TextureBindingPoint::depth);
     glProgramUniform1i(_lightingShaderProgram.GetHandler(), glGetUniformLocation(_lightingShaderProgram.GetHandler(), "randomVectorTexSize"), randomVectorTextureSize);
-
 
     auto vertexes = array<Vector2f, 4>{ Vector2f{ -1, -1 }, Vector2f{ 1, -1 }, Vector2f{ 1, 1 }, Vector2f{ -1, 1 } };
     glGenVertexArrays(1, &_screenQuadVao);
@@ -65,6 +64,7 @@ auto Ssao::PrepareForDraw() -> void {
     glBindVertexArray(0);
 
     auto error = glGetError();
+    assert(error == GL_NO_ERROR);
 }
 
 auto Ssao::BindGBuffer() -> void {
@@ -109,6 +109,7 @@ auto Ssao::SsaoPass() -> void {
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, _ssaoDepthBuffer, 0);
 
     auto error = glGetError();
+    assert(error == GL_NO_ERROR);
 }
 
 auto Ssao::LightingPass() -> void {
@@ -133,6 +134,7 @@ auto Ssao::LightingPass() -> void {
     glBindVertexArray(0);
 
     auto error = glGetError();
+    assert(error == GL_NO_ERROR);
 }
 
 auto Ssao::InitSsaoFbo() -> void {
@@ -201,6 +203,7 @@ auto Ssao::InitSsaoFbo() -> void {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     auto error = glGetError();
+    assert(error == GL_NO_ERROR);
 }
 
 auto Ssao::GenerateSamples(unsigned int sampleCount, Vector2f sampleDistanceRange) -> void {
@@ -250,6 +253,7 @@ auto Ssao::GenerateRandomTexture(unsigned int textureSize) -> void {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glBindTexture(GL_TEXTURE_2D, 0);
     auto error = glGetError();
+    assert(error == GL_NO_ERROR);
 }
 
 }

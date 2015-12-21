@@ -1,24 +1,16 @@
 #include "StaticModelGroup.h"
 
-#include <GL/glew.h>
-
 using std::make_unique;
 using std::string;
 
 namespace core {
 
 StaticModelGroup::~StaticModelGroup() {
-    glDeleteBuffers(1, &_vbo);
-    glDeleteBuffers(1, &_veo);
-    glDeleteVertexArrays(1, &_vao);
-    glDeleteBuffers(1, &_transformUbo);
-    glDeleteBuffers(1, &_materialUbo);
 }
 
 auto StaticModelGroup::PrepareForDraw() -> void {
-    
     // 0. setup ubo
-    InitTransformData();
+    LoadTransformData();
     LoadMaterialData();
 
     // 1. shader program
@@ -28,7 +20,8 @@ auto StaticModelGroup::PrepareForDraw() -> void {
 
     // 2. texture
     for (auto & t : _textures) {
-        t.second->SendToCard();
+        t.second->Load();
+        _resourceManager->LoadTexture(t.second.get());
     }
 
     // 3. vao/vbo
@@ -40,34 +33,13 @@ auto StaticModelGroup::PrepareForDraw() -> void {
         shapes.push_back(s.get());
     }
     _bvh = make_unique<Bvh>(move(shapes));
-
-    // todo: sort shapes according to: 1. shader priority; 2. vbo/vao
 }
 
 auto StaticModelGroup::Draw() -> void {
-    // 1. prepare transform data
-    LoadTransformData();
-
-    auto currentShaderProgram = static_cast<ShaderProgram const*>(nullptr);
     for (auto const& shape : _shapes) {
-        // 1. switch shader program, set view transform & camera position, set lights, set texture
-        if (currentShaderProgram != shape->GetShaderProgram()) {
-            shape->GetShaderProgram()->Use();
-            currentShaderProgram = shape->GetShaderProgram();
-        }
-
-        // 2. feed shape dependent data (transform & material) to shader via ubo 
-        UseTransformData(shape->GetModel());
-        UseMaterialData(shape->GetMaterial());
-
-        // 3. texture
-        for (auto & texture : shape->GetTextures()) {
-            texture->Use();
-        }
-
-        // 4. feed vertex data via vao, draw call
-        shape->GetMesh()->Draw();
+        _renderer->Render(shape.get());
     }
+    // todo: sort shapes according to: 1. shader priority; 2. vbo/vao
 }
 
 auto StaticModelGroup::GetShapes() -> std::vector<std::unique_ptr<Shape>>& {
@@ -131,51 +103,20 @@ auto StaticModelGroup::GetTexture(std::string const & textureName) const -> Text
     return _textures.at(textureName).get();
 }
 
-auto StaticModelGroup::InitTransformData() -> void {
-    glGenBuffers(1, &_transformUbo);
-    glBindBuffer(GL_UNIFORM_BUFFER, _transformUbo);
-    glBufferData(GL_UNIFORM_BUFFER, Model::ShaderData::Size() * _shapes.size(), nullptr, GL_DYNAMIC_DRAW);
-    // may use glBufferStorage() instead of glBufferData() on gl version 4.4+
-    //glBufferStorage(GL_UNIFORM_BUFFER, _transformShaderDataSize * _shapes.size(), nullptr, GL_DYNAMIC_STORAGE_BIT);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-}
-
 auto StaticModelGroup::LoadTransformData() -> void {
-    auto cache = vector<unsigned char>(Model::ShaderData::Size() * _models.size());
-    auto offset = 0;
+    auto models = vector<Model *>();
     for (auto & model : _models) {
-        auto * p = reinterpret_cast<Movable::ShaderData *>(cache.data() + offset);
-        *p = model->GetShaderData();
-        model->SetUboOffset(offset);
-        offset += Model::ShaderData::Size();
+        models.push_back(model.get());
     }
-    glBindBuffer(GL_UNIFORM_BUFFER, _transformUbo);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, cache.size(), cache.data());
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-}
-
-auto StaticModelGroup::UseTransformData(Model const* model) -> void {
-    glBindBufferRange(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Transform), _transformUbo, model->GetUboOffset(), Model::ShaderData::Size());
+    _resourceManager->LoadModels(models);
 }
 
 auto StaticModelGroup::LoadMaterialData() -> void {
-    glGenBuffers(1, &_materialUbo);
-    glBindBuffer(GL_UNIFORM_BUFFER, _materialUbo);
-    glBufferData(GL_UNIFORM_BUFFER, Material::ShaderData::Size() * _materials.size(), nullptr, GL_DYNAMIC_DRAW);
-    auto * p = static_cast<unsigned char*>(glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY));
-    auto offset = 0;
+    auto materials = vector<Material *>();
     for (auto & m : _materials) {
-        auto * material = m.second.get();
-        material->SetUboOffset(offset);
-        memcpy(p, &material->GetShaderData(), sizeof(Material::ShaderData));
-        p += Material::ShaderData::Size();
-        offset += Material::ShaderData::Size();
+        materials.push_back(m.second.get());
     }
-    glUnmapBuffer(GL_UNIFORM_BUFFER);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    _resourceManager->LoadMaterials(materials);
 }
 
-auto StaticModelGroup::UseMaterialData(Material const* material) -> void {
-    glBindBufferRange(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Material), _materialUbo, material->GetUboOffset(), Material::ShaderData::Size());
-}
 }

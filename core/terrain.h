@@ -13,52 +13,90 @@ namespace core {
 
 class Terrain {
 public:
+    struct ShaderData {
+        Vector2i heightMapOrigin;
+        Vector2i heightMapSize;
+        Vector2i diffuseMapOrigin;
+        Vector2i diffuseMapSize;
+        Float32 tileSize;
+        Float32 sightDistance;
+    public:
+        static auto Size() -> unsigned int;
+    };
+public:
     Terrain(std::vector<std::string> && diffuseMapFiles, std::string heightMap);
 public:
-    auto PrepareForDraw(Float32 sightDistance) -> void;
-    auto Draw(Camera const* camera)  -> void;
+    auto SetSightDistance(Float32 sightDistance) -> void;
     auto SetTileSize(Float32 tileSize) -> void {
-        _tileSize = tileSize;
+        _shaderData.tileSize = tileSize;
     }
     auto SetHeightMapOrigin(Vector2i heightMapOrigin) -> void {
-        _heightMapOrigin = heightMapOrigin;
+        _shaderData.heightMapOrigin = heightMapOrigin;
     }
     auto SetHeightMapSize(Vector2i heightMapSize) -> void {
-        _heightMapSize = heightMapSize;
+        _shaderData.heightMapSize = heightMapSize;
     }
     auto SetDiffuseMapOrigin(Vector2i diffuseMapOrigin) -> void {
-        _diffuseMapOrigin = diffuseMapOrigin;
+        _shaderData.diffuseMapOrigin = diffuseMapOrigin;
     }
     auto SetDiffuseMapSize(Vector2i diffuseMapSize) -> void {
-        _diffuseMapSize = diffuseMapSize;
+        _shaderData.diffuseMapSize = diffuseMapSize;
+    }
+    auto GetShaderProgram() const -> ShaderProgram const* {
+        return &_shaderProgram;
+    }
+    auto GetShaderProgram() -> ShaderProgram * {
+        return &_shaderProgram;
+    }
+    auto GetShaderData() const -> ShaderData const& {
+        return _shaderData;
+    }
+    auto GetVao() const -> openglUint {
+        return _vao;
+    }
+    auto SetVao(openglUint vao) {
+        _vao = vao;
+    }
+    auto GetVio() -> openglUint {
+        return _vio;
+    }
+    auto SetVio(openglUint vio) {
+        _vio = vio;
     }
     auto AddSpecialTiles(std::vector<std::unique_ptr<Shape>> && shapes, std::vector<std::unique_ptr<Mesh>> && meshes) -> void;
     auto GetHeight(Vector2f coord) const->Float32;
+    auto GetDiffuseMap() -> TextureArray * {
+        return &_diffuseMap;
+    }
+    auto GetHeightMap() -> Texture * {
+        return &_heightMap;
+    }
+    auto GetTileCount() const -> unsigned int {
+        return _tileCoord.size();
+    }
+    auto GetSpecialTiles() const -> std::vector<Mesh *>;
+    auto GetTileCoordinate(Camera const* camera) -> std::vector<Vector3f> const&;
 private:
-    auto GetViewFrustumCoverage(Camera const* camera) -> std::array<Vector2f, 2>;
-    auto LoadSpecialTiles() -> void;
-    auto DrawSpecialTiles() -> void;
+    auto GetViewFrustumCoverage(Camera const* camera) const -> std::array<Vector2f, 2>;
 private:
-    Float32 _tileSize = 10.0f;
-    Vector2i _heightMapOrigin = Vector2i{ -5, -5 };
-    Vector2i _heightMapSize = Vector2i{ 10, 10 };  // width and height in tile count
-    Vector2i _diffuseMapOrigin = Vector2i{ 0, 0 };
-    Vector2i _diffuseMapSize = Vector2i{ 1, 1 };
-    Float32 _sightDistance = 200.0f;
+    ShaderData _shaderData = {
+        Vector2i{ -5, -5 },
+        Vector2i{ 10, 10 },
+        Vector2i{ 0, 0 },
+        Vector2i{ 1, 1 },
+        10.0f,
+        200.0f,
+    };
 
     std::vector<Vector2i> _holeTiles;
     std::vector<std::unique_ptr<Shape>> _specialTileShapes;
     std::vector<std::unique_ptr<Mesh>> _specialTileMeshes;
-    openglUint _specialTilesVao;
-    openglUint _specialTilesVbo;
-    openglUint _specialTilesVeo;
+    std::vector<Vector3f> _tileCoord;
 
     TextureArray _diffuseMap;
     Texture _heightMap;
     ShaderProgram _shaderProgram;
     openglUint _vao;
-    openglUint _vbo;
-    openglUint _veo;
     openglUint _vio;
 };
 

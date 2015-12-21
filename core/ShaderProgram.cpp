@@ -130,7 +130,7 @@ auto ShaderProgram::Use() const -> void {
     }
 }
 
-auto ShaderProgram::GetHandler() -> GLuint {
+auto ShaderProgram::GetHandler() const -> GLuint {
 	return _program;
 }
 

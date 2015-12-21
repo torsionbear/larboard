@@ -83,6 +83,7 @@ private:
 
 private:
 	std::unique_ptr<ResourceManager> _resourceManager;
+    std::unique_ptr<Renderer> _renderer;
 	Movable _root;
 	std::vector<std::unique_ptr<Camera>> _cameras;
     std::unique_ptr<CameraController> _cameraController = nullptr;
