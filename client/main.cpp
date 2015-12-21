@@ -87,7 +87,7 @@ int main()
         exit(EXIT_FAILURE);
     }
 
-	auto scene = LoadScene3();
+	auto scene = LoadScene1();
 	scene->PrepareForDraw();
 
 	auto lastX = 0.0f;
