@@ -14,7 +14,6 @@
     <ProjectGuid>{A092D6FD-2D55-4F6D-B422-50D3C6907B56}</ProjectGuid>
     <RootNamespace>Client</RootNamespace>
     <ProjectName>client</ProjectName>
-    <TargetPlatformVersion>8.1</TargetPlatformVersion>
     <WindowsTargetPlatformVersion>10.0.10240.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

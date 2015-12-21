@@ -14,7 +14,6 @@
     <ProjectGuid>{C2FC558E-395A-4306-83B4-8EED31C25E7B}</ProjectGuid>
     <RootNamespace>X3dParser</RootNamespace>
     <ProjectName>x3dParser</ProjectName>
-    <TargetPlatformVersion>8.1</TargetPlatformVersion>
     <WindowsTargetPlatformVersion>10.0.10240.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

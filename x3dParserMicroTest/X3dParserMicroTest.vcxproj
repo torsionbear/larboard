@@ -14,7 +14,6 @@
     <ProjectGuid>{D3CBDAD4-10DD-4466-88B0-4797B5CBC557}</ProjectGuid>
     <RootNamespace>X3dParserMicroTest</RootNamespace>
     <ProjectName>x3dParserMicroTest</ProjectName>
-    <TargetPlatformVersion>8.1</TargetPlatformVersion>
     <WindowsTargetPlatformVersion>10.0.10240.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

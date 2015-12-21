@@ -14,7 +14,6 @@
     <ProjectGuid>{C40525D8-5F04-4CF0-A719-BEA896895413}</ProjectGuid>
     <RootNamespace>RenderSystem</RootNamespace>
     <ProjectName>renderSystem</ProjectName>
-    <TargetPlatformVersion>8.1</TargetPlatformVersion>
     <WindowsTargetPlatformVersion>10.0.10240.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
