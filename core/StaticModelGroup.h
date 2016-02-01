@@ -43,6 +43,9 @@ public:
     auto GetBvh() -> Bvh * {
         return _bvh.get();
     }
+    auto GetMeshes() ->std::vector<std::unique_ptr<Mesh>> const& {
+        return _meshes;
+    }
 
 private:
     auto LoadTransformData() -> void;

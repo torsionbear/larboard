@@ -13,6 +13,7 @@
 #include "core/MessageLogger.h"
 #include "core/Mesh.h"
 #include "x3dParser/X3dReader.h"
+#include "d3d12RenderSystem/RenderSystem.h"
 
 using core::ShaderProgram;
 using core::MessageLogger;
@@ -30,11 +31,17 @@ auto UpdateScene(core::Scene & scene) -> void {
 
 }
 
+auto LoadScene_dx0() -> std::unique_ptr<core::Scene> {
+    auto scene = make_unique<core::Scene>(width, height);
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square/square_dx.x3d").Read(scene.get());
+    return move(scene);
+}
+
 auto LoadScene0() -> std::unique_ptr<core::Scene> {
     auto scene = make_unique<core::Scene>(width, height);
 	x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square/square.x3d").Read(scene.get());
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
-    scene->CreateSkyBox(std::array<std::string, 6>{"media/skybox/RT.png", "media/skybox/LF.png", "media/skybox/FT.png", "media/skybox/BK.png", "media/skybox/UP.png", "media/skybox/DN.png", });
+    //scene->CreateSkyBox(std::array<std::string, 6>{"media/skybox/RT.png", "media/skybox/LF.png", "media/skybox/FT.png", "media/skybox/BK.png", "media/skybox/UP.png", "media/skybox/DN.png", });
 
     return move(scene);
 }
@@ -74,45 +81,75 @@ auto LoadScene3() -> std::unique_ptr<core::Scene> {
     return move(scene);
 }
 
-int main()
-{
-	RenderWindow rw{};
+int main_gl() {
+    RenderWindow rw{};
     rw.Create(width, height, L"RenderWindow");
-	MessageLogger::Log(MessageLogger::Info, std::string((const char*)glGetString(GL_VERSION)));
-	MessageLogger::Log(MessageLogger::Info, std::string((const char*)glGetString(GL_RENDERER)));
+    MessageLogger::Log(MessageLogger::Info, std::string((const char*)glGetString(GL_VERSION)));
+    MessageLogger::Log(MessageLogger::Info, std::string((const char*)glGetString(GL_RENDERER)));
 
-    if (glewInit())
-    {
-		MessageLogger::Log(MessageLogger::Error, "Unable to initialize GLEW ... exiting");
+    if (glewInit()) {
+        MessageLogger::Log(MessageLogger::Error, "Unable to initialize GLEW ... exiting");
         exit(EXIT_FAILURE);
     }
 
-	auto scene = LoadScene1();
-	scene->PrepareForDraw();
+    auto scene = LoadScene0();
+    scene->PrepareForDraw();
 
-	auto lastX = 0.0f;
-	auto lastY = 0.0f;
-	auto status = 0; // 0:none; 1:rotate; 2:pan;
+    auto lastX = 0.0f;
+    auto lastY = 0.0f;
+    auto status = 0; // 0:none; 1:rotate; 2:pan;
     auto pickPoint = core::Point4f{ 0, 0, 0, 1 };
     rw.RegisterInputHandler(std::function<void(HWND, UINT, WPARAM, LPARAM)>(InputHandler(scene.get(), width, height)));
 
-	rw.SetCaption(L"newCaption");
-	auto fpsCount = 0u;
-	auto clock = std::chrono::system_clock();
-	auto timePoint = clock.now();
-    while (rw.Step())
-    {
-		if (++fpsCount == 100u) {
-			fpsCount = 0;
-			auto lastTimePoint = timePoint;
-			timePoint = clock.now();
-			auto timeSpan = std::chrono::duration_cast<std::chrono::milliseconds>(timePoint - lastTimePoint);
-			auto fps = 100000.0f / static_cast<float>(timeSpan.count());
-			rw.SetCaption(L"FPS: " + std::to_wstring(fps));
-		}
-		UpdateScene(*scene);
+    rw.SetCaption(L"newCaption");
+    auto fpsCount = 0u;
+    auto clock = std::chrono::system_clock();
+    auto timePoint = clock.now();
+    while (rw.Step()) {
+        if (++fpsCount == 100u) {
+            fpsCount = 0;
+            auto lastTimePoint = timePoint;
+            timePoint = clock.now();
+            auto timeSpan = std::chrono::duration_cast<std::chrono::milliseconds>(timePoint - lastTimePoint);
+            auto fps = 100000.0f / static_cast<float>(timeSpan.count());
+            rw.SetCaption(L"FPS: " + std::to_wstring(fps));
+        }
+        UpdateScene(*scene);
         DrawOneFrame(*scene);
     }
 
     return 0;
+}
+
+int main_dx() {
+    auto const width = 800;
+    auto const height = 600;
+
+    d3d12RenderSystem::RenderWindow renderWindow{};
+    renderWindow.Create(width, height, L"RenderWindow");
+
+    auto renderSystem = d3d12RenderSystem::RenderSystem{ &renderWindow };
+    auto scene = LoadScene_dx0();
+
+    renderSystem.Init();
+    renderSystem.LoadBegin();
+    renderSystem.LoadMeshes(scene->GetStaticModelGroup().GetMeshes());
+    renderSystem.LoadEnd();
+
+    while (renderWindow.Step()) {
+        renderSystem.Update();
+        renderSystem.RenderBegin();
+        for (auto & shape : scene->GetStaticModelGroup().GetShapes()) {
+            renderSystem.Render(shape.get());
+        }
+        renderSystem.RenderEnd();
+    }
+
+    return 0;
+}
+
+int main()
+{
+    //return main_gl();
+    return main_dx();
 }

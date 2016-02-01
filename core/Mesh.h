@@ -49,6 +49,8 @@ private:
     DrawMode _drawMode;
 
     RenderData _renderData;
+public:
+    unsigned int _renderDataId;
 };
 
 }
