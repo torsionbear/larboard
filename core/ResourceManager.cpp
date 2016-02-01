@@ -9,6 +9,11 @@ using std::unique_ptr;
 
 namespace core {
 
+ResourceManager::~ResourceManager() {
+    glDeleteBuffers(1, &_cameraUbo);
+    glDeleteBuffers(1, &_lightUbo);
+}
+
 auto ResourceManager::LoadMeshes(vector<unique_ptr<Mesh>> const& meshes) -> void {
     _vertexBuffers.emplace_back();
     auto & vertexBuffer = _vertexBuffers.back();
@@ -347,6 +352,64 @@ auto ResourceManager::UpdateTerrainTileCoordUbo(openglUint vio, std::vector<Vect
     glBindBuffer(GL_ARRAY_BUFFER, vio);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vector3f) * tileCoord.size(), tileCoord.data());
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+auto ResourceManager::InitCameraData(unsigned int size) -> void {
+    glGenBuffers(1, &_cameraUbo);
+    glBindBuffer(GL_UNIFORM_BUFFER, _cameraUbo);
+    glBufferData(GL_UNIFORM_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+auto ResourceManager::UpdateCameraData(vector<unique_ptr<Camera>> const& cameras) -> void {
+    auto cache = vector<unsigned char>(Camera::ShaderData::Size() * cameras.size());
+    auto offset = 0;
+    for (auto & camera : cameras) {
+        auto * p = reinterpret_cast<Camera::ShaderData *>(&cache[offset]);
+        *p = camera->GetShaderData();
+        camera->SetUboOffset(offset);
+        offset += Camera::ShaderData::Size();
+    }
+    glBindBuffer(GL_UNIFORM_BUFFER, _cameraUbo);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, cache.size(), cache.data());
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+auto ResourceManager::UseCameraData(Camera const * camera) -> void {
+    glBindBufferRange(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Camera), _cameraUbo, camera->GetUboOffset(), sizeof(Camera::ShaderData));
+}
+
+auto ResourceManager::InitLightData(
+    vector<unique_ptr<AmbientLight>> const& ambientLights,
+    vector<unique_ptr<PointLight>> const& pointLights, 
+    vector<unique_ptr<DirectionalLight>> const& directionalLights,
+    vector<unique_ptr<SpotLight>> const& spotLights) -> void {
+    auto data = LightShaderData{};
+
+    data.ambientLight = ambientLights.front()->GetShaderData();
+
+    data.directionalLightCount = directionalLights.size();
+    assert(data.directionalLightCount <= LightShaderData::MaxDirectionalLightCount);
+    for (auto i = 0; i < data.directionalLightCount; ++i) {
+        data.directionalLights[i] = directionalLights[i]->GetShaderData();
+    }
+
+    data.pointLightCount = pointLights.size();
+    assert(data.pointLightCount <= LightShaderData::MaxPointLightCount);
+    for (auto i = 0; i < data.pointLightCount; ++i) {
+        data.pointLights[i] = pointLights[i]->GetShaderData();
+    }
+
+    data.spotLightCount = spotLights.size();
+    assert(data.spotLightCount <= LightShaderData::MaxSpotLightCount);
+    for (auto i = 0; i < data.spotLightCount; ++i) {
+        data.spotLights[i] = spotLights[i]->GetShaderData();
+    }
+
+    glGenBuffers(1, &_lightUbo);
+    glBindBuffer(GL_UNIFORM_BUFFER, _lightUbo);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(data), &data, GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Light), _lightUbo);
 }
 
 }

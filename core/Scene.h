@@ -24,27 +24,11 @@
 
 namespace core {
 
-struct LightShaderData {
-	enum {
-		MaxDirectionalLightCount = 10,
-		MaxPointLightCount = 50,
-		MaxSpotLightCount = 50,
-	};
-    AmbientLight::ShaderData ambientLight;
-	DirectionalLight::ShaderData directionalLights[MaxDirectionalLightCount];
-	PointLight::ShaderData pointLights[MaxPointLightCount];
-	SpotLight::ShaderData spotLights[MaxSpotLightCount];
-	int directionalLightCount;
-	int pointLightCount;
-	int spotLightCount;
-};
-
 class Scene {
 public:
-    Scene(unsigned int width, unsigned int height);
+    Scene(unsigned int width, unsigned int height, ResourceManager * resourceManager, Renderer * renderer);
 	Scene(Scene const&) = delete;
 	Scene& operator=(Scene const&) = delete;
-	~Scene();
 public:
 	auto CreateCamera() -> Camera *;
     auto CreateAmbientLight() -> AmbientLight *;
@@ -76,14 +60,8 @@ public:
     auto Draw() -> void;
 
 private:
-	auto InitCameraData() -> void;
-	auto LoadCameraData() -> void;
-	auto UseCameraData(Camera const* camera) -> void;
-	auto LoadLightData() -> void;
-
-private:
-	std::unique_ptr<ResourceManager> _resourceManager;
-    std::unique_ptr<Renderer> _renderer;
+	ResourceManager * _resourceManager;
+    Renderer * _renderer;
 	Movable _root;
 	std::vector<std::unique_ptr<Camera>> _cameras;
     std::unique_ptr<CameraController> _cameraController = nullptr;
@@ -98,11 +76,6 @@ private:
 
     Ssao _ssao;
 
-	openglUint _cameraUbo;
-	openglUint _lightUbo;
-
-	bool _wireframeMode = false;
-	bool _renderBackFace = false;
     bool _drawBvh = false;
 };
 

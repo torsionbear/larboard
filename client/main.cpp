@@ -7,6 +7,8 @@
 
 #include "renderSystem/RenderWindow.h"
 #include "core/scene.h"
+#include "core/ResourceManager.h"
+#include "core/Renderer.h"
 #include "core/Texture.h"
 #include "core/ShaderProgram.h"
 #include "core/PngReader.h"
@@ -31,40 +33,31 @@ auto UpdateScene(core::Scene & scene) -> void {
 
 }
 
-auto LoadScene_dx0() -> std::unique_ptr<core::Scene> {
-    auto scene = make_unique<core::Scene>(width, height);
-    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square/square_dx.x3d").Read(scene.get());
-    return move(scene);
+auto LoadScene_dx0(core::Scene * scene) -> void {
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square/square_dx.x3d").Read(scene);
 }
 
-auto LoadScene0() -> std::unique_ptr<core::Scene> {
-    auto scene = make_unique<core::Scene>(width, height);
-	x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square/square.x3d").Read(scene.get());
+auto LoadScene0(core::Scene * scene) -> void {
+	x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square/square.x3d").Read(scene);
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
     //scene->CreateSkyBox(std::array<std::string, 6>{"media/skybox/RT.png", "media/skybox/LF.png", "media/skybox/FT.png", "media/skybox/BK.png", "media/skybox/UP.png", "media/skybox/DN.png", });
 
-    return move(scene);
 }
 
-auto LoadScene1() -> std::unique_ptr<core::Scene> {
-    auto scene = make_unique<core::Scene>(width, height);
-    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square2/square2.x3d").Read(scene.get());
+auto LoadScene1(core::Scene * scene) -> void {
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square2/square2.x3d").Read(scene);
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
     scene->CreateSkyBox(std::array<std::string, 6>{"media/skybox/mt_rt.png", "media/skybox/mt_lf.png", "media/skybox/mt_ft.png", "media/skybox/mt_bk.png", "media/skybox/mt_up.png", "media/skybox/mt_dn.png", });
-    return move(scene);
 }
 
-auto LoadScene2() -> std::unique_ptr<core::Scene> {
-    auto scene = make_unique<core::Scene>(width, height);
-    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/8/8.x3d").Read(scene.get());
+auto LoadScene2(core::Scene * scene) -> void {
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/8/8.x3d").Read(scene);
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
     scene->CreateSkyBox(std::array<std::string, 6>{"media/skybox/RT.png", "media/skybox/LF.png", "media/skybox/FT.png", "media/skybox/BK.png", "media/skybox/UP.png", "media/skybox/DN.png", });
-	return move(scene);
 }
 
-auto LoadScene3() -> std::unique_ptr<core::Scene> {
-    auto scene = make_unique<core::Scene>(width, height);
-    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_02/xsh_02_house.x3d").Read(scene.get());
+auto LoadScene3(core::Scene * scene) -> void {
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_02/xsh_02_house.x3d").Read(scene);
 
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.5f, 0.5f, 0.5f, 1 });
     scene->CreateSkyBox(std::array<std::string, 6>{"media/skybox/RT.png", "media/skybox/LF.png", "media/skybox/FT.png", "media/skybox/BK.png", "media/skybox/UP.png", "media/skybox/DN.png", });
@@ -74,11 +67,14 @@ auto LoadScene3() -> std::unique_ptr<core::Scene> {
     scene->GetTerrain()->SetHeightMapOrigin(core::Vector2i{ -30, -24 });
     scene->GetTerrain()->SetHeightMapSize(core::Vector2i{ 60, 60 });
     scene->GetTerrain()->SetDiffuseMapSize(core::Vector2i{ 5, 5 });
-    auto terrainSpecialTileScene = make_unique<core::Scene>(width, height);
+
+    auto resourceManager = make_unique<core::ResourceManager>();
+    auto renderer = make_unique<core::Renderer>(resourceManager.get());
+    auto terrainSpecialTileScene = make_unique<core::Scene>(width, height, resourceManager.get(), renderer.get());
+
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_01_terrainx3d.x3d").Read(terrainSpecialTileScene.get());
     scene->GetTerrain()->AddSpecialTiles(terrainSpecialTileScene->GetStaticModelGroup().AcquireShapes(), terrainSpecialTileScene->GetStaticModelGroup().AcquireMeshes());
 
-    return move(scene);
 }
 
 int main_gl() {
@@ -91,8 +87,11 @@ int main_gl() {
         MessageLogger::Log(MessageLogger::Error, "Unable to initialize GLEW ... exiting");
         exit(EXIT_FAILURE);
     }
+    auto resourceManager = make_unique<core::ResourceManager>();
+    auto renderer = make_unique<core::Renderer>(resourceManager.get());
+    auto scene = make_unique<core::Scene>(width, height, resourceManager.get(), renderer.get());
 
-    auto scene = LoadScene0();
+    LoadScene3(scene.get());
     scene->PrepareForDraw();
 
     auto lastX = 0.0f;
@@ -129,7 +128,12 @@ int main_dx() {
     renderWindow.Create(width, height, L"RenderWindow");
 
     auto renderSystem = d3d12RenderSystem::RenderSystem{ &renderWindow };
-    auto scene = LoadScene_dx0();
+
+    auto resourceManager = make_unique<core::ResourceManager>();
+    auto renderer = make_unique<core::Renderer>(resourceManager.get());
+    auto scene = make_unique<core::Scene>(width, height, resourceManager.get(), renderer.get());
+
+    LoadScene_dx0(scene.get());
 
     renderSystem.Init();
     renderSystem.LoadBegin();
@@ -150,6 +154,6 @@ int main_dx() {
 
 int main()
 {
-    //return main_gl();
-    return main_dx();
+    return main_gl();
+    //return main_dx();
 }

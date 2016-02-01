@@ -4,6 +4,28 @@
 
 namespace core {
 
+auto Renderer::PrepareForDraw() -> void {
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+}
+
+auto Renderer::DrawBegin() -> void {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    //glViewport(0, 0, texWidth, texHeight);
+
+    _wireframeMode ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE) : glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
+
+auto Renderer::ToggleWireframe() -> void {
+    _wireframeMode = !_wireframeMode;
+}
+
+auto Renderer::ToggleBackFace() -> void {
+    _renderBackFace = !_renderBackFace;
+    _renderBackFace ? glDisable(GL_CULL_FACE) : glEnable(GL_CULL_FACE);
+}
+
 auto Renderer::Render(Shape const* shape) -> void {
     // shaderProgram
     shape->GetShaderProgram()->Use();

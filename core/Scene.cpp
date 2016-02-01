@@ -3,25 +3,18 @@
 #include <algorithm>
 #include <stack>
 
-#include <GL/glew.h>
-
 using std::string;
 using std::make_unique;
 using std::array;
 
 namespace core {
 
-Scene::Scene(unsigned int width, unsigned int height)
+Scene::Scene(unsigned int width, unsigned int height, ResourceManager * resourceManager, Renderer * renderer)
     : _ssao(width, height) {
     // todo: send in resourceManager by argument
-    _resourceManager = make_unique<ResourceManager>();
-    _renderer = make_unique<Renderer>(_resourceManager.get());
-    _staticModelGroup = make_unique<StaticModelGroup>(_resourceManager.get(), _renderer.get());
-}
-
-Scene::~Scene() {
-    glDeleteBuffers(1, &_cameraUbo);
-    glDeleteBuffers(1, &_lightUbo);
+    _resourceManager = resourceManager;
+    _renderer = renderer;
+    _staticModelGroup = make_unique<StaticModelGroup>(resourceManager, renderer);
 }
 
 auto Scene::CreateCamera() -> Camera * {
@@ -102,12 +95,11 @@ auto Scene::Picking(Ray & ray) -> bool {
 }
 
 auto Scene::ToggleBackFace() -> void {
-	_renderBackFace = !_renderBackFace;
-	_renderBackFace ? glDisable(GL_CULL_FACE) : glEnable(GL_CULL_FACE);
+    _renderer->ToggleBackFace();
 }
 
 auto Scene::ToggleWireframe() -> void {
-	_wireframeMode = !_wireframeMode;
+    _renderer->ToggleWireframe();
 }
 
 auto Scene::ToggleBvh() -> void {
@@ -116,13 +108,11 @@ auto Scene::ToggleBvh() -> void {
 
 auto Scene::PrepareForDraw() -> void {
     _cameraController = make_unique<CameraController>(this);
-
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
+    _renderer->PrepareForDraw();
 
 	// setup ubo
-	InitCameraData();
-	LoadLightData();
+    _resourceManager->InitCameraData(Camera::ShaderData::Size() * _cameras.size());
+    _resourceManager->InitLightData(_ambientLights, _pointLights, _directionalLights, _spotLights);
     _staticModelGroup->PrepareForDraw();
 
     // bvh
@@ -141,7 +131,6 @@ auto Scene::PrepareForDraw() -> void {
         _skyBox->GetCubeMap()->Load();
         _resourceManager->LoadCubeMap(_skyBox->GetCubeMap());
         _skyBox->GetShaderProgram()->SendToCard();
-        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
     }
 
     // terrain
@@ -161,23 +150,18 @@ auto Scene::PrepareForDraw() -> void {
 	// todo: sort shapes according to: 1. shader priority; 2. vbo/vao
 
     _ssao.PrepareForDraw();
-    auto error = glGetError();
-    assert(error == GL_NO_ERROR);
 }
 
 auto Scene::Draw() -> void {
     _ssao.BindGBuffer();
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    //glViewport(0, 0, texWidth, texHeight);
-
-    _wireframeMode ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE) : glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    _renderer->DrawBegin();
 
     _cameraController->Step();
 
     // feed model independent data (camera) to shader via ubo
-    LoadCameraData();
-    UseCameraData(_cameras.front().get());
+    _resourceManager->UpdateCameraData(_cameras);
+    _resourceManager->UseCameraData(_cameras.front().get());
 
     if (nullptr != _skyBox) {
         _renderer->RenderSkyBox(_skyBox.get());
@@ -197,63 +181,6 @@ auto Scene::Draw() -> void {
     }
     _ssao.SsaoPass();
     _ssao.LightingPass();
-}
-
-// store all camera's data in _cameraUbo. 
-// if there's not need to split screen for multiple player, 
-// maybe we should store only 1 camera's data in _cameraUbo
-auto Scene::InitCameraData() -> void {
-	glGenBuffers(1, &_cameraUbo);
-	glBindBuffer(GL_UNIFORM_BUFFER, _cameraUbo);
-	glBufferData(GL_UNIFORM_BUFFER, Camera::ShaderData::Size() * _cameras.size(), nullptr, GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-}
-
-auto Scene::LoadCameraData() -> void {
-	auto cache = vector<unsigned char>(Camera::ShaderData::Size() * _cameras.size());
-	auto offset = 0;
-	for (auto & camera : _cameras) {
-		auto * p = reinterpret_cast<Camera::ShaderData *>(&cache[offset]);
-		*p = camera->GetShaderData();
-		camera->SetUboOffset(offset);
-		offset += Camera::ShaderData::Size();
-	}
-	glBindBuffer(GL_UNIFORM_BUFFER, _cameraUbo);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, cache.size(), cache.data());
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-}
-
-auto Scene::UseCameraData(Camera const * camera) -> void {
-	glBindBufferRange(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Camera), _cameraUbo, camera->GetUboOffset(), sizeof(Camera::ShaderData));
-}
-
-auto Scene::LoadLightData() -> void {
-	auto data = LightShaderData{};
-
-    data.ambientLight = _ambientLights.front()->GetShaderData();
-
-	data.directionalLightCount = _directionalLights.size();
-	assert(data.directionalLightCount <= LightShaderData::MaxDirectionalLightCount);
-	for (auto i = 0; i < data.directionalLightCount; ++i) {
-		data.directionalLights[i] = _directionalLights[i]->GetShaderData();
-	}
-
-	data.pointLightCount = _pointLights.size();
-	assert(data.pointLightCount <= LightShaderData::MaxPointLightCount);
-	for (auto i = 0; i < data.pointLightCount; ++i) {
-		data.pointLights[i] = _pointLights[i]->GetShaderData();
-	}
-
-	data.spotLightCount = _spotLights.size();
-	assert(data.spotLightCount <= LightShaderData::MaxSpotLightCount);
-	for (auto i = 0; i < data.spotLightCount; ++i) {
-		data.spotLights[i] = _spotLights[i]->GetShaderData();
-	}
-
-	glGenBuffers(1, &_lightUbo);
-	glBindBuffer(GL_UNIFORM_BUFFER, _lightUbo);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(data), &data, GL_DYNAMIC_DRAW);
-	glBindBufferBase(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Light), _lightUbo);
 }
 
 }
