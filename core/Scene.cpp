@@ -94,21 +94,13 @@ auto Scene::Picking(Ray & ray) -> bool {
     return ret;
 }
 
-auto Scene::ToggleBackFace() -> void {
-    _renderer->ToggleBackFace();
-}
-
-auto Scene::ToggleWireframe() -> void {
-    _renderer->ToggleWireframe();
-}
-
 auto Scene::ToggleBvh() -> void {
     _drawBvh = !_drawBvh;
 }
 
 auto Scene::PrepareForDraw() -> void {
-    _cameraController = make_unique<CameraController>(this);
     _renderer->PrepareForDraw();
+    _ssao.PrepareForDraw();
 
 	// setup ubo
     _resourceManager->InitCameraData(Camera::ShaderData::Size() * _cameras.size());
@@ -149,15 +141,11 @@ auto Scene::PrepareForDraw() -> void {
     }
 	// todo: sort shapes according to: 1. shader priority; 2. vbo/vao
 
-    _ssao.PrepareForDraw();
 }
 
 auto Scene::Draw() -> void {
     _ssao.BindGBuffer();
-
     _renderer->DrawBegin();
-
-    _cameraController->Step();
 
     // feed model independent data (camera) to shader via ubo
     _resourceManager->UpdateCameraData(_cameras);

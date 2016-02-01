@@ -40,7 +40,7 @@ private:
         openglUint _veo = 0;
     };
 public:
-    ~ResourceManager();
+    ResourceManager::~ResourceManager();
 public:
 	auto LoadMeshes(std::vector<std::unique_ptr<Mesh>> const& meshes) -> void;
     auto LoadSkyBoxMesh(SkyBox * skyBox) -> void;
@@ -70,8 +70,8 @@ private:
     std::vector<openglUint> _uniformBuffers;
     std::vector<openglUint> _textures;
     std::vector<std::unique_ptr<ShaderProgram>> _shaderPrograms;
-    openglUint _cameraUbo;
-    openglUint _lightUbo;
+    unsigned int _cameraUboIndex;
+    //unsigned int _lightUboIndex;
 };
 
 }

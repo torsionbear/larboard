@@ -10,8 +10,9 @@ using std::unique_ptr;
 namespace core {
 
 ResourceManager::~ResourceManager() {
-    glDeleteBuffers(1, &_cameraUbo);
-    glDeleteBuffers(1, &_lightUbo);
+    if (!_uniformBuffers.empty()) {
+        glDeleteBuffers(_uniformBuffers.size(), _uniformBuffers.data());
+    }
 }
 
 auto ResourceManager::LoadMeshes(vector<unique_ptr<Mesh>> const& meshes) -> void {
@@ -355,8 +356,12 @@ auto ResourceManager::UpdateTerrainTileCoordUbo(openglUint vio, std::vector<Vect
 }
 
 auto ResourceManager::InitCameraData(unsigned int size) -> void {
-    glGenBuffers(1, &_cameraUbo);
-    glBindBuffer(GL_UNIFORM_BUFFER, _cameraUbo);
+    _cameraUboIndex = _uniformBuffers.size();
+    _uniformBuffers.emplace_back();
+    auto & cameraUbo = _uniformBuffers.back();
+
+    glGenBuffers(1, &cameraUbo);
+    glBindBuffer(GL_UNIFORM_BUFFER, cameraUbo);
     glBufferData(GL_UNIFORM_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
@@ -370,13 +375,13 @@ auto ResourceManager::UpdateCameraData(vector<unique_ptr<Camera>> const& cameras
         camera->SetUboOffset(offset);
         offset += Camera::ShaderData::Size();
     }
-    glBindBuffer(GL_UNIFORM_BUFFER, _cameraUbo);
+    glBindBuffer(GL_UNIFORM_BUFFER, _uniformBuffers[_cameraUboIndex]);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, cache.size(), cache.data());
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 auto ResourceManager::UseCameraData(Camera const * camera) -> void {
-    glBindBufferRange(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Camera), _cameraUbo, camera->GetUboOffset(), sizeof(Camera::ShaderData));
+    glBindBufferRange(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Camera), _uniformBuffers[_cameraUboIndex], camera->GetUboOffset(), sizeof(Camera::ShaderData));
 }
 
 auto ResourceManager::InitLightData(
@@ -406,10 +411,13 @@ auto ResourceManager::InitLightData(
         data.spotLights[i] = spotLights[i]->GetShaderData();
     }
 
-    glGenBuffers(1, &_lightUbo);
-    glBindBuffer(GL_UNIFORM_BUFFER, _lightUbo);
+    //_lightUboIndex = _uniformBuffers.size();
+    _uniformBuffers.emplace_back();
+    auto & lightUbo = _uniformBuffers.back();
+    glGenBuffers(1, &lightUbo);
+    glBindBuffer(GL_UNIFORM_BUFFER, lightUbo);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(data), &data, GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Light), _lightUbo);
+    glBindBufferBase(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Light), lightUbo);
 }
 
 }

@@ -39,9 +39,6 @@ public:
 	auto Unstage(Movable *) -> void;
 
     auto GetActiveCamera() const -> Camera *;
-    auto GetCameraController() const -> CameraController * {
-        return _cameraController.get();
-    }
     auto GetStaticModelGroup() -> StaticModelGroup & {
         return *_staticModelGroup;
     }
@@ -52,8 +49,6 @@ public:
     auto CreateSkyBox(std::array<std::string, 6> && filenames) -> void;
     auto Picking(Ray & ray) -> bool;
 
-	auto ToggleBackFace() -> void;
-    auto ToggleWireframe() -> void;
     auto ToggleBvh() -> void;
 
     auto PrepareForDraw() -> void;
@@ -64,7 +59,6 @@ private:
     Renderer * _renderer;
 	Movable _root;
 	std::vector<std::unique_ptr<Camera>> _cameras;
-    std::unique_ptr<CameraController> _cameraController = nullptr;
     std::vector<std::unique_ptr<AmbientLight>> _ambientLights;
 	std::vector<std::unique_ptr<PointLight>> _pointLights;
 	std::vector<std::unique_ptr<DirectionalLight>> _directionalLights;

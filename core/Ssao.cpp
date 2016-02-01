@@ -19,9 +19,9 @@ Ssao::Ssao(unsigned int width, unsigned int height)
 }
 
 Ssao::~Ssao() {
-    glDeleteBuffers(1, &_screenQuadVao);
-    glDeleteBuffers(1, &_screenQuadVbo);
-    glDeleteFramebuffers(1, &_ssaoFbo);
+    //glDeleteVertexArrays(1, &_screenQuadVao);
+    //glDeleteBuffers(1, &_screenQuadVbo);
+    //glDeleteFramebuffers(1, &_ssaoFbo);
 }
 
 auto Ssao::PrepareForDraw() -> void {

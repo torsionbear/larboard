@@ -6,6 +6,7 @@
 #include "InputHandler.h"
 
 #include "renderSystem/RenderWindow.h"
+#include "core/CameraController.h"
 #include "core/scene.h"
 #include "core/ResourceManager.h"
 #include "core/Renderer.h"
@@ -24,14 +25,6 @@ using std::max;
 
 auto static const width = 800;
 auto static const height = 600;
-
-auto DrawOneFrame(core::Scene & scene) -> void {
-	scene.Draw();
-}
-
-auto UpdateScene(core::Scene & scene) -> void {
-
-}
 
 auto LoadScene_dx0(core::Scene * scene) -> void {
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square/square_dx.x3d").Read(scene);
@@ -90,6 +83,7 @@ int main_gl() {
     auto resourceManager = make_unique<core::ResourceManager>();
     auto renderer = make_unique<core::Renderer>(resourceManager.get());
     auto scene = make_unique<core::Scene>(width, height, resourceManager.get(), renderer.get());
+    auto cameraController = make_unique<core::CameraController>(scene.get());
 
     LoadScene3(scene.get());
     scene->PrepareForDraw();
@@ -98,7 +92,9 @@ int main_gl() {
     auto lastY = 0.0f;
     auto status = 0; // 0:none; 1:rotate; 2:pan;
     auto pickPoint = core::Point4f{ 0, 0, 0, 1 };
-    rw.RegisterInputHandler(std::function<void(HWND, UINT, WPARAM, LPARAM)>(InputHandler(scene.get(), width, height)));
+
+    auto inputHandler = InputHandler(resourceManager.get(), renderer.get(), scene.get(), cameraController.get(), width, height);
+    rw.RegisterInputHandler(std::function<void(HWND, UINT, WPARAM, LPARAM)>(inputHandler));
 
     rw.SetCaption(L"newCaption");
     auto fpsCount = 0u;
@@ -113,8 +109,9 @@ int main_gl() {
             auto fps = 100000.0f / static_cast<float>(timeSpan.count());
             rw.SetCaption(L"FPS: " + std::to_wstring(fps));
         }
-        UpdateScene(*scene);
-        DrawOneFrame(*scene);
+
+        cameraController->Step();
+        scene->Draw();
     }
 
     return 0;

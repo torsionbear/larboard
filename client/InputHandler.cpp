@@ -88,10 +88,10 @@ auto InputHandler::operator()(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
         case VK_ESCAPE:
             break;
         case VK_F1:
-            _scene->ToggleBackFace();
+            _renderer->ToggleBackFace();
             break;
         case VK_F2:
-            _scene->ToggleWireframe();
+            _renderer->ToggleWireframe();
             break;
         case VK_F3:
             _scene->ToggleBvh();
@@ -99,39 +99,39 @@ auto InputHandler::operator()(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
         case VK_TAB:
             _isFpsMode = !_isFpsMode;
             if (_isFpsMode) {
-                _scene->GetCameraController()->Enable();
+                _cameraController->Enable();
                 auto center = _center;
                 ClientToScreen(hWnd, &center);
                 SetCursorPos(center.x, center.y);
             } else {
-                _scene->GetCameraController()->Disable();
+                _cameraController->Disable();
             }
             break;
         case 0x57:	// W key
         {
             if (_isFpsMode) {
-                _scene->GetCameraController()->IncreaseForwardSpeed(10.0f);
+                _cameraController->IncreaseForwardSpeed(10.0f);
             }
             break;
         }
         case 0x41:	// A key
         {
             if (_isFpsMode) {
-                _scene->GetCameraController()->IncreaseRightSpeed(-10.0f);
+                _cameraController->IncreaseRightSpeed(-10.0f);
             }
             break;
         }
         case 0x53:	// S key
         {
             if (_isFpsMode) {
-                _scene->GetCameraController()->IncreaseForwardSpeed(-10.0f);
+                _cameraController->IncreaseForwardSpeed(-10.0f);
             }
             break;
         }
         case 0x44:	// D key
         {
             if (_isFpsMode) {
-                _scene->GetCameraController()->IncreaseRightSpeed(10.0f);
+                _cameraController->IncreaseRightSpeed(10.0f);
             }
             break;
         }
@@ -151,28 +151,28 @@ auto InputHandler::operator()(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
         case 0x57:	// W key
         {
             if (_isFpsMode) {
-                _scene->GetCameraController()->IncreaseForwardSpeed(-10.0f);
+                _cameraController->IncreaseForwardSpeed(-10.0f);
             }
             break;
         }
         case 0x41:	// A key
         {
             if (_isFpsMode) {
-                _scene->GetCameraController()->IncreaseRightSpeed(10.0f);
+                _cameraController->IncreaseRightSpeed(10.0f);
             }
             break;
         }
         case 0x53:	// S key
         {
             if (_isFpsMode) {
-                _scene->GetCameraController()->IncreaseForwardSpeed(10.0f);
+                _cameraController->IncreaseForwardSpeed(10.0f);
             }
             break;
         }
         case 0x44:	// D key
         {
             if (_isFpsMode) {
-                _scene->GetCameraController()->IncreaseRightSpeed(-10.0f);
+                _cameraController->IncreaseRightSpeed(-10.0f);
             }
             break;
         }
