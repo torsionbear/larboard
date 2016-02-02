@@ -24,7 +24,8 @@ Ssao::~Ssao() {
     //glDeleteFramebuffers(1, &_ssaoFbo);
 }
 
-auto Ssao::PrepareForDraw() -> void {
+auto Ssao::Prepare() -> void {
+    Renderer::Prepare();
     InitSsaoFbo();
     _ssaoShaderProgram.SendToCard();
     //glUseProgram(_ssaoShaderProgram.GetHandler());
@@ -65,6 +66,17 @@ auto Ssao::PrepareForDraw() -> void {
 
     auto error = glGetError();
     assert(error == GL_NO_ERROR);
+}
+
+auto Ssao::DrawBegin() -> void {
+    BindGBuffer();
+    Renderer::DrawBegin();
+}
+
+auto Ssao::DrawEnd() -> void {
+    SsaoPass();
+    LightingPass();
+    Renderer::DrawEnd();
 }
 
 auto Ssao::BindGBuffer() -> void {

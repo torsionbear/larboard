@@ -62,8 +62,8 @@ auto LoadScene3(core::Scene * scene) -> void {
     scene->GetTerrain()->SetDiffuseMapSize(core::Vector2i{ 5, 5 });
 
     auto resourceManager = make_unique<core::ResourceManager>();
-    auto renderer = make_unique<core::Renderer>(resourceManager.get());
-    auto terrainSpecialTileScene = make_unique<core::Scene>(width, height, resourceManager.get(), renderer.get());
+    auto renderer = make_unique<core::Renderer>();
+    auto terrainSpecialTileScene = make_unique<core::Scene>(resourceManager.get());
 
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_01_terrainx3d.x3d").Read(terrainSpecialTileScene.get());
     scene->GetTerrain()->AddSpecialTiles(terrainSpecialTileScene->GetStaticModelGroup().AcquireShapes(), terrainSpecialTileScene->GetStaticModelGroup().AcquireMeshes());
@@ -81,11 +81,13 @@ int main_gl() {
         exit(EXIT_FAILURE);
     }
     auto resourceManager = make_unique<core::ResourceManager>();
-    auto renderer = make_unique<core::Renderer>(resourceManager.get());
-    auto scene = make_unique<core::Scene>(width, height, resourceManager.get(), renderer.get());
+    auto renderer = make_unique<core::Ssao>(width, height);
+    auto scene = make_unique<core::Scene>(resourceManager.get());
     auto cameraController = make_unique<core::CameraController>(scene.get());
 
     LoadScene3(scene.get());
+
+    renderer->Prepare();
     scene->PrepareForDraw();
 
     auto lastX = 0.0f;
@@ -111,7 +113,8 @@ int main_gl() {
         }
 
         cameraController->Step();
-        scene->Draw();
+        core::Scene::UpdateScene(resourceManager.get(), scene.get());
+        core::Scene::DrawScene(renderer.get(), scene.get());
     }
 
     return 0;
@@ -127,8 +130,8 @@ int main_dx() {
     auto renderSystem = d3d12RenderSystem::RenderSystem{ &renderWindow };
 
     auto resourceManager = make_unique<core::ResourceManager>();
-    auto renderer = make_unique<core::Renderer>(resourceManager.get());
-    auto scene = make_unique<core::Scene>(width, height, resourceManager.get(), renderer.get());
+    auto renderer = make_unique<core::Renderer>();
+    auto scene = make_unique<core::Scene>(resourceManager.get());
 
     LoadScene_dx0(scene.get());
 

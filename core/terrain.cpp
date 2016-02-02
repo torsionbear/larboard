@@ -28,8 +28,10 @@ Terrain::Terrain(vector<string> && diffuseMapFiles, string heightMap)
     _shaderProgram.SetTessellationEvaluationShader("shader/terrain_te.shader");
 }
 
-auto Terrain::SetSightDistance(Float32 sightDistance) -> void {
+auto Terrain::Load(Float32 sightDistance) -> void {
     _shaderData.sightDistance = sightDistance;
+    _diffuseMap.Load();
+    _heightMap.Load();
 }
 
 auto Terrain::AddSpecialTiles(std::vector<std::unique_ptr<Shape>> && shapes, vector<unique_ptr<Mesh>>&& meshes) -> void {

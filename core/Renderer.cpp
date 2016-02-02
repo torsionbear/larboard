@@ -4,7 +4,7 @@
 
 namespace core {
 
-auto Renderer::PrepareForDraw() -> void {
+auto Renderer::Prepare() -> void {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
@@ -13,8 +13,10 @@ auto Renderer::PrepareForDraw() -> void {
 auto Renderer::DrawBegin() -> void {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     //glViewport(0, 0, texWidth, texHeight);
-
     _wireframeMode ? glPolygonMode(GL_FRONT_AND_BACK, GL_LINE) : glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
+
+auto Renderer::DrawEnd() -> void {
 }
 
 auto Renderer::ToggleWireframe() -> void {
@@ -88,6 +90,8 @@ auto Renderer::RenderSkyBox(SkyBox const * skyBox) -> void {
 }
 
 auto Renderer::DrawTerrain(Terrain const * terrain) -> void {
+    UseTextureArray(terrain->GetDiffuseMap(), TextureUsage::DiffuseTextureArray);
+    UseTexture(terrain->GetHeightMap(), TextureUsage::HeightMap);
     terrain->GetShaderProgram()->Use();
 
     glBindVertexArray(terrain->GetVao());

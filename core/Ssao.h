@@ -1,12 +1,13 @@
 #pragma once
 
+#include "Renderer.h"
 #include "Primitive.h"
 #include "Matrix.h"
 #include "ShaderProgram.h"
 
 namespace core {
 
-class Ssao {
+class Ssao : public Renderer {
     enum TextureBindingPoint : int {
         diffuseEmissive = 0,
         specularShininess = 1,
@@ -17,13 +18,15 @@ class Ssao {
     };
 public:
     Ssao(unsigned int width, unsigned int height);
-    ~Ssao();
+    ~Ssao() override;
 public:
-    auto PrepareForDraw() -> void;
+    auto Prepare() -> void override;
+    auto DrawBegin() -> void override;
+    auto DrawEnd() -> void override;
+private:
     auto BindGBuffer() -> void;
     auto SsaoPass() -> void;
     auto LightingPass() -> void;
-private:
     auto InitSsaoFbo() -> void;
     auto GenerateSamples(unsigned int sampleCount, Vector2f sampleDistanceRange) -> void;
     auto GenerateRandomTexture(unsigned int textureSize) -> void;

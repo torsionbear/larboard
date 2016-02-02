@@ -26,7 +26,7 @@ public:
 public:
     Terrain(std::vector<std::string> && diffuseMapFiles, std::string heightMap);
 public:
-    auto SetSightDistance(Float32 sightDistance) -> void;
+    auto Load(Float32 sightDistance) -> void;
     auto SetTileSize(Float32 tileSize) -> void {
         _shaderData.tileSize = tileSize;
     }
@@ -65,8 +65,14 @@ public:
     }
     auto AddSpecialTiles(std::vector<std::unique_ptr<Shape>> && shapes, std::vector<std::unique_ptr<Mesh>> && meshes) -> void;
     auto GetHeight(Vector2f coord) const->Float32;
+    auto GetDiffuseMap() const -> TextureArray const* {
+        return &_diffuseMap;
+    }
     auto GetDiffuseMap() -> TextureArray * {
         return &_diffuseMap;
+    }
+    auto GetHeightMap() const -> Texture const* {
+        return &_heightMap;
     }
     auto GetHeightMap() -> Texture * {
         return &_heightMap;

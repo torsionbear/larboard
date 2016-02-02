@@ -18,6 +18,10 @@ public:
         , _shaderProgram(std::make_unique<ShaderProgram>("shader/skybox_v.shader", "shader/skybox_f.shader")) {
     }
 public:
+    auto Load() -> void {
+        _cubeMap->Load();
+        _shaderProgram->Load();
+    }
     auto GetShaderProgram() -> ShaderProgram * {
         return _shaderProgram.get();
     }

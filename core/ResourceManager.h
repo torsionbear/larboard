@@ -43,7 +43,7 @@ public:
     ResourceManager::~ResourceManager();
 public:
 	auto LoadMeshes(std::vector<std::unique_ptr<Mesh>> const& meshes) -> void;
-    auto LoadSkyBoxMesh(SkyBox * skyBox) -> void;
+    auto LoadSkyBox(SkyBox * skyBox) -> void;
 
     auto LoadMaterials(std::vector<Material *> const& materials) -> void;
     auto LoadModels(std::vector<Model *> const& models) -> void;
@@ -53,7 +53,7 @@ public:
     auto LoadAabbs(std::vector<Aabb *> aabbs) -> void;
     auto LoadTerrain(Terrain * terrain) -> void;
     auto LoadTerrainSpecialTiles(std::vector<Mesh *> terrainSpecialTiles) -> void;
-    auto UpdateTerrainTileCoordUbo(openglUint vio, std::vector<Vector3f> const& tileCoord) -> void;
+    auto UpdateTerrain(Terrain * terrain, Camera * camera) -> void;
     auto InitCameraData(unsigned int size) -> void;
     auto UpdateCameraData(std::vector<std::unique_ptr<Camera>> const& cameras) -> void;
     auto UseCameraData(Camera const * camera) -> void;
@@ -62,6 +62,8 @@ public:
         std::vector<std::unique_ptr<PointLight>> const& pointLights,
         std::vector<std::unique_ptr<DirectionalLight>> const& directionalLights,
         std::vector<std::unique_ptr<SpotLight>> const& spotLights) -> void;
+private:
+    auto LoadSkyBoxMesh(SkyBox * skyBox) -> void;
 private:
 	std::vector<VertexBuffer> _vertexBuffers;
     std::vector<openglUint> _instanceBuffers;

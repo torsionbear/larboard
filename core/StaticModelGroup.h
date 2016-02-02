@@ -5,7 +5,6 @@
 #include <map>
 #include <unordered_map>
 
-#include "Renderer.h"
 #include "Model.h"
 #include "Shape.h"
 #include "Bvh.h"
@@ -14,14 +13,12 @@ namespace core {
 
 class StaticModelGroup {
 public:
-    StaticModelGroup(ResourceManager* resourceManager, Renderer * renderer)
-        : _resourceManager(resourceManager)
-        , _renderer(renderer) {
+    StaticModelGroup(ResourceManager* resourceManager)
+        : _resourceManager(resourceManager) {
     }
     ~StaticModelGroup();
 public:
     auto PrepareForDraw() -> void;
-    auto Draw() -> void;
     auto GetShapes() -> std::vector<std::unique_ptr<Shape>>&;
     auto AcquireShapes() -> std::vector<std::unique_ptr<Shape>>;
     auto AcquireMeshes() -> std::vector<std::unique_ptr<Mesh>>;
@@ -53,7 +50,7 @@ private:
 
 private:
     ResourceManager * _resourceManager;
-    Renderer * _renderer;
+
     Movable _root;
     std::vector<std::unique_ptr<Movable>> _movables;
     std::vector<std::unique_ptr<Model>> _models;

@@ -35,13 +35,6 @@ auto StaticModelGroup::PrepareForDraw() -> void {
     _bvh = make_unique<Bvh>(move(shapes));
 }
 
-auto StaticModelGroup::Draw() -> void {
-    for (auto const& shape : _shapes) {
-        _renderer->Render(shape.get());
-    }
-    // todo: sort shapes according to: 1. shader priority; 2. vbo/vao
-}
-
 auto StaticModelGroup::GetShapes() -> std::vector<std::unique_ptr<Shape>>& {
     return _shapes;
 }

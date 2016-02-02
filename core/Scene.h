@@ -26,7 +26,10 @@ namespace core {
 
 class Scene {
 public:
-    Scene(unsigned int width, unsigned int height, ResourceManager * resourceManager, Renderer * renderer);
+    static auto UpdateScene(ResourceManager * resourceManager, Scene const* scene) -> void;
+    static auto DrawScene(Renderer * renderer, Scene const* scene) -> void;
+public:
+    Scene(ResourceManager * resourceManager);
 	Scene(Scene const&) = delete;
 	Scene& operator=(Scene const&) = delete;
 public:
@@ -52,11 +55,10 @@ public:
     auto ToggleBvh() -> void;
 
     auto PrepareForDraw() -> void;
-    auto Draw() -> void;
 
-private:
+public:
 	ResourceManager * _resourceManager;
-    Renderer * _renderer;
+
 	Movable _root;
 	std::vector<std::unique_ptr<Camera>> _cameras;
     std::vector<std::unique_ptr<AmbientLight>> _ambientLights;
@@ -67,8 +69,6 @@ private:
     std::unique_ptr<SkyBox> _skyBox = nullptr;
     std::unique_ptr<StaticModelGroup> _staticModelGroup = nullptr;
     std::unique_ptr<Terrain> _terrain = nullptr;
-
-    Ssao _ssao;
 
     bool _drawBvh = false;
 };

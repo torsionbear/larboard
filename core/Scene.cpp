@@ -9,12 +9,39 @@ using std::array;
 
 namespace core {
 
-Scene::Scene(unsigned int width, unsigned int height, ResourceManager * resourceManager, Renderer * renderer)
-    : _ssao(width, height) {
-    // todo: send in resourceManager by argument
+auto Scene::UpdateScene(ResourceManager * resourceManager, Scene const* scene) -> void {
+    //updates
+    resourceManager->UpdateCameraData(scene->_cameras);
+    resourceManager->UseCameraData(scene->_cameras.front().get());
+    if (nullptr != scene->_terrain) {
+        resourceManager->UpdateTerrain(scene->_terrain.get(), scene->_cameras.front().get());
+    }
+}
+
+auto Scene::DrawScene(Renderer * renderer, Scene const * scene) -> void {
+    renderer->DrawBegin();
+
+    if (nullptr != scene->_skyBox) {
+        renderer->RenderSkyBox(scene->_skyBox.get());
+    }
+    if (nullptr != scene->_terrain) {
+        renderer->DrawTerrain(scene->_terrain.get());
+    }
+    for (auto const& shape : scene->_staticModelGroup->GetShapes()) {
+        renderer->Render(shape.get());
+    }
+    if (scene->_drawBvh) {
+        auto const& aabbs = scene->_staticModelGroup->GetBvh()->GetAabbs();
+        for (auto aabb : aabbs) {
+            renderer->RenderAabb(aabb);
+        }
+    }
+    renderer->DrawEnd();
+}
+
+Scene::Scene(ResourceManager * resourceManager) {
     _resourceManager = resourceManager;
-    _renderer = renderer;
-    _staticModelGroup = make_unique<StaticModelGroup>(resourceManager, renderer);
+    _staticModelGroup = make_unique<StaticModelGroup>(resourceManager);
 }
 
 auto Scene::CreateCamera() -> Camera * {
@@ -99,8 +126,6 @@ auto Scene::ToggleBvh() -> void {
 }
 
 auto Scene::PrepareForDraw() -> void {
-    _renderer->PrepareForDraw();
-    _ssao.PrepareForDraw();
 
 	// setup ubo
     _resourceManager->InitCameraData(Camera::ShaderData::Size() * _cameras.size());
@@ -119,56 +144,16 @@ auto Scene::PrepareForDraw() -> void {
 
     // sky box
     if (nullptr != _skyBox) {
-        _resourceManager->LoadSkyBoxMesh(_skyBox.get());
-        _skyBox->GetCubeMap()->Load();
-        _resourceManager->LoadCubeMap(_skyBox->GetCubeMap());
-        _skyBox->GetShaderProgram()->SendToCard();
+        _skyBox->Load();        
+        _resourceManager->LoadSkyBox(_skyBox.get());
     }
 
     // terrain
     if (nullptr != _terrain) {
-        auto diffuseMap = _terrain->GetDiffuseMap();
-        auto heightMap = _terrain->GetHeightMap();
-        diffuseMap->Load();
-        heightMap->Load();
-        _resourceManager->LoadTextureArray(diffuseMap);
-        _resourceManager->LoadTexture(heightMap);
-
-        _terrain->SetSightDistance(_cameras.front()->GetSightDistance());
+        _terrain->Load(_cameras.front()->GetSightDistance());
         _resourceManager->LoadTerrain(_terrain.get());
-        _terrain->GetShaderProgram()->SendToCard();
-        _resourceManager->LoadTerrainSpecialTiles(_terrain->GetSpecialTiles());
     }
 	// todo: sort shapes according to: 1. shader priority; 2. vbo/vao
-
-}
-
-auto Scene::Draw() -> void {
-    _ssao.BindGBuffer();
-    _renderer->DrawBegin();
-
-    // feed model independent data (camera) to shader via ubo
-    _resourceManager->UpdateCameraData(_cameras);
-    _resourceManager->UseCameraData(_cameras.front().get());
-
-    if (nullptr != _skyBox) {
-        _renderer->RenderSkyBox(_skyBox.get());
-    }
-    if (nullptr != _terrain) {
-        _resourceManager->UpdateTerrainTileCoordUbo(_terrain->GetVio(), _terrain->GetTileCoordinate(_cameras.front().get()));
-        _renderer->UseTextureArray(_terrain->GetDiffuseMap(), TextureUsage::DiffuseTextureArray);
-        _renderer->UseTexture(_terrain->GetHeightMap(), TextureUsage::HeightMap);
-        _renderer->DrawTerrain(_terrain.get());
-    }
-    _staticModelGroup->Draw();
-    if (_drawBvh) {
-        auto const& aabbs = _staticModelGroup->GetBvh()->GetAabbs();
-        for (auto aabb : aabbs) {
-            _renderer->RenderAabb(aabb);
-        }
-    }
-    _ssao.SsaoPass();
-    _ssao.LightingPass();
 }
 
 }

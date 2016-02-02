@@ -85,6 +85,12 @@ auto ResourceManager::LoadSkyBoxMesh(SkyBox * skyBox) -> void {
     glBindVertexArray(0);
 }
 
+auto ResourceManager::LoadSkyBox(SkyBox * skyBox) -> void {
+    LoadSkyBoxMesh(skyBox);
+    LoadCubeMap(skyBox->GetCubeMap());
+    skyBox->GetShaderProgram()->SendToCard();
+}
+
 auto ResourceManager::LoadMaterials(vector<Material *> const& materials) -> void {
     _materialBuffers.emplace_back();
     auto & materialUbo = _materialBuffers.back();
@@ -254,6 +260,11 @@ auto ResourceManager::LoadAabbs(std::vector<Aabb *> aabbs) -> void {
 }
 
 auto ResourceManager::LoadTerrain(Terrain * terrain) -> void {
+    LoadTextureArray(terrain->GetDiffuseMap());
+    LoadTexture(terrain->GetHeightMap());
+    terrain->GetShaderProgram()->SendToCard();
+
+    // vertex data
     auto const& shaderData = terrain->GetShaderData();
     _vertexBuffers.emplace_back();
     auto & vertexBuffer = _vertexBuffers.back();
@@ -303,6 +314,8 @@ auto ResourceManager::LoadTerrain(Terrain * terrain) -> void {
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
     glBindBufferBase(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Terrain), ubo);
 
+    //special tiles
+    LoadTerrainSpecialTiles(terrain->GetSpecialTiles());
     auto error = glGetError();
     assert(error == GL_NO_ERROR);
 }
@@ -349,8 +362,10 @@ auto ResourceManager::LoadTerrainSpecialTiles(std::vector<Mesh*> terrainSpecialT
     assert(error == GL_NO_ERROR);
 }
 
-auto ResourceManager::UpdateTerrainTileCoordUbo(openglUint vio, std::vector<Vector3f> const & tileCoord) -> void {
-    glBindBuffer(GL_ARRAY_BUFFER, vio);
+auto ResourceManager::UpdateTerrain(Terrain * terrain, Camera * camera) -> void {
+    // update terrain tile coord ubo
+    auto tileCoord = terrain->GetTileCoordinate(camera);
+    glBindBuffer(GL_ARRAY_BUFFER, terrain->GetVio());
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vector3f) * tileCoord.size(), tileCoord.data());
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
