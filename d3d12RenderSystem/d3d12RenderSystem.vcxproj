@@ -135,7 +135,6 @@
     <ClInclude Include="RenderWindow.h" />
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="SwapChainRenderTargets.h" />
-    <ClInclude Include="UploadBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Fence.cpp" />

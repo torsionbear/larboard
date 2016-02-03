@@ -124,29 +124,28 @@ int main_dx() {
     auto const width = 800;
     auto const height = 600;
 
-    d3d12RenderSystem::RenderWindow renderWindow{};
-    renderWindow.Create(width, height, L"RenderWindow");
-
-    auto renderSystem = d3d12RenderSystem::RenderSystem{ &renderWindow };
+    d3d12RenderSystem::RenderSystem renderSystem;
 
     auto resourceManager = make_unique<core::ResourceManager>();
-    auto renderer = make_unique<core::Renderer>();
     auto scene = make_unique<core::Scene>(resourceManager.get());
 
     LoadScene_dx0(scene.get());
 
-    renderSystem.Init();
-    renderSystem.LoadBegin();
-    renderSystem.LoadMeshes(scene->GetStaticModelGroup().GetMeshes());
-    renderSystem.LoadEnd();
+    renderSystem.Init(width, height);
+    auto & rm = renderSystem.GetResourceManager();
+    auto & rd = renderSystem.GetRenderer();
+    auto & renderWindow = renderSystem.GetRenderWindow();
+
+    rm.LoadBegin();
+    rm.LoadMeshes(scene->GetStaticModelGroup().GetMeshes(), sizeof(core::Vertex));
+    rm.LoadEnd();
 
     while (renderWindow.Step()) {
-        renderSystem.Update();
-        renderSystem.RenderBegin();
+        rd.RenderBegin();
         for (auto & shape : scene->GetStaticModelGroup().GetShapes()) {
-            renderSystem.Render(shape.get());
+            rd.RenderShape(shape.get());
         }
-        renderSystem.RenderEnd();
+        rd.RenderEnd();
     }
 
     return 0;
@@ -154,6 +153,6 @@ int main_dx() {
 
 int main()
 {
-    return main_gl();
-    //return main_dx();
+    //return main_gl();
+    return main_dx();
 }

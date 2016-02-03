@@ -10,25 +10,25 @@ auto main() -> int {
     auto const width = 800;
     auto const height = 600;
 
-    RenderWindow renderWindow{};
-    renderWindow.Create(width, height, L"RenderWindow");
+    RenderSystem renderSystem;
+    renderSystem.Init(width, height);
 
-    auto renderSystem = RenderSystem{&renderWindow };
+    auto & renderer = renderSystem.GetRenderer();
+    auto & resourceManager = renderSystem.GetResourceManager();
+    auto & renderWindow = renderSystem.GetRenderWindow();
 
-    renderSystem.Init();
-    renderSystem.LoadBegin();
+    resourceManager.LoadBegin();
 
     //auto vertexData = std::array<float, 128>{};
     //auto indexData = std::array<unsigned int, 3>{0, 1, 2};
     //auto mesh = std::vector<std::unique_ptr<core::Mesh>>{ std::make_unique<core::Mesh>(vertexData, indexData)};
     //renderSystem.LoadMeshes(mesh);
 
-    renderSystem.LoadEnd();
+    resourceManager.LoadEnd();
 
     while (renderWindow.Step()) {
-        renderSystem.Update();
-        renderSystem.RenderBegin();
-        renderSystem.RenderEnd();
+        renderer.RenderBegin();
+        renderer.RenderEnd();
     }
 
     return 0;

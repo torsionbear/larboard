@@ -1,105 +1,63 @@
 #include "Renderer.h"
 
-/*
-#include <GL/glew.h>
+namespace d3d12RenderSystem {
 
-namespace core {
+auto Renderer::Prepare() -> void {
 
-auto Renderer::Render(Shape const* shape) -> void {
-    // shaderProgram
-    shape->GetShaderProgram()->Use();
-    //if (_currentShaderProgram != shape.GetShaderProgram()) {
-    //    shape.GetShaderProgram()->Use();
-    //    _currentShaderProgram = shape.GetShaderProgram();
-    //}
+}
 
-    // transform
-    auto model = shape->GetModel();
-    glBindBufferRange(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Transform), model->GetUbo(), model->GetUboOffset(), Model::ShaderData::Size());
+auto Renderer::RenderBegin() -> void {
+    _resourceManager->FrameBegin();
+    auto commandList = _resourceManager->GetCommandList();
+    commandList->ResourceBarrier(1, _resourceManager->GetSwapChainRenderTargets().GetBarrierToRenderTarget());
 
-    // material
-    auto material = shape->GetMaterial();
-    glBindBufferRange(GL_UNIFORM_BUFFER, GetIndex(UniformBufferType::Material), material->GetUbo(), material->GetUboOffset(), Material::ShaderData::Size());
+    // Set necessary state.
+    commandList->SetGraphicsRootSignature(_resourceManager->GetRootSignature());
+    commandList->RSSetViewports(1, &_viewport);
+    commandList->RSSetScissorRects(1, &_scissorRect);
 
-    // texture
-    for (auto & texture : shape->GetTextures()) {
-        UseTexture(texture, texture->GetType());
-    }
+    auto rtv = _resourceManager->GetSwapChainRenderTargets().GetCurrentRtv();
+    commandList->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
 
+    // Record commands.
+    const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
+    commandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
+    commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+}
+
+auto Renderer::RenderEnd() -> void {
+    auto commandList = _resourceManager->GetCommandList();
+    commandList->ResourceBarrier(1, _resourceManager->GetSwapChainRenderTargets().GetBarrierToPresent());
+
+    // submit command list
+    auto list = static_cast<ID3D12CommandList *>(commandList);
+    ThrowIfFailed(commandList->Close());
+    _commandQueue->ExecuteCommandLists(1, &list);
+
+    _resourceManager->GetSwapChainRenderTargets().Present();
+    _resourceManager->FrameEnd();
+}
+
+auto Renderer::RenderShape(core::Shape const * shape) -> void {
     // draw call
     auto mesh = shape->GetMesh();
-    auto const& meshRenderData = mesh->GetRenderData();
-    
-    glBindVertexArray(meshRenderData._vao);
-    glDrawElementsBaseVertex(GL_TRIANGLES, mesh->GetIndex().size(), GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(meshRenderData._indexOffset), meshRenderData._baseVertex);
-    glBindVertexArray(0);
+    auto const& meshRenderData = _resourceManager->GetMeshData(mesh->_renderDataId);
 
-    auto error = glGetError();
-    assert(error == GL_NO_ERROR);
+    // todo: only call the following 2 IASet* functions when necessary
+    auto commandList = _resourceManager->GetCommandList();
+    commandList->IASetVertexBuffers(0, 1, &meshRenderData.vbv);
+    commandList->IASetIndexBuffer(&meshRenderData.ibv);
+    commandList->DrawIndexedInstanced(meshRenderData.indexCount, 1, meshRenderData.indexOffset, meshRenderData.baseVertex, 0);
 }
 
-auto Renderer::RenderAabb(Aabb const * aabb) -> void {
-    auto const& shaderProgram = aabb->GetShaderProgram();
-    shaderProgram->Use();
-
-    auto location = glGetUniformLocation(shaderProgram->GetHandler(), "color");
-    glUniform4f(location, 1.0f, 0.0f, 0.0f, 1.0f);
-
-    auto const& renderData = aabb->GetRenderData();
-    glBindVertexArray(renderData._vao);
-    glDrawElementsBaseVertex(GL_LINES, 24, GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(renderData._indexOffset), renderData._baseVertex);
-    glBindVertexArray(0);
-}
-
-auto Renderer::RenderSkyBox(SkyBox const * skyBox) -> void {
-    skyBox->GetShaderProgram()->Use();
-
-    UseCubeMap(skyBox->GetCubeMap());
-
-    //draw call
-    glBindVertexArray(skyBox->GetVao());
-
-    glDepthMask(GL_FALSE);
-    glDisable(GL_DEPTH_TEST);
-    glDrawElements(GL_QUADS, 24, GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(0));
-    glDepthMask(GL_TRUE);
-    glEnable(GL_DEPTH_TEST);
-}
-
-auto Renderer::DrawTerrain(Terrain const * terrain) -> void {
-    terrain->GetShaderProgram()->Use();
-
-    glBindVertexArray(terrain->GetVao());
-    glPatchParameteri(GL_PATCH_VERTICES, 3);
-    glDrawElementsInstanced(GL_PATCHES, 6, GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(0), terrain->GetTileCount());
-    glBindVertexArray(0);
-
-    // draw special tiles
-    for (auto & mesh : terrain->GetSpecialTiles()) {
-        auto const& renderData = mesh->GetRenderData();
-        glBindVertexArray(renderData._vao);
-        glDrawElementsBaseVertex(GL_PATCHES, mesh->GetIndex().size(), GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(renderData._indexOffset), renderData._baseVertex);
-        glBindVertexArray(0);
-    }
-    auto error = glGetError();
-    error = glGetError();
-    assert(error == GL_NO_ERROR);
-}
-
-auto Renderer::UseCubeMap(CubeMap const * cubeMap) -> void {
-    glActiveTexture(GL_TEXTURE0 + TextureUsage::CubeMap);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubeMap->GetTexture());
-}
-
-auto Renderer::UseTextureArray(TextureArray const * textureArray, TextureUsage::TextureType type) -> void {
-    glActiveTexture(GL_TEXTURE0 + type);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, textureArray->GetTexture());
-}
-
-auto Renderer::UseTexture(Texture const * texture, TextureUsage::TextureType type) -> void {
-    glActiveTexture(GL_TEXTURE0 + type);
-    glBindTexture(GL_TEXTURE_2D, texture->GetTexture());
+auto Renderer::Init(ResourceManager * resourceManager, ID3D12CommandQueue * commandQueue, unsigned int width, unsigned int height) -> void {
+    _resourceManager = resourceManager;
+    _commandQueue = commandQueue;
+    _viewport.Width = static_cast<float>(width);
+    _viewport.Height = static_cast<float>(height);
+    _viewport.MaxDepth = 1.0f;
+    _scissorRect.right = static_cast<LONG>(width);
+    _scissorRect.bottom = static_cast<LONG>(height);
 }
 
 }
-*/
