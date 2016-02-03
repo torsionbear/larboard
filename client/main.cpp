@@ -10,6 +10,7 @@
 #include "core/scene.h"
 #include "core/ResourceManager.h"
 #include "core/Renderer.h"
+#include "core/ssao.h"
 #include "core/Texture.h"
 #include "core/ShaderProgram.h"
 #include "core/PngReader.h"
@@ -61,9 +62,7 @@ auto LoadScene3(core::Scene * scene) -> void {
     scene->GetTerrain()->SetHeightMapSize(core::Vector2i{ 60, 60 });
     scene->GetTerrain()->SetDiffuseMapSize(core::Vector2i{ 5, 5 });
 
-    auto resourceManager = make_unique<core::ResourceManager>();
-    auto renderer = make_unique<core::Renderer>();
-    auto terrainSpecialTileScene = make_unique<core::Scene>(resourceManager.get());
+    auto terrainSpecialTileScene = make_unique<core::Scene>();
 
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_01_terrainx3d.x3d").Read(terrainSpecialTileScene.get());
     scene->GetTerrain()->AddSpecialTiles(terrainSpecialTileScene->GetStaticModelGroup().AcquireShapes(), terrainSpecialTileScene->GetStaticModelGroup().AcquireMeshes());
@@ -82,20 +81,21 @@ int main_gl() {
     }
     auto resourceManager = make_unique<core::ResourceManager>();
     auto renderer = make_unique<core::Ssao>(width, height);
-    auto scene = make_unique<core::Scene>(resourceManager.get());
+    auto scene = make_unique<core::Scene>();
     auto cameraController = make_unique<core::CameraController>(scene.get());
 
     LoadScene3(scene.get());
+    scene->Load();
 
     renderer->Prepare();
-    scene->PrepareForDraw();
+    resourceManager->LoadScene(scene.get());
 
     auto lastX = 0.0f;
     auto lastY = 0.0f;
     auto status = 0; // 0:none; 1:rotate; 2:pan;
     auto pickPoint = core::Point4f{ 0, 0, 0, 1 };
 
-    auto inputHandler = InputHandler(resourceManager.get(), renderer.get(), scene.get(), cameraController.get(), width, height);
+    auto inputHandler = InputHandler(renderer.get(), scene.get(), cameraController.get(), width, height);
     rw.RegisterInputHandler(std::function<void(HWND, UINT, WPARAM, LPARAM)>(inputHandler));
 
     rw.SetCaption(L"newCaption");
@@ -113,8 +113,8 @@ int main_gl() {
         }
 
         cameraController->Step();
-        core::Scene::UpdateScene(resourceManager.get(), scene.get());
-        core::Scene::DrawScene(renderer.get(), scene.get());
+        core::ResourceManager::UpdateScene(resourceManager.get(), scene.get());
+        core::Renderer::DrawScene(renderer.get(), scene.get());
     }
 
     return 0;
@@ -126,8 +126,7 @@ int main_dx() {
 
     d3d12RenderSystem::RenderSystem renderSystem;
 
-    auto resourceManager = make_unique<core::ResourceManager>();
-    auto scene = make_unique<core::Scene>(resourceManager.get());
+    auto scene = make_unique<core::Scene>();
 
     LoadScene_dx0(scene.get());
 
@@ -153,6 +152,6 @@ int main_dx() {
 
 int main()
 {
-    //return main_gl();
-    return main_dx();
+    return main_gl();
+    //return main_dx();
 }

@@ -4,13 +4,11 @@
 #include <memory>
 #include <map>
 
-#include "ResourceManager.h"
 #include "SceneNode.h"
 #include "Camera.h"
 #include "Movable.h"
 #include "Model.h"
 #include "Shape.h"
-#include "Camera.h"
 #include "AmbientLight.h"
 #include "PointLight.h"
 #include "DirectionalLight.h"
@@ -19,20 +17,16 @@
 #include "Bvh.h"
 #include "StaticModelGroup.h"
 #include "terrain.h"
-#include "CameraController.h"
-#include "Ssao.h"
 
 namespace core {
 
 class Scene {
 public:
-    static auto UpdateScene(ResourceManager * resourceManager, Scene const* scene) -> void;
-    static auto DrawScene(Renderer * renderer, Scene const* scene) -> void;
-public:
-    Scene(ResourceManager * resourceManager);
+    Scene();
 	Scene(Scene const&) = delete;
 	Scene& operator=(Scene const&) = delete;
 public:
+    auto Load() -> void;
 	auto CreateCamera() -> Camera *;
     auto CreateAmbientLight() -> AmbientLight *;
     auto CreateDirectionalLight() -> DirectionalLight *;
@@ -54,11 +48,7 @@ public:
 
     auto ToggleBvh() -> void;
 
-    auto PrepareForDraw() -> void;
-
 public:
-	ResourceManager * _resourceManager;
-
 	Movable _root;
 	std::vector<std::unique_ptr<Camera>> _cameras;
     std::vector<std::unique_ptr<AmbientLight>> _ambientLights;

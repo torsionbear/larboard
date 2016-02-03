@@ -1,15 +1,17 @@
 #pragma once
 
+#include "Scene.h"
 #include "Shape.h"
 #include "SkyBox.h"
 #include "ShaderProgram.h"
 #include "TextureArray.h"
 #include "Terrain.h"
-#include "ResourceManager.h"
 
 namespace core {
 
 class Renderer {
+public:
+    static auto DrawScene(Renderer * renderer, Scene const* scene) -> void;
 public:
     virtual ~Renderer() {
     }

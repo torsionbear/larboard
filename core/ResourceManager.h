@@ -3,6 +3,8 @@
 #include <vector>
 #include <memory>
 
+#include "Scene.h"
+#include "StaticModelGroup.h"
 #include "Mesh.h"
 #include "Skybox.h"
 #include "Bvh.h"
@@ -33,6 +35,8 @@ struct LightShaderData {
 };
 
 class ResourceManager {
+public:
+    static auto UpdateScene(ResourceManager * resourceManager, Scene const* scene) -> void;
 private:
     struct VertexBuffer {
         openglUint _vao = 0;
@@ -42,11 +46,14 @@ private:
 public:
     ResourceManager::~ResourceManager();
 public:
+    auto LoadScene(Scene * scene) -> void;
+    auto LoadStaticModelGroup(StaticModelGroup * staticModelGroup) -> void;
+    auto LoadBvh(Bvh * bvh) -> void;
 	auto LoadMeshes(std::vector<std::unique_ptr<Mesh>> const& meshes) -> void;
     auto LoadSkyBox(SkyBox * skyBox) -> void;
 
     auto LoadMaterials(std::vector<Material *> const& materials) -> void;
-    auto LoadModels(std::vector<Model *> const& models) -> void;
+    auto LoadModels(std::vector<std::unique_ptr<Model>> const& models) -> void;
     auto LoadTexture(Texture * texture) -> void;
     auto LoadCubeMap(CubeMap * cubeMap) -> void;
     auto LoadTextureArray(TextureArray * textureArray) -> void;

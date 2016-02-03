@@ -4,6 +4,27 @@
 
 namespace core {
 
+auto Renderer::DrawScene(Renderer * renderer, Scene const * scene) -> void {
+    renderer->DrawBegin();
+
+    if (nullptr != scene->_skyBox) {
+        renderer->RenderSkyBox(scene->_skyBox.get());
+    }
+    if (nullptr != scene->_terrain) {
+        renderer->DrawTerrain(scene->_terrain.get());
+    }
+    for (auto const& shape : scene->_staticModelGroup->GetShapes()) {
+        renderer->Render(shape.get());
+    }
+    if (scene->_drawBvh) {
+        auto const& aabbs = scene->_staticModelGroup->GetBvh()->GetAabbs();
+        for (auto aabb : aabbs) {
+            renderer->RenderAabb(aabb);
+        }
+    }
+    renderer->DrawEnd();
+}
+
 auto Renderer::Prepare() -> void {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);

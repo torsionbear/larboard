@@ -9,39 +9,20 @@ using std::array;
 
 namespace core {
 
-auto Scene::UpdateScene(ResourceManager * resourceManager, Scene const* scene) -> void {
-    //updates
-    resourceManager->UpdateCameraData(scene->_cameras);
-    resourceManager->UseCameraData(scene->_cameras.front().get());
-    if (nullptr != scene->_terrain) {
-        resourceManager->UpdateTerrain(scene->_terrain.get(), scene->_cameras.front().get());
-    }
+Scene::Scene() {
+    _staticModelGroup = make_unique<StaticModelGroup>();
 }
 
-auto Scene::DrawScene(Renderer * renderer, Scene const * scene) -> void {
-    renderer->DrawBegin();
-
-    if (nullptr != scene->_skyBox) {
-        renderer->RenderSkyBox(scene->_skyBox.get());
+auto Scene::Load() -> void {
+    if (nullptr != _staticModelGroup) {
+        _staticModelGroup->Load();
     }
-    if (nullptr != scene->_terrain) {
-        renderer->DrawTerrain(scene->_terrain.get());
+    if (nullptr != _skyBox) {
+        _skyBox->Load();
     }
-    for (auto const& shape : scene->_staticModelGroup->GetShapes()) {
-        renderer->Render(shape.get());
+    if (nullptr != _terrain) {
+        _terrain->Load(_cameras.front()->GetSightDistance());
     }
-    if (scene->_drawBvh) {
-        auto const& aabbs = scene->_staticModelGroup->GetBvh()->GetAabbs();
-        for (auto aabb : aabbs) {
-            renderer->RenderAabb(aabb);
-        }
-    }
-    renderer->DrawEnd();
-}
-
-Scene::Scene(ResourceManager * resourceManager) {
-    _resourceManager = resourceManager;
-    _staticModelGroup = make_unique<StaticModelGroup>(resourceManager);
 }
 
 auto Scene::CreateCamera() -> Camera * {
@@ -123,37 +104,6 @@ auto Scene::Picking(Ray & ray) -> bool {
 
 auto Scene::ToggleBvh() -> void {
     _drawBvh = !_drawBvh;
-}
-
-auto Scene::PrepareForDraw() -> void {
-
-	// setup ubo
-    _resourceManager->InitCameraData(Camera::ShaderData::Size() * _cameras.size());
-    _resourceManager->InitLightData(_ambientLights, _pointLights, _directionalLights, _spotLights);
-    _staticModelGroup->PrepareForDraw();
-
-    // bvh
-    auto bvh = _staticModelGroup->GetBvh();    
-    auto shaderProgram = bvh->GetShaderProgram();
-    shaderProgram->SendToCard();
-    auto aabbs = bvh->GetAabbs();
-    for (auto aabb : aabbs) {
-        aabb->SetShaderProgram(shaderProgram);
-    }
-    _resourceManager->LoadAabbs(aabbs);
-
-    // sky box
-    if (nullptr != _skyBox) {
-        _skyBox->Load();        
-        _resourceManager->LoadSkyBox(_skyBox.get());
-    }
-
-    // terrain
-    if (nullptr != _terrain) {
-        _terrain->Load(_cameras.front()->GetSightDistance());
-        _resourceManager->LoadTerrain(_terrain.get());
-    }
-	// todo: sort shapes according to: 1. shader priority; 2. vbo/vao
 }
 
 }

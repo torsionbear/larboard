@@ -5,34 +5,23 @@ using std::string;
 
 namespace core {
 
-StaticModelGroup::~StaticModelGroup() {
-}
-
-auto StaticModelGroup::PrepareForDraw() -> void {
-    // 0. setup ubo
-    LoadTransformData();
-    LoadMaterialData();
-
-    // 1. shader program
-    for (auto & s : _shaderProgram) {
-        s.second->SendToCard();
-    }
-
-    // 2. texture
+auto StaticModelGroup::Load() -> void {
+    // texture
     for (auto & t : _textures) {
         t.second->Load();
-        _resourceManager->LoadTexture(t.second.get());
     }
-
-    // 3. vao/vbo
-    _resourceManager->LoadMeshes(_meshes);
-
-    // 4. build BVH
+    // build BVH
     auto shapes = vector<Shape *>{};
     for (auto const& s : _shapes) {
         shapes.push_back(s.get());
     }
     _bvh = make_unique<Bvh>(move(shapes));
+
+    auto shaderProgram = _bvh->GetShaderProgram();
+    auto aabbs = _bvh->GetAabbs();
+    for (auto aabb : aabbs) {
+        aabb->SetShaderProgram(shaderProgram);
+    }
 }
 
 auto StaticModelGroup::GetShapes() -> std::vector<std::unique_ptr<Shape>>& {
@@ -94,22 +83,6 @@ auto StaticModelGroup::GetMaterial(std::string const & materialName) const -> Ma
 
 auto StaticModelGroup::GetTexture(std::string const & textureName) const -> Texture * {
     return _textures.at(textureName).get();
-}
-
-auto StaticModelGroup::LoadTransformData() -> void {
-    auto models = vector<Model *>();
-    for (auto & model : _models) {
-        models.push_back(model.get());
-    }
-    _resourceManager->LoadModels(models);
-}
-
-auto StaticModelGroup::LoadMaterialData() -> void {
-    auto materials = vector<Material *>();
-    for (auto & m : _materials) {
-        materials.push_back(m.second.get());
-    }
-    _resourceManager->LoadMaterials(materials);
 }
 
 }

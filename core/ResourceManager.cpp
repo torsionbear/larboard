@@ -9,10 +9,57 @@ using std::unique_ptr;
 
 namespace core {
 
+auto ResourceManager::UpdateScene(ResourceManager * resourceManager, Scene const* scene) -> void {
+    //updates
+    resourceManager->UpdateCameraData(scene->_cameras);
+    resourceManager->UseCameraData(scene->_cameras.front().get());
+    if (nullptr != scene->_terrain) {
+        resourceManager->UpdateTerrain(scene->_terrain.get(), scene->_cameras.front().get());
+    }
+}
+
 ResourceManager::~ResourceManager() {
     if (!_uniformBuffers.empty()) {
         glDeleteBuffers(_uniformBuffers.size(), _uniformBuffers.data());
     }
+}
+
+auto ResourceManager::LoadScene(Scene * scene) -> void {
+    // setup ubo
+    InitCameraData(Camera::ShaderData::Size() * scene->_cameras.size());
+    InitLightData(scene->_ambientLights, scene->_pointLights, scene->_directionalLights, scene->_spotLights);
+
+    if (nullptr != scene->_staticModelGroup) {
+        LoadStaticModelGroup(scene->_staticModelGroup.get());
+    }
+    if (nullptr != scene->_skyBox) {
+        LoadSkyBox(scene->_skyBox.get());
+    }
+    if (nullptr != scene->_terrain) {
+        LoadTerrain(scene->_terrain.get());
+    }
+}
+
+auto ResourceManager::LoadStaticModelGroup(StaticModelGroup * staticModelGroup) -> void {
+    LoadModels(staticModelGroup->_models);
+    auto materials = vector<Material *>();
+    for (auto & m : staticModelGroup->_materials) {
+        materials.push_back(m.second.get());
+    }
+    LoadMaterials(materials);
+    for (auto & s : staticModelGroup->_shaderProgram) {
+        s.second->SendToCard();
+    }
+    for (auto & t : staticModelGroup->_textures) {
+        LoadTexture(t.second.get());
+    }
+    LoadMeshes(staticModelGroup->_meshes);
+    LoadBvh(staticModelGroup->_bvh.get());
+}
+
+auto ResourceManager::LoadBvh(Bvh * bvh) -> void {
+    bvh->GetShaderProgram()->SendToCard();
+    LoadAabbs(bvh->GetAabbs());
 }
 
 auto ResourceManager::LoadMeshes(vector<unique_ptr<Mesh>> const& meshes) -> void {
@@ -111,7 +158,7 @@ auto ResourceManager::LoadMaterials(vector<Material *> const& materials) -> void
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-auto ResourceManager::LoadModels(vector<Model*> const & models) -> void {
+auto ResourceManager::LoadModels(vector<unique_ptr<Model>> const & models) -> void {
     _transformBuffers.emplace_back();
     auto & transformUbo = _transformBuffers.back();
     glGenBuffers(1, &transformUbo);

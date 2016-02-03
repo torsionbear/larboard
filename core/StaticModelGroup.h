@@ -13,12 +13,7 @@ namespace core {
 
 class StaticModelGroup {
 public:
-    StaticModelGroup(ResourceManager* resourceManager)
-        : _resourceManager(resourceManager) {
-    }
-    ~StaticModelGroup();
-public:
-    auto PrepareForDraw() -> void;
+    auto Load() -> void;
     auto GetShapes() -> std::vector<std::unique_ptr<Shape>>&;
     auto AcquireShapes() -> std::vector<std::unique_ptr<Shape>>;
     auto AcquireMeshes() -> std::vector<std::unique_ptr<Mesh>>;
@@ -44,13 +39,7 @@ public:
         return _meshes;
     }
 
-private:
-    auto LoadTransformData() -> void;
-    auto LoadMaterialData() -> void;
-
-private:
-    ResourceManager * _resourceManager;
-
+public:
     Movable _root;
     std::vector<std::unique_ptr<Movable>> _movables;
     std::vector<std::unique_ptr<Model>> _models;

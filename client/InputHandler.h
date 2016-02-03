@@ -1,16 +1,19 @@
 #pragma once
 
-#include "renderSystem/RenderWindow.h"
+#include <Windows.h>
+#include <Windowsx.h>
+
 #include "core/scene.h"
 #include "core/Matrix.h"
+#include "core/CameraController.h"
+#include "core/Renderer.h"
 
 class InputHandler {
 private:
     enum Status { none, rotate, pan };
 public:
-    InputHandler(core::ResourceManager * resourceManager, core::Renderer * renderer, core::Scene * scene, core::CameraController * cameraController, int width, int height)
+    InputHandler(core::Renderer * renderer, core::Scene * scene, core::CameraController * cameraController, int width, int height)
         : _cameraController(cameraController)
-        , _resourceManager(resourceManager)
         , _renderer(renderer)
         , _scene(scene)
         , _center{ width / 2, height / 2 }
@@ -24,7 +27,6 @@ private:
 private:
     bool _isFpsMode = false;
     core::CameraController * _cameraController;
-    core::ResourceManager * _resourceManager;
     core::Renderer * _renderer;
     core::Scene * _scene;
     POINT const _center;

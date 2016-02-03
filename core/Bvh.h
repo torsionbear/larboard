@@ -1,7 +1,6 @@
 #pragma once
 
 #include "BvhNode.h"
-#include "ResourceManager.h"
 #include "ShaderProgram.h"
 
 namespace core {
