@@ -28,7 +28,7 @@ auto static const width = 800;
 auto static const height = 600;
 
 auto LoadScene_dx0(core::Scene * scene) -> void {
-    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square/square_dx.x3d").Read(scene);
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square/square.x3d").Read(scene);
 }
 
 auto LoadScene0(core::Scene * scene) -> void {

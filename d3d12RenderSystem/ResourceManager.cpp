@@ -68,12 +68,26 @@ auto ResourceManager::CreatePso(ID3D12RootSignature * rootSignature) -> ComPtr<I
     };
 
     // Describe and create the graphics pipeline state object (PSO).
+    auto rasterizer_desc = D3D12_RASTERIZER_DESC{
+
+    };
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
     psoDesc.InputLayout = { inputElementDescs.data(), inputElementDescs.size() };
     psoDesc.pRootSignature = rootSignature;
     psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader.Get());
     psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader.Get());
-    psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(
+        D3D12_FILL_MODE_SOLID,
+        D3D12_CULL_MODE_BACK,
+        TRUE,   // make ccw front here
+        D3D12_DEFAULT_DEPTH_BIAS,
+        D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
+        D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS,
+        TRUE,
+        FALSE,
+        FALSE,
+        0,
+        D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF);
     psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
     psoDesc.DepthStencilState.DepthEnable = FALSE;
     psoDesc.DepthStencilState.StencilEnable = FALSE;
