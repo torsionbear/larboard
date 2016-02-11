@@ -20,7 +20,7 @@ class SwapChainRenderTargets {
         D3D12_RESOURCE_BARRIER _presentToRenderTarget;
     };
 public:
-    SwapChainRenderTargets(unsigned int backBufferCount)
+    SwapChainRenderTargets(unsigned int backBufferCount = 2u)
         : _backBufferCount(backBufferCount) {
     }
     auto Init(IDXGIFactory1 * factory, ID3D12Device * device, ID3D12CommandQueue * commandQueue, UINT width, UINT height, HWND hwnd) -> void;

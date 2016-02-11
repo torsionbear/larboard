@@ -20,4 +20,8 @@ inline auto Align(uint8 * ptr, uint8 align) -> uint8 * {
     return reinterpret_cast<uint8 *>(result);
 }
 
+inline auto Align(unsigned long base, uint8 align) -> unsigned long {
+    return (base + align - 1) & ~(align - 1);
+}
+
 }

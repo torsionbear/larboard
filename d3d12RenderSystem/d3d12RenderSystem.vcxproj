@@ -127,23 +127,23 @@
   <ItemGroup>
     <ClInclude Include="Common.h" />
     <ClInclude Include="d3dx12.h" />
-    <ClInclude Include="Fence.h" />
-    <ClInclude Include="FrameManager.h" />
+    <ClInclude Include="FencedCommandQueue.h" />
     <ClInclude Include="FrameResource.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RenderSystem.h" />
     <ClInclude Include="RenderWindow.h" />
     <ClInclude Include="ResourceManager.h" />
     <ClInclude Include="SwapChainRenderTargets.h" />
+    <ClInclude Include="UploadHeap.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Fence.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="FencedCommandQueue.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RenderSystem.cpp" />
     <ClCompile Include="RenderWindow.cpp" />
     <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="SwapChainRenderTargets.cpp" />
+    <ClCompile Include="UploadHeap.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

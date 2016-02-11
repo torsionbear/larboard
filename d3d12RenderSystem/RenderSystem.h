@@ -10,6 +10,8 @@
 #include "RenderWindow.h"
 #include "ResourceManager.h"
 #include "Renderer.h"
+#include "FencedCommandQueue.h"
+#include "SwapChainRenderTargets.h"
 
 #include "core/Shape.h"
 
@@ -23,6 +25,10 @@ struct Vertex {
 };
 
 class RenderSystem {
+public:
+    ~RenderSystem() {
+        _fencedCommandQueue.SyncLatest();
+    }
 public:
     auto GetResourceManager() -> ResourceManager & {
         return _resourceManager;
@@ -38,12 +44,11 @@ private:
     auto static EnableDebugLayer() -> void;
     auto static CreateFactory() -> ComPtr<IDXGIFactory1>;
     auto static CreateDevice(IDXGIFactory1 * factory) -> ComPtr<ID3D12Device>;
-    auto static CreateCommandQueue(ID3D12Device * device) -> ComPtr<ID3D12CommandQueue>;
     auto static CreateSrvHeap(ID3D12Device * device, unsigned int descriptorCount) -> ComPtr<ID3D12DescriptorHeap>;
 
 private:
     ComPtr<ID3D12Device> _device;
-    ComPtr<ID3D12CommandQueue> _commandQueue;
+    FencedCommandQueue _fencedCommandQueue;
 
     ComPtr<ID3D12DescriptorHeap> _srvHeap;
     ComPtr<ID3D12GraphicsCommandList> _commandList;

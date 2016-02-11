@@ -15,11 +15,11 @@ auto RenderSystem::Init(unsigned int width, unsigned int height) -> void {
     EnableDebugLayer();
     auto factory = CreateFactory();
     _device = CreateDevice(factory.Get());
-    _commandQueue = CreateCommandQueue(_device.Get());
+    _fencedCommandQueue.Init(_device.Get());
     _renderWindow.Create(width, height, L"RenderWindow");
-    _resourceManager.Init(_device.Get(), _commandQueue.Get(), factory.Get(), _renderWindow.GetWidth(), _renderWindow.GetHeight(), _renderWindow.GetHwnd());
+    _resourceManager.Init(_device.Get(), factory.Get(), &_fencedCommandQueue, width, height, _renderWindow.GetHwnd());
     _srvHeap = CreateSrvHeap(_device.Get(), 1);
-    _renderer.Init(&_resourceManager, _commandQueue.Get(), width, height);
+    _renderer.Init(&_resourceManager, width, height);
 }
 
 auto RenderSystem::EnableDebugLayer() -> void {
@@ -54,15 +54,6 @@ auto RenderSystem::CreateDevice(IDXGIFactory1 * factory) -> ComPtr<ID3D12Device>
     }
     ThrowIfFailed(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device)));
     return device;
-}
-
-auto RenderSystem::CreateCommandQueue(ID3D12Device * device) -> ComPtr<ID3D12CommandQueue> {
-    auto commandQueue = ComPtr<ID3D12CommandQueue>{ nullptr };
-    auto commandQueueDesc = D3D12_COMMAND_QUEUE_DESC{};
-    //commandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-    //commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-    device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&commandQueue));
-    return commandQueue;
 }
 
 auto RenderSystem::CreateSrvHeap(ID3D12Device * device, unsigned int descriptorCount) -> ComPtr<ID3D12DescriptorHeap> {

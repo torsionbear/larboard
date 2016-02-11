@@ -22,21 +22,27 @@ public:
     ~FrameManager() {
         _fence->Sync();
     }
-    auto Init(Fence * fence, std::vector<FrameResource> && frameResources) -> void {
-        _frameResources = move(frameResources);
+    auto Init(ID3D12Device * device, Fence * fence, unsigned int resourceCount) -> void {
+        _frameResources = std::vector<FrameResource>(resourceCount);
+        for (auto & frameResource : _frameResources) {
+            frameResource.Init(device);
+        }
         _fence = fence;
     }
-    auto GetCurrentFrameResource() -> FrameResource * {
-        return &_frameResources[_frameCacheIndex];
-    }
-    auto FrameBegin() -> void {
-        _frameCacheIndex = (_frameCacheIndex + 1) % _frameResources.size();
-        _fence->Sync(_frameResources[_frameCacheIndex].GetFenceValue());
-
-        _frameResources[_frameCacheIndex].Reset();
-    }
+    //auto GetCurrentFrameResource() -> FrameResource * {
+    //    return &_frameResources[_frameCacheIndex];
+    //}
+    //auto FrameBegin() -> void {
+    //    _frameCacheIndex = (_frameCacheIndex + 1) % _frameResources.size();
+    //    _fence->Sync(_frameResources[_frameCacheIndex].GetFenceValue());
+    //
+    //    _frameResources[_frameCacheIndex].Reset();
+    //}
     auto FrameEnd() -> void {
         _frameResources[_frameCacheIndex].SetFenceValue(_fence->Signal());
+    }
+    auto Sync(uint64 fenceValue) -> void {
+        _fence->Sync(fenceValue);
     }
 private:
     Fence * _fence;

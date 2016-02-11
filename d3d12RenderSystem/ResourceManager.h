@@ -16,48 +16,57 @@
 
 #include <wrl.h>
 
-#include "FrameManager.h"
-
 #include "core/Mesh.h"
+#include "SwapChainRenderTargets.h"
+#include "FrameResource.h"
+#include "FencedCommandQueue.h"
+#include "UploadHeap.h"
 
 namespace d3d12RenderSystem {
 
 using Microsoft::WRL::ComPtr;
 
 struct MeshData {
-    D3D12_VERTEX_BUFFER_VIEW vbv;
-    D3D12_INDEX_BUFFER_VIEW ibv;
+    unsigned int vertexIndexBufferIndex;
     unsigned int indexCount;
     unsigned int indexOffset;
     int baseVertex;
 };
 
+struct VertexIndexBuffer {
+    D3D12_VERTEX_BUFFER_VIEW vbv;
+    D3D12_INDEX_BUFFER_VIEW ibv;
+};
+
 class ResourceManager {
 public:
-    ResourceManager()
-        : _swapChainRenderTargets(2) {
-    }
-    ~ResourceManager() {
-        _fence.Sync();
+    ResourceManager() {
     }
 public:
-    auto Init(ID3D12Device * device, ID3D12CommandQueue * commandQueue, IDXGIFactory1 * factory, UINT width, UINT height, HWND hwnd) -> void;
-    auto FrameBegin() -> void;
-    auto FrameEnd() -> void;
-    auto LoadBegin() -> void;
+    auto Init(ID3D12Device * device, IDXGIFactory1 * factory, FencedCommandQueue * fencedCommandQueue, unsigned int width, unsigned int height, HWND hwnd) -> void;
+    auto PrepareResource() -> void;
     auto LoadEnd() -> void;
     auto LoadMeshes(std::vector<std::unique_ptr<core::Mesh>> const& meshes, unsigned int stride) -> void;
     auto GetMeshData(unsigned int index) -> MeshData const& {
         return _meshData[index];
     }
+    auto GetVertexIndexBuffer(unsigned int index) -> VertexIndexBuffer const& {
+        return _vertexIndexBuffer[index];
+    }
     auto GetRootSignature() -> ID3D12RootSignature * {
         return _rootSignature.Get();
+    }
+    auto GetCommandList() -> ID3D12GraphicsCommandList * {
+        return _commandList.Get();
+    }
+    auto GetFrameResource() -> FrameResource& {
+        return _frameResourceContainer.GetCurrent();
     }
     auto GetSwapChainRenderTargets() -> SwapChainRenderTargets & {
         return _swapChainRenderTargets;
     }
-    auto GetCommandList() -> ID3D12GraphicsCommandList * {
-        return _commandList.Get();
+    auto GetFencedCommandQueue() -> FencedCommandQueue * {
+        return _fencedCommandQueue;
     }
 private:
     auto CreatePso(ID3D12RootSignature * rootSignature)->ComPtr<ID3D12PipelineState>;
@@ -65,49 +74,18 @@ private:
     auto CreateCommandList(ID3D12PipelineState * pso, ID3D12CommandAllocator * allocator)->ComPtr<ID3D12GraphicsCommandList>;
 private:
     ID3D12Device * _device;
-    ComPtr<ID3D12Resource> _uploadHeap;
-    ComPtr<ID3D12Resource> _uploadHeap2;
-    ComPtr<ID3D12Resource> _vertexHeap;
-    ComPtr<ID3D12Resource> _indexHeap;
+    UploadHeap _uploadHeap;
+    ComPtr<ID3D12Resource> _vertexIndexHeap;
     std::vector<MeshData> _meshData;
+    std::vector<VertexIndexBuffer> _vertexIndexBuffer;
 
-    Fence _fence;
-    FrameManager _frameManager;
+    FrameResourceContainer<FrameResource, 2> _frameResourceContainer;
+    SwapChainRenderTargets _swapChainRenderTargets;
+    FencedCommandQueue * _fencedCommandQueue;
+
     ComPtr<ID3D12GraphicsCommandList> _commandList;
     ComPtr<ID3D12PipelineState> _defaultPso;
     ComPtr<ID3D12RootSignature> _rootSignature;
-    ID3D12CommandQueue * _commandQueue;
-    SwapChainRenderTargets _swapChainRenderTargets;
 };
-/*
-class ResourceManager {
-private:
-    struct VertexBuffer {
-        openglUint _vao = 0;
-        openglUint _vbo = 0;
-        openglUint _veo = 0;
-    };
-public:
-    auto LoadMeshes(std::vector<std::unique_ptr<Mesh>> const& meshes) -> void;
-    auto LoadSkyBoxMesh(SkyBox * skyBox) -> void;
 
-    auto LoadMaterials(std::vector<Material *> const& materials) -> void;
-    auto LoadModels(std::vector<Model *> const& models) -> void;
-    auto LoadTexture(Texture * texture) -> void;
-    auto LoadCubeMap(CubeMap * cubeMap) -> void;
-    auto LoadTextureArray(TextureArray * textureArray) -> void;
-    auto LoadAabbs(std::vector<Aabb *> aabbs) -> void;
-    auto LoadTerrain(Terrain * terrain) -> void;
-    auto LoadTerrainSpecialTiles(std::vector<Mesh *> terrainSpecialTiles) -> void;
-    auto UpdateTerrainTileCoordUbo(openglUint vio, std::vector<Vector3f> const& tileCoord) -> void;
-private:
-	std::vector<VertexBuffer> _vertexBuffers;
-    std::vector<openglUint> _instanceBuffers;
-    std::vector<openglUint> _materialBuffers;
-    std::vector<openglUint> _transformBuffers;
-    std::vector<openglUint> _uniformBuffers;
-    std::vector<openglUint> _textures;
-    std::vector<std::unique_ptr<ShaderProgram>> _shaderPrograms;
-};
-*/
 }

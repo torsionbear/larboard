@@ -10,6 +10,27 @@ namespace d3d12RenderSystem {
 
 using Microsoft::WRL::ComPtr;
 
+template<typename FRAMERESOURCE, unsigned int SIZE>
+class FrameResourceContainer {
+public:
+    template<typename ... ARGS>
+    auto Init(ARGS&& ... args) -> void {
+        for (auto & frameResource : _frameResources) {
+            frameResource.Init(std::forward<ARGS>(args)...);
+        }
+    }
+    auto GetCurrent() -> FRAMERESOURCE & {
+        return _frameResources[_frameCacheIndex];
+    }
+    auto Switch() -> FRAMERESOURCE & {
+        _frameCacheIndex = (_frameCacheIndex + 1) % _frameResources.size();
+        return _frameResources[_frameCacheIndex];
+    }
+private:
+    std::array<FRAMERESOURCE, SIZE> _frameResources;
+    unsigned int _frameCacheIndex = 0;
+};
+
 class FrameResource {
 public:
     auto Init(ID3D12Device* device) -> void {
