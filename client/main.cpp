@@ -135,6 +135,7 @@ int main_dx() {
     auto & renderer = renderSystem.GetRenderer();
     auto & renderWindow = renderSystem.GetRenderWindow();
 
+    renderer.Prepare();
     resourceManager.LoadMeshes(scene->GetStaticModelGroup().GetMeshes(), sizeof(core::Vertex));
     resourceManager.LoadEnd();
 

@@ -21,6 +21,7 @@
 #include "FrameResource.h"
 #include "FencedCommandQueue.h"
 #include "UploadHeap.h"
+#include "DescriptorHeap.h"
 
 namespace d3d12RenderSystem {
 
@@ -36,6 +37,12 @@ struct MeshData {
 struct VertexIndexBuffer {
     D3D12_VERTEX_BUFFER_VIEW vbv;
     D3D12_INDEX_BUFFER_VIEW ibv;
+};
+
+struct ConstantBuffer {
+    void * _mappedDataPtr;
+    D3D12_GPU_DESCRIPTOR_HANDLE _gpuHandle;
+    D3D12_CPU_DESCRIPTOR_HANDLE _cpuHandle;
 };
 
 class ResourceManager {
@@ -68,6 +75,9 @@ public:
     auto GetFencedCommandQueue() -> FencedCommandQueue * {
         return _fencedCommandQueue;
     }
+    auto AllocDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int size) -> void;
+    auto CreateDepthStencil(unsigned int width, unsigned int height, unsigned int index) -> D3D12_CPU_DESCRIPTOR_HANDLE;
+    auto CreateConstantBuffer(unsigned int size, unsigned int index) -> ConstantBuffer;
 private:
     auto CreatePso(ID3D12RootSignature * rootSignature)->ComPtr<ID3D12PipelineState>;
     auto CreateRootSignature()->ComPtr<ID3D12RootSignature>;
@@ -78,6 +88,11 @@ private:
     ComPtr<ID3D12Resource> _vertexIndexHeap;
     std::vector<MeshData> _meshData;
     std::vector<VertexIndexBuffer> _vertexIndexBuffer;
+    DescriptorHeap _dsvHeap;
+    DescriptorHeap _cbvSrvHeap;
+
+    ComPtr<ID3D12Resource> _depthStencil;
+    std::vector<ComPtr<ID3D12Resource>> _constantBuffers;
 
     FrameResourceContainer<FrameResource, 2> _frameResourceContainer;
     SwapChainRenderTargets _swapChainRenderTargets;

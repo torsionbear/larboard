@@ -127,6 +127,7 @@
   <ItemGroup>
     <ClInclude Include="Common.h" />
     <ClInclude Include="d3dx12.h" />
+    <ClInclude Include="DescriptorHeap.h" />
     <ClInclude Include="FencedCommandQueue.h" />
     <ClInclude Include="FrameResource.h" />
     <ClInclude Include="Renderer.h" />

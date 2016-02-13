@@ -46,6 +46,40 @@ auto ResourceManager::LoadEnd() -> void {
     _fencedCommandQueue->SyncLatest();
 }
 
+auto ResourceManager::AllocDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int size) -> void {
+    switch (type) {
+    case D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV:
+        _cbvSrvHeap.Init(_device, type, size, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+        break;
+    case D3D12_DESCRIPTOR_HEAP_TYPE_DSV:
+        _dsvHeap.Init(_device, type, size, D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
+        break;
+    }
+}
+
+auto ResourceManager::CreateConstantBuffer(unsigned int size, unsigned int index) -> ConstantBuffer {
+    auto ret = ConstantBuffer{nullptr, _cbvSrvHeap.GetGpuHandle(index), _cbvSrvHeap.GetCpuHandle(index) };
+
+    //const UINT constantBufferSize = (sizeof(ConstantBuffer) + (D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1)) & ~(D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT - 1); // must be a multiple 256 bytes
+    _constantBuffers.emplace_back();
+    auto & constantBuffer = _constantBuffers.back();
+    ThrowIfFailed(_device->CreateCommittedResource(
+        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+        D3D12_HEAP_FLAG_NONE,
+        &CD3DX12_RESOURCE_DESC::Buffer(size),
+        D3D12_RESOURCE_STATE_GENERIC_READ,
+        nullptr,
+        IID_PPV_ARGS(&constantBuffer)));
+    // Map the constant buffers and cache their heap pointers.
+    CD3DX12_RANGE readRange(0, 0);		// We do not intend to read from this resource on the CPU.
+    ThrowIfFailed(constantBuffer->Map(0, &readRange, reinterpret_cast<void**>(&ret._mappedDataPtr)));
+
+    D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = { constantBuffer->GetGPUVirtualAddress(), size };
+    _device->CreateConstantBufferView(&cbvDesc, ret._cpuHandle);
+
+    return ret;
+}
+
 auto ResourceManager::CreatePso(ID3D12RootSignature * rootSignature) -> ComPtr<ID3D12PipelineState> {
     auto ret = ComPtr<ID3D12PipelineState>{ nullptr };
 
@@ -103,13 +137,13 @@ auto ResourceManager::CreatePso(ID3D12RootSignature * rootSignature) -> ComPtr<I
 auto ResourceManager::CreateRootSignature() -> ComPtr<ID3D12RootSignature> {
     auto ret = ComPtr<ID3D12RootSignature>{ nullptr };
 
-    CD3DX12_DESCRIPTOR_RANGE ranges[1];
-    ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+    auto ranges = array<CD3DX12_DESCRIPTOR_RANGE, 1>{};
+    ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
 
-    CD3DX12_ROOT_PARAMETER rootParameters[1];
+    auto rootParameters = array<CD3DX12_ROOT_PARAMETER, 1>{};
     rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
 
-    D3D12_STATIC_SAMPLER_DESC sampler = {};
+    auto sampler = D3D12_STATIC_SAMPLER_DESC{};
     sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
     sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
     sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
@@ -125,7 +159,7 @@ auto ResourceManager::CreateRootSignature() -> ComPtr<ID3D12RootSignature> {
     sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
     CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-    rootSignatureDesc.Init(_countof(rootParameters), rootParameters, 1, &sampler, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+    rootSignatureDesc.Init(rootParameters.size(), rootParameters.data(), 1, &sampler, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
     //rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
     ComPtr<ID3DBlob> signature;
@@ -138,6 +172,39 @@ auto ResourceManager::CreateRootSignature() -> ComPtr<ID3D12RootSignature> {
 auto ResourceManager::CreateCommandList(ID3D12PipelineState * pso, ID3D12CommandAllocator * allocator) -> ComPtr<ID3D12GraphicsCommandList> {
     auto ret = ComPtr<ID3D12GraphicsCommandList>{ nullptr };
     ThrowIfFailed(_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, allocator, pso, IID_PPV_ARGS(&ret)));
+    return ret;
+}
+
+auto ResourceManager::CreateDepthStencil(unsigned int width, unsigned int height, unsigned int index) -> D3D12_CPU_DESCRIPTOR_HANDLE {
+    CD3DX12_RESOURCE_DESC shadowTextureDesc(
+        D3D12_RESOURCE_DIMENSION_TEXTURE2D,
+        0,
+        width,
+        height,
+        1,
+        1,
+        DXGI_FORMAT_D32_FLOAT,
+        1,
+        0,
+        D3D12_TEXTURE_LAYOUT_UNKNOWN,
+        D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL | D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE);
+
+    D3D12_CLEAR_VALUE clearValue;	// tell the runtime at resource creation the desired clear value for better performance.
+    clearValue.Format = DXGI_FORMAT_D32_FLOAT;
+    clearValue.DepthStencil.Depth = 1.0f;
+    clearValue.DepthStencil.Stencil = 0;
+
+    ThrowIfFailed(_device->CreateCommittedResource(
+        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+        D3D12_HEAP_FLAG_NONE,
+        &shadowTextureDesc,
+        D3D12_RESOURCE_STATE_DEPTH_WRITE,
+        &clearValue,
+        IID_PPV_ARGS(&_depthStencil)));
+
+    // Create the depth stencil view.
+    auto ret = _dsvHeap.GetCpuHandle(index);
+    _device->CreateDepthStencilView(_depthStencil.Get(), nullptr, ret);
     return ret;
 }
 

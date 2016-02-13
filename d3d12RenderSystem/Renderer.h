@@ -17,7 +17,9 @@ private:
     ResourceManager * _resourceManager;
     D3D12_VIEWPORT _viewport;
     D3D12_RECT _scissorRect;
-
+    
+    // render logic specific data members
+    D3D12_CPU_DESCRIPTOR_HANDLE _dsv;
 };
 
 }

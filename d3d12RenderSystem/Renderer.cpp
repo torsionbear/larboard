@@ -3,7 +3,9 @@
 namespace d3d12RenderSystem {
 
 auto Renderer::Prepare() -> void {
-
+    // depth stencil
+    _resourceManager->AllocDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1);
+    _dsv = _resourceManager->CreateDepthStencil(_viewport.Width, _viewport.Height, 0);
 }
 
 auto Renderer::RenderBegin() -> void {
@@ -17,7 +19,7 @@ auto Renderer::RenderBegin() -> void {
     commandList->RSSetScissorRects(1, &_scissorRect);
 
     auto rtv = swapChainRenderTargets.GetCurrentRtv();
-    commandList->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
+    commandList->OMSetRenderTargets(1, &rtv, FALSE, &_dsv);
 
     // Record commands.
     const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };

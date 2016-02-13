@@ -14,7 +14,8 @@ auto UploadHeap::Init(unsigned int size, ID3D12Device * device, FencedCommandQue
         nullptr,
         IID_PPV_ARGS(&_uploadHeap)));
 
-    _uploadHeap->Map(0, nullptr, reinterpret_cast<void**>(&_heapBegin));
+    auto readRange = CD3DX12_RANGE(0, 0);		// We do not intend to read from this resource on the CPU.
+    _uploadHeap->Map(0, &readRange, reinterpret_cast<void**>(&_heapBegin));
     _heapEnd = _heapBegin + size;
     _begin = _heapBegin;
     _end = _heapBegin;
@@ -57,7 +58,7 @@ auto UploadHeap::UploadDataBlocks(ID3D12GraphicsCommandList * commandList, DataB
     // 1. compute alignments' lcd
     // alignments' lowest common denominator should be the greatest one.
     auto alignmentLcd = 0u;
-    for (auto i = 0u; i < count; +i) {
+    for (auto i = 0u; i < count; ++i) {
         auto const alignment = (dataBlocks + i)->alignment;
         if (alignment > alignmentLcd) {
             alignmentLcd = alignment;
