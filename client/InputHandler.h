@@ -12,7 +12,7 @@ class InputHandler {
 private:
     enum Status { none, rotate, pan };
 public:
-    InputHandler(core::Renderer * renderer, core::Scene * scene, core::CameraController * cameraController, int width, int height)
+    InputHandler(core::IRenderer * renderer, core::Scene * scene, core::CameraController * cameraController, int width, int height)
         : _cameraController(cameraController)
         , _renderer(renderer)
         , _scene(scene)
@@ -27,7 +27,7 @@ private:
 private:
     bool _isFpsMode = false;
     core::CameraController * _cameraController;
-    core::Renderer * _renderer;
+    core::IRenderer * _renderer;
     core::Scene * _scene;
     POINT const _center;
     core::Float32 _widthInverse;

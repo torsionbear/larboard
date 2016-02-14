@@ -127,6 +127,7 @@ int main_dx() {
 
     auto scene = make_unique<core::Scene>();
     LoadScene_dx0(scene.get());
+    scene->Load();
 
     d3d12RenderSystem::RenderSystem renderSystem;
     renderSystem.Init(width, height);
@@ -134,18 +135,27 @@ int main_dx() {
     auto & resourceManager = renderSystem.GetResourceManager();
     auto & renderer = renderSystem.GetRenderer();
     auto & renderWindow = renderSystem.GetRenderWindow();
+    auto cameraController = core::CameraController(scene.get());
+
+    auto inputHandler = InputHandler(&renderer, scene.get(), &cameraController, width, height);
+    renderSystem.GetRenderWindow().RegisterInputHandler(std::function<void(HWND, UINT, WPARAM, LPARAM)>(inputHandler));
 
     renderer.Prepare();
+    // load
     resourceManager.LoadMeshes(scene->GetStaticModelGroup().GetMeshes(), sizeof(core::Vertex));
     resourceManager.LoadEnd();
 
     while (renderWindow.Step()) {
         resourceManager.PrepareResource();
-        renderer.RenderBegin();
+        // update
+        cameraController.Step();
+        renderer.Update(*scene->GetActiveCamera());
+        renderer.DrawBegin();
+        // render
         for (auto & shape : scene->GetStaticModelGroup().GetShapes()) {
             renderer.RenderShape(shape.get());
         }
-        renderer.RenderEnd();
+        renderer.DrawEnd();
     }
 
     return 0;

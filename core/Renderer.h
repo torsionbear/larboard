@@ -8,19 +8,26 @@
 #include "Terrain.h"
 
 namespace core {
-
-class Renderer {
+class IRenderer {
+public:
+    virtual ~IRenderer() {
+    }
+public:
+    virtual auto Prepare() -> void = 0;
+    virtual auto DrawBegin() -> void = 0;
+    virtual auto DrawEnd() -> void = 0;
+    virtual auto ToggleWireframe() -> void = 0;
+    virtual auto ToggleBackFace() -> void = 0;
+};
+class Renderer : public IRenderer {
 public:
     static auto DrawScene(Renderer * renderer, Scene const* scene) -> void;
 public:
-    virtual ~Renderer() {
-    }
-public:
-    virtual auto Prepare() -> void;
-    virtual auto DrawBegin() -> void;
-    virtual auto DrawEnd() -> void;
-    auto ToggleWireframe() -> void;
-    auto ToggleBackFace() -> void;
+    virtual auto Prepare() -> void override;
+    virtual auto DrawBegin() -> void override;
+    virtual auto DrawEnd() -> void override;
+    virtual auto ToggleWireframe() -> void override;
+    virtual auto ToggleBackFace() -> void override;
     auto Render(Shape const* shape) -> void;
     auto RenderAabb(Aabb const* aabb) -> void;
     auto RenderSkyBox(SkyBox const * skyBox) -> void;

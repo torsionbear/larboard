@@ -18,7 +18,7 @@ Camera::Camera()
 	: Movable(Vector4f{ 0.0f, 0.0f, -1.0f, 0.0f }, Vector4f{ 0.0f, 1.0f, 0.0f, 0.0f }) {	// Camera looks at -z by default
 }
 
-auto Camera::GetProjectionTransform() const -> Matrix4x4f const & {
+auto Camera::GetProjectTransform() const -> Matrix4x4f const & {
 	return _projectTransform;
 }
 
@@ -73,7 +73,6 @@ auto Camera::SetPerspective(Float32 aspectRatio, Float32 fieldOfView, Float32 ne
 }
 
 auto Camera::GetShaderData() -> ShaderData {
-    auto viewTransform = GetRigidBodyMatrixInverse();
 	return ShaderData {
         GetRigidBodyMatrixInverse(),
         _projectTransform,

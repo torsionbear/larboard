@@ -17,6 +17,7 @@
 #include <wrl.h>
 
 #include "core/Mesh.h"
+#include "core/Camera.h"
 #include "SwapChainRenderTargets.h"
 #include "FrameResource.h"
 #include "FencedCommandQueue.h"
@@ -34,13 +35,20 @@ struct MeshData {
     int baseVertex;
 };
 
+struct CameraData {
+    core::Matrix4x4f viewTransform;
+    core::Matrix4x4f projectTransform;
+    core::Matrix4x4f viewTransformInverse;
+    core::Vector4f viewPosition;
+};
+
 struct VertexIndexBuffer {
     D3D12_VERTEX_BUFFER_VIEW vbv;
     D3D12_INDEX_BUFFER_VIEW ibv;
 };
 
 struct ConstantBuffer {
-    void * _mappedDataPtr;
+    uint8 * _mappedDataPtr;
     D3D12_GPU_DESCRIPTOR_HANDLE _gpuHandle;
     D3D12_CPU_DESCRIPTOR_HANDLE _cpuHandle;
 };
@@ -54,6 +62,7 @@ public:
     auto PrepareResource() -> void;
     auto LoadEnd() -> void;
     auto LoadMeshes(std::vector<std::unique_ptr<core::Mesh>> const& meshes, unsigned int stride) -> void;
+    auto LoadCamera(core::Camera const& camera, ConstantBuffer const& constantBuffer, unsigned int offset) -> void;
     auto GetMeshData(unsigned int index) -> MeshData const& {
         return _meshData[index];
     }
@@ -76,6 +85,7 @@ public:
         return _fencedCommandQueue;
     }
     auto AllocDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int size) -> void;
+    auto GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type) -> ID3D12DescriptorHeap *;
     auto CreateDepthStencil(unsigned int width, unsigned int height, unsigned int index) -> D3D12_CPU_DESCRIPTOR_HANDLE;
     auto CreateConstantBuffer(unsigned int size, unsigned int index) -> ConstantBuffer;
 private:
@@ -88,10 +98,10 @@ private:
     ComPtr<ID3D12Resource> _vertexIndexHeap;
     std::vector<MeshData> _meshData;
     std::vector<VertexIndexBuffer> _vertexIndexBuffer;
+
     DescriptorHeap _dsvHeap;
     DescriptorHeap _cbvSrvHeap;
-
-    ComPtr<ID3D12Resource> _depthStencil;
+    std::vector<ComPtr<ID3D12Resource>> _depthStencils;
     std::vector<ComPtr<ID3D12Resource>> _constantBuffers;
 
     FrameResourceContainer<FrameResource, 2> _frameResourceContainer;

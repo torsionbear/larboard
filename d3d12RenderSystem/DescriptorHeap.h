@@ -32,7 +32,9 @@ public:
     auto GetGpuHandle(unsigned int index) -> D3D12_GPU_DESCRIPTOR_HANDLE {
         return D3D12_GPU_DESCRIPTOR_HANDLE{ _gpuHandle.ptr + index * _incrementSize };
     }
-
+    auto GetHeap() -> ID3D12DescriptorHeap * {
+        return _heap.Get();
+    }
 private:
     CD3DX12_CPU_DESCRIPTOR_HANDLE _cpuHandle;
     CD3DX12_GPU_DESCRIPTOR_HANDLE _gpuHandle;

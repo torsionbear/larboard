@@ -14,13 +14,13 @@ inline auto ThrowIfFailed(HRESULT hr) -> void {
     }
 }
 
-inline auto Align(uint8 * ptr, uint8 align) -> uint8 * {
+inline auto Align(uint8 * ptr, unsigned int align) -> uint8 * {
     auto base = reinterpret_cast<unsigned long>(ptr);
     auto result = (base + align - 1) & ~(align - 1);
     return reinterpret_cast<uint8 *>(result);
 }
 
-inline auto Align(unsigned long base, uint8 align) -> unsigned long {
+inline auto Align(unsigned long base, unsigned int align) -> unsigned long {
     return (base + align - 1) & ~(align - 1);
 }
 

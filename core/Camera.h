@@ -22,7 +22,7 @@ public:
 public:
 	auto SetPerspective(Point4f lowerLeft, Point4f upperRight, Float32 farPlane) -> void;
 	auto SetPerspective(Float32 aspectRatio, Float32 fieldOfView, Float32 nearPlane, Float32 farPlane) -> void;
-	auto GetProjectionTransform() const -> Matrix4x4f const&;
+	auto GetProjectTransform() const -> Matrix4x4f const&;
     auto GetRayTo(Vector2f windowCoordinate) const -> Ray;
     auto GetFarPlane() const -> Float32 {
         return _farPlane;
