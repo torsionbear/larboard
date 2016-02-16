@@ -40,54 +40,15 @@ auto ResourceManager::PrepareResource() -> void {
     ThrowIfFailed(_commandList->Reset(frameResource.GetCommandAllocator(), _defaultPso.Get()));
 }
 
+auto ResourceManager::LoadBegin(unsigned int depthStencilCount, unsigned int cameraCount, unsigned int meshCount, unsigned int modelCount) -> void {
+    AllocDsvDescriptorHeap(depthStencilCount);
+    AllocCbvSrvDescriptorHeap(cameraCount + modelCount);
+}
+
 auto ResourceManager::LoadEnd() -> void {
     ThrowIfFailed(_commandList->Close());
     _fencedCommandQueue->ExecuteCommandList(_commandList.Get(), 1);
     _fencedCommandQueue->SyncLatest();
-}
-
-auto ResourceManager::AllocDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int size) -> void {
-    switch (type) {
-    case D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV:
-        _cbvSrvHeap.Init(_device, type, size, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-        break;
-    case D3D12_DESCRIPTOR_HEAP_TYPE_DSV:
-        _dsvHeap.Init(_device, type, size, D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
-        break;
-    }
-}
-
-auto ResourceManager::GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE type) -> ID3D12DescriptorHeap * {
-    switch (type) {
-    case D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV:
-        return _cbvSrvHeap.GetHeap();
-    case D3D12_DESCRIPTOR_HEAP_TYPE_DSV:
-        return _dsvHeap.GetHeap();
-    }
-    return nullptr;
-}
-
-auto ResourceManager::CreateConstantBuffer(unsigned int size, unsigned int index) -> ConstantBuffer {
-    auto ret = ConstantBuffer{nullptr, _cbvSrvHeap.GetGpuHandle(index), _cbvSrvHeap.GetCpuHandle(index) };
-
-    auto const alignedSize = Align(size, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT);
-    _constantBuffers.emplace_back();
-    auto & constantBuffer = _constantBuffers.back();
-    ThrowIfFailed(_device->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-        D3D12_HEAP_FLAG_NONE,
-        &CD3DX12_RESOURCE_DESC::Buffer(alignedSize),
-        D3D12_RESOURCE_STATE_GENERIC_READ,
-        nullptr,
-        IID_PPV_ARGS(&constantBuffer)));
-    // Map the constant buffers and cache their heap pointers.
-    CD3DX12_RANGE readRange(0, 0);		// We do not intend to read from this resource on the CPU.
-    ThrowIfFailed(constantBuffer->Map(0, &readRange, reinterpret_cast<void**>(&ret._mappedDataPtr)));
-
-    D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = { constantBuffer->GetGPUVirtualAddress(), alignedSize };
-    _device->CreateConstantBufferView(&cbvDesc, ret._cpuHandle);
-
-    return ret;
 }
 
 auto ResourceManager::CreatePso(ID3D12RootSignature * rootSignature) -> ComPtr<ID3D12PipelineState> {
@@ -147,11 +108,13 @@ auto ResourceManager::CreatePso(ID3D12RootSignature * rootSignature) -> ComPtr<I
 auto ResourceManager::CreateRootSignature() -> ComPtr<ID3D12RootSignature> {
     auto ret = ComPtr<ID3D12RootSignature>{ nullptr };
 
-    auto ranges = array<CD3DX12_DESCRIPTOR_RANGE, 1>{};
+    auto ranges = array<CD3DX12_DESCRIPTOR_RANGE, 2>{};
     ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
+    ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1);
 
-    auto rootParameters = array<CD3DX12_ROOT_PARAMETER, 1>{};
+    auto rootParameters = array<CD3DX12_ROOT_PARAMETER, 2>{};
     rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_VERTEX);
+    rootParameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_VERTEX);
 
     auto sampler = D3D12_STATIC_SAMPLER_DESC{};
     sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
@@ -185,7 +148,9 @@ auto ResourceManager::CreateCommandList(ID3D12PipelineState * pso, ID3D12Command
     return ret;
 }
 
-auto ResourceManager::CreateDepthStencil(unsigned int width, unsigned int height, unsigned int index) -> D3D12_CPU_DESCRIPTOR_HANDLE {
+auto ResourceManager::CreateDepthStencil(unsigned int width, unsigned int height) -> void {
+    auto & bufferHandle = _dsvHeap.GetBufferHandle();
+
     CD3DX12_RESOURCE_DESC shadowTextureDesc(
         D3D12_RESOURCE_DIMENSION_TEXTURE2D,
         0,
@@ -204,34 +169,34 @@ auto ResourceManager::CreateDepthStencil(unsigned int width, unsigned int height
     clearValue.DepthStencil.Depth = 1.0f;
     clearValue.DepthStencil.Stencil = 0;
 
-    _depthStencils.emplace_back();
-    auto & depthStencil = _depthStencils.back();
+    _defaultBuffers.emplace_back();
+    auto & buffer = _defaultBuffers.back();
     ThrowIfFailed(_device->CreateCommittedResource(
         &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
         D3D12_HEAP_FLAG_NONE,
         &shadowTextureDesc,
         D3D12_RESOURCE_STATE_DEPTH_WRITE,
         &clearValue,
-        IID_PPV_ARGS(&depthStencil)));
+        IID_PPV_ARGS(&buffer)));
 
     // Create the depth stencil view.
-    auto ret = _dsvHeap.GetCpuHandle(index);
-    _device->CreateDepthStencilView(depthStencil.Get(), nullptr, ret);
-    return ret;
+    _device->CreateDepthStencilView(buffer.Get(), nullptr, bufferHandle._cpuHandle);
+    _depthStencilBufferHandles.push_back(bufferHandle);
 }
 
-auto ResourceManager::LoadMeshes(vector<unique_ptr<core::Mesh>> const& meshes, unsigned int stride) -> void {
+auto ResourceManager::LoadMeshes(core::Mesh ** meshes, unsigned int count, unsigned int stride) -> void {
     auto vertexData = vector<core::Vertex>();
     auto indexData = vector<unsigned int>();
     auto const vertexIndexBufferIndex = _vertexIndexBuffer.size();
     _vertexIndexBuffer.emplace_back();
     auto & vertexIndexBuffer = _vertexIndexBuffer.back();
-    for (auto & mesh : meshes) {
-        mesh->_renderDataId = _meshData.size();
-        _meshData.push_back(MeshData{ 
+    for (auto i = 0u; i < count; ++i) {
+        auto mesh = meshes[i];
+        mesh->_renderDataId = _meshDataInfos.size();
+        _meshDataInfos.push_back(MeshDataInfo{
             vertexIndexBufferIndex,
             mesh->GetIndex().size(),
-            indexData.size() * sizeof(unsigned int),
+            indexData.size(),
             static_cast<int>(vertexData.size()),
         });
         vertexData.insert(vertexData.end(), mesh->GetVertex().cbegin(), mesh->GetVertex().cend());
@@ -255,16 +220,84 @@ auto ResourceManager::LoadMeshes(vector<unique_ptr<core::Mesh>> const& meshes, u
     vertexIndexBuffer.ibv = D3D12_INDEX_BUFFER_VIEW{ _vertexIndexHeap->GetGPUVirtualAddress() + dataBlocks[1].offset, dataBlocks[1].size, DXGI_FORMAT_R32_UINT };
 
     _uploadHeap.UploadDataBlocks(_commandList.Get(), memoryBlock, _vertexIndexHeap.Get());
+    _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(_vertexIndexHeap.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER));
 }
 
-auto ResourceManager::LoadCamera(core::Camera const & camera, ConstantBuffer const& constantBuffer, unsigned int offset) -> void {
-    auto cameraData = CameraData {
+auto ResourceManager::LoadModels(core::Model ** models, unsigned int count) -> void {
+    // create resource
+    _defaultBuffers.emplace_back();
+    auto & buffer = _defaultBuffers.back();
+    ThrowIfFailed(_device->CreateCommittedResource(
+        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+        D3D12_HEAP_FLAG_NONE,
+        &CD3DX12_RESOURCE_DESC::Buffer(count * sizeof(TransformData)),
+        D3D12_RESOURCE_STATE_COPY_DEST,
+        nullptr,
+        IID_PPV_ARGS(&buffer)));
+    // aggregate data, populate _transformBufferHandles and set model._renderDataId
+    auto transformData = vector<TransformData>{};
+    for (auto i = 0u; i < count; ++i) {
+        auto & model = models[i];
+        model->_renderDataId = _transformBufferHandles.size();
+        auto bufferHandle = _cbvSrvHeap.GetBufferHandle();
+        D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = { buffer->GetGPUVirtualAddress() + i * sizeof(TransformData), sizeof(TransformData) };
+        _device->CreateConstantBufferView(&cbvDesc, bufferHandle._cpuHandle);
+        _transformBufferHandles.push_back(bufferHandle);
+        transformData.emplace_back(TransformData{
+            model->GetTransform(),
+            model->GetTransform(),
+        });
+    }
+    auto dataBlock = DataBlock{ 0, count * sizeof(TransformData), D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT, transformData.data() };
+
+    auto const& memoryBlock = _uploadHeap.AllocateDataBlocks(&dataBlock, 1);
+    _uploadHeap.UploadDataBlocks(_commandList.Get(), memoryBlock, buffer.Get());
+    _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+}
+
+auto ResourceManager::LoadCamera(core::Camera * cameras, unsigned int count) -> void {
+    _uploadBuffers.emplace_back();
+    auto & buffer = _uploadBuffers.back();
+    ThrowIfFailed(_device->CreateCommittedResource(
+        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+        D3D12_HEAP_FLAG_NONE,
+        &CD3DX12_RESOURCE_DESC::Buffer(count * sizeof(CameraData)),
+        D3D12_RESOURCE_STATE_GENERIC_READ,
+        nullptr,
+        IID_PPV_ARGS(&buffer)));
+    // Map the constant buffers and cache their heap pointers.
+    uint8 * mappedPtr = nullptr;
+    CD3DX12_RANGE readRange(0, 0);		// no intend to read from this resource on the CPU.
+    ThrowIfFailed(buffer->Map(0, &readRange, reinterpret_cast<void**>(&mappedPtr)));
+
+    auto cameraData = vector<CameraData>{};
+    for (auto i = 0u; i < count; ++i) {
+        auto & camera = cameras[i];
+        camera._renderDataId = _cameraBufferHandles.size();
+        auto bufferHandle = _cbvSrvHeap.GetBufferHandle();
+        bufferHandle._mappedDataPtr = mappedPtr + i * sizeof(CameraData);
+        D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = { buffer->GetGPUVirtualAddress() + i * sizeof(CameraData), sizeof(CameraData) };
+        _device->CreateConstantBufferView(&cbvDesc, bufferHandle._cpuHandle);
+        _cameraBufferHandles.push_back(bufferHandle);
+        cameraData.emplace_back(CameraData{
+            camera.GetRigidBodyMatrixInverse(),
+            camera.GetProjectTransform(),
+            camera.GetTransform(),
+            camera.GetPosition(),
+        });
+    }
+    memcpy(mappedPtr, cameraData.data(), cameraData.size());
+}
+
+auto ResourceManager::UpdateCamera(core::Camera const & camera) -> void {
+    auto const& bufferHandle = _cameraBufferHandles[camera._renderDataId];
+    auto cameraData = CameraData{
         camera.GetRigidBodyMatrixInverse(),
         camera.GetProjectTransform(),
         camera.GetTransform(),
         camera.GetPosition(),
     };
-    memcpy(constantBuffer._mappedDataPtr + offset, &cameraData, sizeof(cameraData));
+    memcpy(bufferHandle._mappedDataPtr, &cameraData, sizeof(cameraData));
 }
 
 }

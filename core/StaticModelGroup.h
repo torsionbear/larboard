@@ -35,8 +35,11 @@ public:
     auto GetBvh() -> Bvh * {
         return _bvh.get();
     }
-    auto GetMeshes() ->std::vector<std::unique_ptr<Mesh>> const& {
+    auto GetMeshes() -> std::vector<std::unique_ptr<Mesh>> const& {
         return _meshes;
+    }
+    auto GetModels() ->std::vector<std::unique_ptr<Model>> const& {
+        return _models;
     }
 
 public:

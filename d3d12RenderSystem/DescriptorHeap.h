@@ -11,6 +11,12 @@ namespace d3d12RenderSystem {
 
 using Microsoft::WRL::ComPtr;
 
+struct BufferHandle {
+    uint8 * _mappedDataPtr;
+    D3D12_GPU_DESCRIPTOR_HANDLE _gpuHandle;
+    D3D12_CPU_DESCRIPTOR_HANDLE _cpuHandle;
+};
+
 class DescriptorHeap {
 public:
     auto Init(ID3D12Device * device, D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int size, D3D12_DESCRIPTOR_HEAP_FLAGS flags) -> void {
@@ -26,19 +32,27 @@ public:
         _cpuHandle = _heap->GetCPUDescriptorHandleForHeapStart();
         _gpuHandle = _heap->GetGPUDescriptorHandleForHeapStart();
     }
-    auto GetCpuHandle(unsigned int index) -> D3D12_CPU_DESCRIPTOR_HANDLE {
+    auto GetBufferHandle() -> BufferHandle {
+        assert(_end <= _size);
+        auto ret = BufferHandle{ nullptr, GetGpuHandle(_end), GetCpuHandle(_end) };
+        ++_end;
+        return ret;
+    }
+    auto GetHeap() const -> ID3D12DescriptorHeap * {
+        return _heap.Get();
+    }
+private:
+    auto GetCpuHandle(unsigned int index) const -> D3D12_CPU_DESCRIPTOR_HANDLE {
         return D3D12_CPU_DESCRIPTOR_HANDLE{ _cpuHandle.ptr + index * _incrementSize};
     }
-    auto GetGpuHandle(unsigned int index) -> D3D12_GPU_DESCRIPTOR_HANDLE {
+    auto GetGpuHandle(unsigned int index) const -> D3D12_GPU_DESCRIPTOR_HANDLE {
         return D3D12_GPU_DESCRIPTOR_HANDLE{ _gpuHandle.ptr + index * _incrementSize };
-    }
-    auto GetHeap() -> ID3D12DescriptorHeap * {
-        return _heap.Get();
     }
 private:
     CD3DX12_CPU_DESCRIPTOR_HANDLE _cpuHandle;
     CD3DX12_GPU_DESCRIPTOR_HANDLE _gpuHandle;
     unsigned int _size;
+    unsigned int _end = 0u;
     unsigned int _incrementSize;
     ComPtr<ID3D12DescriptorHeap> _heap;
 };

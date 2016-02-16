@@ -16,16 +16,12 @@ public:
     virtual auto ToggleBackFace() -> void override;
     auto Init(ResourceManager * _resourceManager, unsigned int width, unsigned int height) -> void;
     auto RenderShape(core::Shape const* shape) -> void;
-
-    auto Update(core::Camera const& camera) -> void;
+    auto UseCamera(core::Camera const* camera) -> void;
 private:
     ResourceManager * _resourceManager;
     D3D12_VIEWPORT _viewport;
     D3D12_RECT _scissorRect;
     
-    // render logic specific data members
-    D3D12_CPU_DESCRIPTOR_HANDLE _dsv;
-    ConstantBuffer _constantBuffer;
 };
 
 }

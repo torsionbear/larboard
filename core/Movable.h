@@ -96,6 +96,8 @@ protected:
 
     openglUint _ubo;
 	openglInt _uboOffset;
+public:
+    unsigned int _renderDataId;
 };
 
 }

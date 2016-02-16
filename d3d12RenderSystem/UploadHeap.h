@@ -32,7 +32,6 @@ public:
     auto Init(unsigned int size, ID3D12Device * device, FencedCommandQueue * fencedCommandQueue) -> void;
     auto AllocateDataBlocks(DataBlock * dataBlocks, unsigned int count) -> MemoryBlock const&;
     auto UploadDataBlocks(ID3D12GraphicsCommandList * commandList, MemoryBlock const& memoryBlock, ID3D12Resource * dest) -> void;
-    auto UploadDataBlocks(ID3D12GraphicsCommandList * commandList, DataBlock * dataBlocks, unsigned int count, ID3D12Resource * dest) -> void;
 private:
     //auto Alloc(unsigned int size, uint64 fenceValue) -> MemoryBlock &;
     auto TryAllocate(unsigned int size, unsigned int alignment) -> uint8 *;

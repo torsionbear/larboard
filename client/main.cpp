@@ -31,6 +31,10 @@ auto LoadScene_dx0(core::Scene * scene) -> void {
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square/square.x3d").Read(scene);
 }
 
+auto LoadScene_dx1(core::Scene * scene) -> void {
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square2/square2.x3d").Read(scene);
+}
+
 auto LoadScene0(core::Scene * scene) -> void {
 	x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square/square.x3d").Read(scene);
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
@@ -126,7 +130,7 @@ int main_dx() {
 
 
     auto scene = make_unique<core::Scene>();
-    LoadScene_dx0(scene.get());
+    LoadScene_dx1(scene.get());
     scene->Load();
 
     d3d12RenderSystem::RenderSystem renderSystem;
@@ -140,17 +144,31 @@ int main_dx() {
     auto inputHandler = InputHandler(&renderer, scene.get(), &cameraController, width, height);
     renderSystem.GetRenderWindow().RegisterInputHandler(std::function<void(HWND, UINT, WPARAM, LPARAM)>(inputHandler));
 
-    renderer.Prepare();
     // load
-    resourceManager.LoadMeshes(scene->GetStaticModelGroup().GetMeshes(), sizeof(core::Vertex));
+    resourceManager.LoadBegin(1, 1, scene->GetStaticModelGroup().GetMeshes().size(), scene->GetStaticModelGroup().GetModels().size());
+    resourceManager.CreateDepthStencil(width, height);
+    resourceManager.LoadCamera(scene->GetActiveCamera(), 1);
+
+    auto meshes = vector<core::Mesh *>{};
+    for (auto & m : scene->GetStaticModelGroup().GetMeshes()) {
+        meshes.push_back(m.get());
+    }
+    resourceManager.LoadMeshes(meshes.data(), meshes.size(), sizeof(core::Vertex));
+
+    auto models = vector<core::Model *>{};
+    for (auto & model : scene->GetStaticModelGroup().GetModels()) {
+        models.push_back(model.get());
+    }
+    resourceManager.LoadModels(models.data(), models.size());
     resourceManager.LoadEnd();
 
     while (renderWindow.Step()) {
         resourceManager.PrepareResource();
         // update
         cameraController.Step();
-        renderer.Update(*scene->GetActiveCamera());
+        resourceManager.UpdateCamera(*scene->GetActiveCamera());
         renderer.DrawBegin();
+        renderer.UseCamera(scene->GetActiveCamera());
         // render
         for (auto & shape : scene->GetStaticModelGroup().GetShapes()) {
             renderer.RenderShape(shape.get());

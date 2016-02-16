@@ -51,6 +51,8 @@ private:
     Point4f _upperRight;
     Float32 _farPlane;
     openglInt _uboOffset;
+public:
+    unsigned int _renderDataId;
 };
 
 }

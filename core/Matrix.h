@@ -43,7 +43,7 @@ public:
 	using value_type = T;
 public:
 	Matrix() {
-		for (auto i = 0u; i < COL; ++i) {
+		for (auto i = 0u; i < ROW; ++i) {
 			for (auto j = 0u; j < COL; ++j) {
 				_data[i * COL + j] = i == j ? 1.0f : 0.0f;
 			}
@@ -102,6 +102,7 @@ public:
 private:
 	std::array<value_type, ROW * COL> _data;
 };
+using Matrix3x4f = Matrix<Float32, 3, 4>;
 using Matrix4x4f = Matrix<Float32, 4, 4>;
 using Vector2f = Matrix<Float32, 2, 1>;
 using Vector2i = Matrix<int, 2, 1>;

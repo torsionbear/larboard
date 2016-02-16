@@ -7,12 +7,6 @@ using std::array;
 namespace d3d12RenderSystem {
 
 auto Renderer::Prepare() -> void {
-    // depth stencil
-    _resourceManager->AllocDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1);
-    _dsv = _resourceManager->CreateDepthStencil(_viewport.Width, _viewport.Height, 0);
-
-    _resourceManager->AllocDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1);
-    _constantBuffer = _resourceManager->CreateConstantBuffer(sizeof(CameraData), 0);
 }
 
 auto Renderer::DrawBegin() -> void {
@@ -25,7 +19,7 @@ auto Renderer::DrawBegin() -> void {
     commandList->SetGraphicsRootSignature(_resourceManager->GetRootSignature());
     // descriptor heaps. Only shader visible descriptor heaps need to be bound to command lists.
     auto heaps = array<ID3D12DescriptorHeap *, 1>{
-            _resourceManager->GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)
+            _resourceManager->GetCbvSrvDescriptorHeap().GetHeap()
     };
     commandList->SetDescriptorHeaps(heaps.size(), heaps.data());
     // viewport & scissorRect
@@ -34,11 +28,9 @@ auto Renderer::DrawBegin() -> void {
 
     // render target
     auto rtv = swapChainRenderTargets.GetCurrentRtv();
-    commandList->OMSetRenderTargets(1, &rtv, FALSE, &_dsv);
+    auto depthStencilBufferHandle = _resourceManager->GetDepthStencilBufferHandle(0);
+    commandList->OMSetRenderTargets(1, &rtv, FALSE, &depthStencilBufferHandle._cpuHandle);
 
-    // root signature binding
-    // constant buffer
-    commandList->SetGraphicsRootDescriptorTable(0, _constantBuffer._gpuHandle);
 
     // Record commands.
     const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
@@ -66,19 +58,22 @@ auto Renderer::ToggleBackFace() -> void {
 
 auto Renderer::RenderShape(core::Shape const * shape) -> void {
     // draw call
-    auto mesh = shape->GetMesh();
-    auto const& meshRenderData = _resourceManager->GetMeshData(mesh->_renderDataId);
+    auto const& meshRenderData = _resourceManager->GetMeshData(shape->GetMesh()->_renderDataId);
     auto const& vertexIndexBuffer = _resourceManager->GetVertexIndexBuffer(meshRenderData.vertexIndexBufferIndex);
+    auto const& transformBufferHandle = _resourceManager->GetTransformBufferHandle(shape->GetModel()->_renderDataId);
 
     // todo: only call the following 2 IASet* functions when necessary
     auto commandList = _resourceManager->GetCommandList();
     commandList->IASetVertexBuffers(0, 1, &vertexIndexBuffer.vbv);
     commandList->IASetIndexBuffer(&vertexIndexBuffer.ibv);
+    commandList->SetGraphicsRootDescriptorTable(1, transformBufferHandle._gpuHandle);
     commandList->DrawIndexedInstanced(meshRenderData.indexCount, 1, meshRenderData.indexOffset, meshRenderData.baseVertex, 0);
 }
 
-auto Renderer::Update(core::Camera const & camera) -> void {
-    _resourceManager->LoadCamera(camera, _constantBuffer, 0);
+auto Renderer::UseCamera(core::Camera const * camera) -> void {
+    auto commandList = _resourceManager->GetCommandList();
+    auto const& cameraBufferHandle = _resourceManager->GetCameraBufferHandle(camera->_renderDataId);
+    commandList->SetGraphicsRootDescriptorTable(0, cameraBufferHandle._gpuHandle);
 }
 
 auto Renderer::Init(ResourceManager * resourceManager, unsigned int width, unsigned int height) -> void {

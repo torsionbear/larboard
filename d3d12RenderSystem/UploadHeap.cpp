@@ -51,37 +51,6 @@ auto UploadHeap::AllocateDataBlocks(DataBlock * dataBlocks, unsigned int count) 
 
 auto UploadHeap::UploadDataBlocks(ID3D12GraphicsCommandList * commandList, MemoryBlock const & memoryBlock, ID3D12Resource * dest) -> void {
     commandList->CopyBufferRegion(dest, 0, _uploadHeap.Get(), memoryBlock._ptr - _heapBegin, memoryBlock._size);
-    commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(dest, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER));
-}
-
-auto UploadHeap::UploadDataBlocks(ID3D12GraphicsCommandList * commandList, DataBlock * dataBlocks, unsigned int count, ID3D12Resource * dest) -> void {
-    // 1. compute alignments' lcd
-    // alignments' lowest common denominator should be the greatest one.
-    auto alignmentLcd = 0u;
-    for (auto i = 0u; i < count; ++i) {
-        auto const alignment = (dataBlocks + i)->alignment;
-        if (alignment > alignmentLcd) {
-            alignmentLcd = alignment;
-        }
-    }
-    // 2. compute total size
-    auto totalSize = 0u;
-    for (auto i = 0u; i < count; ++i) {
-        auto dataBlock = dataBlocks + i;
-        auto dataBegin = Align(totalSize, dataBlock->alignment);
-        dataBlock->offset = dataBegin;
-        totalSize = dataBegin + dataBlock->size;
-    }
-    // 3. allocate memory block
-    auto & memoryBlock = AllocateMemoryBlock(totalSize, alignmentLcd);
-    // 4. copy data
-    for (auto i = 0u; i < count; ++i) {
-        auto dataBlock = (dataBlocks + i);
-        memcpy(memoryBlock._ptr + dataBlock->offset, dataBlock->data, dataBlock->size);
-    }
-    // 5. upload
-    commandList->CopyBufferRegion(dest, 0, _uploadHeap.Get(), memoryBlock._ptr - _heapBegin, memoryBlock._size);
-    commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(dest, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER));
 }
 
 //auto UploadHeap::Alloc(unsigned int size, uint64 fenceValue) -> MemoryBlock & {
