@@ -11,7 +11,7 @@ namespace d3d12RenderSystem {
 
 using Microsoft::WRL::ComPtr;
 
-struct BufferHandle {
+struct BufferInfo {
     uint8 * _mappedDataPtr;
     D3D12_GPU_DESCRIPTOR_HANDLE _gpuHandle;
     D3D12_CPU_DESCRIPTOR_HANDLE _cpuHandle;
@@ -32,9 +32,9 @@ public:
         _cpuHandle = _heap->GetCPUDescriptorHandleForHeapStart();
         _gpuHandle = _heap->GetGPUDescriptorHandleForHeapStart();
     }
-    auto GetBufferHandle() -> BufferHandle {
+    auto GetBufferInfo() -> BufferInfo {
         assert(_end <= _size);
-        auto ret = BufferHandle{ nullptr, GetGpuHandle(_end), GetCpuHandle(_end) };
+        auto ret = BufferInfo{ nullptr, GetGpuHandle(_end), GetCpuHandle(_end) };
         ++_end;
         return ret;
     }

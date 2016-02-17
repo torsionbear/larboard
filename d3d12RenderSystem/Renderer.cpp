@@ -28,8 +28,8 @@ auto Renderer::DrawBegin() -> void {
 
     // render target
     auto rtv = swapChainRenderTargets.GetCurrentRtv();
-    auto depthStencilBufferHandle = _resourceManager->GetDepthStencilBufferHandle(0);
-    commandList->OMSetRenderTargets(1, &rtv, FALSE, &depthStencilBufferHandle._cpuHandle);
+    auto depthStencilBufferInfo = _resourceManager->GetDepthStencilBufferInfo(0);
+    commandList->OMSetRenderTargets(1, &rtv, FALSE, &depthStencilBufferInfo._cpuHandle);
 
 
     // Record commands.
@@ -58,22 +58,21 @@ auto Renderer::ToggleBackFace() -> void {
 
 auto Renderer::RenderShape(core::Shape const * shape) -> void {
     // draw call
-    auto const& meshRenderData = _resourceManager->GetMeshData(shape->GetMesh()->_renderDataId);
-    auto const& vertexIndexBuffer = _resourceManager->GetVertexIndexBuffer(meshRenderData.vertexIndexBufferIndex);
-    auto const& transformBufferHandle = _resourceManager->GetTransformBufferHandle(shape->GetModel()->_renderDataId);
+    auto const& meshRenderData = _resourceManager->GetMeshDataInfo(shape->GetMesh()->_renderDataId);
+    auto const& transformBufferInfo = _resourceManager->GetTransformBufferInfo(shape->GetModel()->_renderDataId);
 
     // todo: only call the following 2 IASet* functions when necessary
     auto commandList = _resourceManager->GetCommandList();
-    commandList->IASetVertexBuffers(0, 1, &vertexIndexBuffer.vbv);
-    commandList->IASetIndexBuffer(&vertexIndexBuffer.ibv);
-    commandList->SetGraphicsRootDescriptorTable(1, transformBufferHandle._gpuHandle);
+    commandList->IASetVertexBuffers(0, 1, &meshRenderData.vbv);
+    commandList->IASetIndexBuffer(&meshRenderData.ibv);
+    commandList->SetGraphicsRootDescriptorTable(1, transformBufferInfo._gpuHandle);
     commandList->DrawIndexedInstanced(meshRenderData.indexCount, 1, meshRenderData.indexOffset, meshRenderData.baseVertex, 0);
 }
 
 auto Renderer::UseCamera(core::Camera const * camera) -> void {
     auto commandList = _resourceManager->GetCommandList();
-    auto const& cameraBufferHandle = _resourceManager->GetCameraBufferHandle(camera->_renderDataId);
-    commandList->SetGraphicsRootDescriptorTable(0, cameraBufferHandle._gpuHandle);
+    auto const& cameraBufferInfo = _resourceManager->GetCameraBufferInfo(camera->_renderDataId);
+    commandList->SetGraphicsRootDescriptorTable(0, cameraBufferInfo._gpuHandle);
 }
 
 auto Renderer::Init(ResourceManager * resourceManager, unsigned int width, unsigned int height) -> void {

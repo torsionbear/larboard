@@ -21,6 +21,12 @@ auto UploadHeap::Init(unsigned int size, ID3D12Device * device, FencedCommandQue
     _end = _heapBegin;
 }
 
+auto UploadHeap::UploadDataBlock(ID3D12GraphicsCommandList * commandList, unsigned int size, unsigned int alignment, void * data, ID3D12Resource * dest) -> void {
+    auto & memoryBlock = AllocateMemoryBlock(size, alignment);
+    memcpy(memoryBlock._ptr, data, size);
+    UploadDataBlocks(commandList, memoryBlock, dest);
+}
+
 auto UploadHeap::AllocateDataBlocks(DataBlock * dataBlocks, unsigned int count) -> MemoryBlock const& {
     // 1. compute alignments' lcd
     // alignments' lowest common denominator should be the greatest one.

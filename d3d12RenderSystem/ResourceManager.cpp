@@ -149,7 +149,7 @@ auto ResourceManager::CreateCommandList(ID3D12PipelineState * pso, ID3D12Command
 }
 
 auto ResourceManager::CreateDepthStencil(unsigned int width, unsigned int height) -> void {
-    auto & bufferHandle = _dsvHeap.GetBufferHandle();
+    auto & bufferInfo = _dsvHeap.GetBufferInfo();
 
     CD3DX12_RESOURCE_DESC shadowTextureDesc(
         D3D12_RESOURCE_DIMENSION_TEXTURE2D,
@@ -180,21 +180,47 @@ auto ResourceManager::CreateDepthStencil(unsigned int width, unsigned int height
         IID_PPV_ARGS(&buffer)));
 
     // Create the depth stencil view.
-    _device->CreateDepthStencilView(buffer.Get(), nullptr, bufferHandle._cpuHandle);
-    _depthStencilBufferHandles.push_back(bufferHandle);
+    _device->CreateDepthStencilView(buffer.Get(), nullptr, bufferInfo._cpuHandle);
+    _depthStencilBufferInfos.push_back(bufferInfo);
 }
 
 auto ResourceManager::LoadMeshes(core::Mesh ** meshes, unsigned int count, unsigned int stride) -> void {
+    auto vertexBufferSize = 0u;
+    auto indexBufferSize = 0u;
+    for (auto i = 0u; i < count; ++i) {
+        vertexBufferSize += meshes[i]->GetVertex().size() * stride;
+        indexBufferSize += meshes[i]->GetIndex().size() * sizeof(unsigned int);
+    }
+    _vertexBuffers.emplace_back();
+    auto & vertexBuffer = _vertexBuffers.back();
+    ThrowIfFailed(_device->CreateCommittedResource(
+        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+        D3D12_HEAP_FLAG_NONE,
+        &CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize),
+        D3D12_RESOURCE_STATE_COPY_DEST,
+        nullptr,
+        IID_PPV_ARGS(&vertexBuffer)));
+    auto const vbv = D3D12_VERTEX_BUFFER_VIEW{ vertexBuffer->GetGPUVirtualAddress(), vertexBufferSize, stride };
+
+    _indexBuffers.emplace_back();
+    auto & indexBuffer = _indexBuffers.back();
+    ThrowIfFailed(_device->CreateCommittedResource(
+        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+        D3D12_HEAP_FLAG_NONE,
+        &CD3DX12_RESOURCE_DESC::Buffer(indexBufferSize),
+        D3D12_RESOURCE_STATE_COPY_DEST,
+        nullptr,
+        IID_PPV_ARGS(&indexBuffer)));
+    auto const ibv = D3D12_INDEX_BUFFER_VIEW{ indexBuffer->GetGPUVirtualAddress(), indexBufferSize, DXGI_FORMAT_R32_UINT };
+
     auto vertexData = vector<core::Vertex>();
     auto indexData = vector<unsigned int>();
-    auto const vertexIndexBufferIndex = _vertexIndexBuffer.size();
-    _vertexIndexBuffer.emplace_back();
-    auto & vertexIndexBuffer = _vertexIndexBuffer.back();
     for (auto i = 0u; i < count; ++i) {
         auto mesh = meshes[i];
         mesh->_renderDataId = _meshDataInfos.size();
         _meshDataInfos.push_back(MeshDataInfo{
-            vertexIndexBufferIndex,
+            vbv,
+            ibv,
             mesh->GetIndex().size(),
             indexData.size(),
             static_cast<int>(vertexData.size()),
@@ -202,25 +228,11 @@ auto ResourceManager::LoadMeshes(core::Mesh ** meshes, unsigned int count, unsig
         vertexData.insert(vertexData.end(), mesh->GetVertex().cbegin(), mesh->GetVertex().cend());
         indexData.insert(indexData.end(), mesh->GetIndex().cbegin(), mesh->GetIndex().cend());
     }
+    _uploadHeap.UploadDataBlock(_commandList.Get(), vertexBufferSize, sizeof(float), vertexData.data(), vertexBuffer.Get());
+    _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(vertexBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 
-    auto dataBlocks = std::array<DataBlock, 2>{
-        DataBlock{ 0, vertexData.size() * stride, sizeof(float), vertexData.data() },
-            DataBlock{ 0, indexData.size() * sizeof(unsigned int), sizeof(float), indexData.data() },
-    };
-    auto const& memoryBlock = _uploadHeap.AllocateDataBlocks(dataBlocks.data(), dataBlocks.size());
-
-    ThrowIfFailed(_device->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-        D3D12_HEAP_FLAG_NONE,
-        &CD3DX12_RESOURCE_DESC::Buffer(memoryBlock._size),
-        D3D12_RESOURCE_STATE_COPY_DEST,
-        nullptr,
-        IID_PPV_ARGS(&_vertexIndexHeap)));
-    vertexIndexBuffer.vbv = D3D12_VERTEX_BUFFER_VIEW{ _vertexIndexHeap->GetGPUVirtualAddress() + dataBlocks[0].offset, dataBlocks[0].size, stride };
-    vertexIndexBuffer.ibv = D3D12_INDEX_BUFFER_VIEW{ _vertexIndexHeap->GetGPUVirtualAddress() + dataBlocks[1].offset, dataBlocks[1].size, DXGI_FORMAT_R32_UINT };
-
-    _uploadHeap.UploadDataBlocks(_commandList.Get(), memoryBlock, _vertexIndexHeap.Get());
-    _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(_vertexIndexHeap.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER));
+    _uploadHeap.UploadDataBlock(_commandList.Get(), indexBufferSize, sizeof(float), indexData.data(), indexBuffer.Get());
+    _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(indexBuffer.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER));
 }
 
 auto ResourceManager::LoadModels(core::Model ** models, unsigned int count) -> void {
@@ -234,15 +246,15 @@ auto ResourceManager::LoadModels(core::Model ** models, unsigned int count) -> v
         D3D12_RESOURCE_STATE_COPY_DEST,
         nullptr,
         IID_PPV_ARGS(&buffer)));
-    // aggregate data, populate _transformBufferHandles and set model._renderDataId
+    // aggregate data, populate _transformBufferInfos and set model._renderDataId
     auto transformData = vector<TransformData>{};
     for (auto i = 0u; i < count; ++i) {
         auto & model = models[i];
-        model->_renderDataId = _transformBufferHandles.size();
-        auto bufferHandle = _cbvSrvHeap.GetBufferHandle();
+        model->_renderDataId = _transformBufferInfos.size();
+        auto bufferInfo = _cbvSrvHeap.GetBufferInfo();
         D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = { buffer->GetGPUVirtualAddress() + i * sizeof(TransformData), sizeof(TransformData) };
-        _device->CreateConstantBufferView(&cbvDesc, bufferHandle._cpuHandle);
-        _transformBufferHandles.push_back(bufferHandle);
+        _device->CreateConstantBufferView(&cbvDesc, bufferInfo._cpuHandle);
+        _transformBufferInfos.push_back(bufferInfo);
         transformData.emplace_back(TransformData{
             model->GetTransform(),
             model->GetTransform(),
@@ -273,12 +285,12 @@ auto ResourceManager::LoadCamera(core::Camera * cameras, unsigned int count) -> 
     auto cameraData = vector<CameraData>{};
     for (auto i = 0u; i < count; ++i) {
         auto & camera = cameras[i];
-        camera._renderDataId = _cameraBufferHandles.size();
-        auto bufferHandle = _cbvSrvHeap.GetBufferHandle();
-        bufferHandle._mappedDataPtr = mappedPtr + i * sizeof(CameraData);
+        camera._renderDataId = _cameraBufferInfos.size();
+        auto bufferInfo = _cbvSrvHeap.GetBufferInfo();
+        bufferInfo._mappedDataPtr = mappedPtr + i * sizeof(CameraData);
         D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = { buffer->GetGPUVirtualAddress() + i * sizeof(CameraData), sizeof(CameraData) };
-        _device->CreateConstantBufferView(&cbvDesc, bufferHandle._cpuHandle);
-        _cameraBufferHandles.push_back(bufferHandle);
+        _device->CreateConstantBufferView(&cbvDesc, bufferInfo._cpuHandle);
+        _cameraBufferInfos.push_back(bufferInfo);
         cameraData.emplace_back(CameraData{
             camera.GetRigidBodyMatrixInverse(),
             camera.GetProjectTransform(),
@@ -290,14 +302,14 @@ auto ResourceManager::LoadCamera(core::Camera * cameras, unsigned int count) -> 
 }
 
 auto ResourceManager::UpdateCamera(core::Camera const & camera) -> void {
-    auto const& bufferHandle = _cameraBufferHandles[camera._renderDataId];
+    auto const& bufferInfo = _cameraBufferInfos[camera._renderDataId];
     auto cameraData = CameraData{
         camera.GetRigidBodyMatrixInverse(),
         camera.GetProjectTransform(),
         camera.GetTransform(),
         camera.GetPosition(),
     };
-    memcpy(bufferHandle._mappedDataPtr, &cameraData, sizeof(cameraData));
+    memcpy(bufferInfo._mappedDataPtr, &cameraData, sizeof(cameraData));
 }
 
 }

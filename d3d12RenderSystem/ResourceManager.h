@@ -30,7 +30,8 @@ namespace d3d12RenderSystem {
 using Microsoft::WRL::ComPtr;
 
 struct MeshDataInfo {
-    unsigned int vertexIndexBufferIndex;
+    D3D12_VERTEX_BUFFER_VIEW vbv;
+    D3D12_INDEX_BUFFER_VIEW ibv;
     unsigned int indexCount;
     unsigned int indexOffset;
     int baseVertex;
@@ -51,10 +52,10 @@ struct TransformData {
     core::Matrix4x4f _pad2;
 };
 
-struct VertexIndexBuffer {
-    D3D12_VERTEX_BUFFER_VIEW vbv;
-    D3D12_INDEX_BUFFER_VIEW ibv;
-};
+//struct VertexIndexBuffer {
+//    D3D12_VERTEX_BUFFER_VIEW vbv;
+//    D3D12_INDEX_BUFFER_VIEW ibv;
+//};
 
 struct PersistentMappedBuffer{
     uint8 * _mappedDataPtr;
@@ -76,11 +77,8 @@ public:
     auto LoadCamera(core::Camera * camera, unsigned int count) -> void;
     auto UpdateCamera(core::Camera const& camera) -> void;
     auto CreateDepthStencil(unsigned int width, unsigned int height) -> void;
-    auto GetMeshData(unsigned int index) -> MeshDataInfo const& {
+    auto GetMeshDataInfo(unsigned int index) -> MeshDataInfo const& {
         return _meshDataInfos[index];
-    }
-    auto GetVertexIndexBuffer(unsigned int index) -> VertexIndexBuffer const& {
-        return _vertexIndexBuffer[index];
     }
     auto GetRootSignature() -> ID3D12RootSignature * {
         return _rootSignature.Get();
@@ -109,14 +107,14 @@ public:
     auto AllocDsvDescriptorHeap(unsigned int size) -> void {
         _dsvHeap.Init(_device, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, size, D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
     }
-    auto GetCameraBufferHandle(unsigned int index) -> BufferHandle const& {
-        return _cameraBufferHandles[index];
+    auto GetCameraBufferInfo(unsigned int index) -> BufferInfo const& {
+        return _cameraBufferInfos[index];
     }
-    auto GetTransformBufferHandle(unsigned int index) -> BufferHandle const& {
-        return _transformBufferHandles[index];
+    auto GetTransformBufferInfo(unsigned int index) -> BufferInfo const& {
+        return _transformBufferInfos[index];
     }
-    auto GetDepthStencilBufferHandle(unsigned int index) -> BufferHandle const& {
-        return _depthStencilBufferHandles[index];
+    auto GetDepthStencilBufferInfo(unsigned int index) -> BufferInfo const& {
+        return _depthStencilBufferInfos[index];
     }
 private:
     auto CreatePso(ID3D12RootSignature * rootSignature)->ComPtr<ID3D12PipelineState>;
@@ -125,16 +123,16 @@ private:
 private:
     ID3D12Device * _device;
     UploadHeap _uploadHeap;
-    ComPtr<ID3D12Resource> _vertexIndexHeap;
-    std::vector<MeshDataInfo> _meshDataInfos;
-    std::vector<VertexIndexBuffer> _vertexIndexBuffer;
 
     DescriptorHeap _dsvHeap;
     DescriptorHeap _cbvSrvHeap;
-    std::vector<BufferHandle> _cameraBufferHandles;
-    std::vector<BufferHandle> _transformBufferHandles;
-    std::vector<BufferHandle> _depthStencilBufferHandles;
+    std::vector<MeshDataInfo> _meshDataInfos;
+    std::vector<BufferInfo> _cameraBufferInfos;
+    std::vector<BufferInfo> _transformBufferInfos;
+    std::vector<BufferInfo> _depthStencilBufferInfos;
 
+    std::vector<ComPtr<ID3D12Resource>> _vertexBuffers;
+    std::vector<ComPtr<ID3D12Resource>> _indexBuffers;
     std::vector<ComPtr<ID3D12Resource>> _uploadBuffers;
     std::vector<ComPtr<ID3D12Resource>> _defaultBuffers;
 
