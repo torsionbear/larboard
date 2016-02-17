@@ -29,8 +29,8 @@ public:
         desc.Flags = flags;
         ThrowIfFailed(device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&_heap)));
 
-        _cpuHandle = _heap->GetCPUDescriptorHandleForHeapStart();
         _gpuHandle = _heap->GetGPUDescriptorHandleForHeapStart();
+        _cpuHandle = _heap->GetCPUDescriptorHandleForHeapStart();
     }
     auto GetBufferInfo() -> BufferInfo {
         assert(_end <= _size);
@@ -42,11 +42,11 @@ public:
         return _heap.Get();
     }
 private:
-    auto GetCpuHandle(unsigned int index) const -> D3D12_CPU_DESCRIPTOR_HANDLE {
-        return D3D12_CPU_DESCRIPTOR_HANDLE{ _cpuHandle.ptr + index * _incrementSize};
-    }
     auto GetGpuHandle(unsigned int index) const -> D3D12_GPU_DESCRIPTOR_HANDLE {
         return D3D12_GPU_DESCRIPTOR_HANDLE{ _gpuHandle.ptr + index * _incrementSize };
+    }
+    auto GetCpuHandle(unsigned int index) const -> D3D12_CPU_DESCRIPTOR_HANDLE {
+        return D3D12_CPU_DESCRIPTOR_HANDLE{ _cpuHandle.ptr + index * _incrementSize };
     }
 private:
     CD3DX12_CPU_DESCRIPTOR_HANDLE _cpuHandle;

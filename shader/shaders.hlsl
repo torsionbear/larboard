@@ -12,7 +12,8 @@
 struct PSInput
 {
 	float4 position : SV_POSITION;
-	float4 color : COLOR;
+	float4 normal : PS_NORMAL;
+	float4 texCoord : PS_TEXCOORD;
 };
 
 cbuffer Camera : register(b0)
@@ -32,23 +33,26 @@ cbuffer Transform : register(b1)
     float4x4 _pad2;
 };
 
+Texture2D diffuse : register(t0);
+SamplerState staticSampler : register(s0);
+
 PSInput VSMain(float4 position : POSITION, float4 normal : NORMAL, float4 texCoord : TEXCOORD )
 {
 	PSInput result;
-
+	
 	float4 newPosition = position;
 	newPosition = mul(worldTransform, newPosition);
 	newPosition = mul(viewTransform, newPosition);
 	newPosition = mul(projectTransform, newPosition);
 	
 	result.position = newPosition;
-	float4 color = {0.0f, 1.0f, 0.0f, 1.0f};
-	result.color = color;
-
+	result.normal = normal;
+	result.texCoord = texCoord;
 	return result;
 }
 
 float4 PSMain(PSInput input) : SV_TARGET
 {
-	return input.color;
+	//return input.texCoord;
+	return diffuse.Sample(staticSampler, input.texCoord);
 }

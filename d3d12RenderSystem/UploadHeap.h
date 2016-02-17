@@ -23,20 +23,21 @@ struct DataBlock {
 struct MemoryBlock {
     unsigned int alignment;
     unsigned int _size;
-    uint8 * _ptr;
+    unsigned int _offset;
     uint64 _fenceValue;
 };
 
 class UploadHeap {
 public:
     auto Init(unsigned int size, ID3D12Device * device, FencedCommandQueue * fencedCommandQueue) -> void;
-    auto UploadDataBlock(ID3D12GraphicsCommandList * commandList, unsigned int size, unsigned int alignment, void * data, ID3D12Resource * dest) -> void;
+    auto UploadSubresources(ID3D12GraphicsCommandList * commandList, ID3D12Resource * dest, unsigned int first, unsigned int count, D3D12_SUBRESOURCE_DATA * subresources) -> void;
+    auto AllocateAndUploadDataBlock(ID3D12GraphicsCommandList * commandList, ID3D12Resource * dest, unsigned int size, unsigned int alignment, void * data) -> void;
     auto AllocateDataBlocks(DataBlock * dataBlocks, unsigned int count) -> MemoryBlock const&;
-    auto UploadDataBlocks(ID3D12GraphicsCommandList * commandList, MemoryBlock const& memoryBlock, ID3D12Resource * dest) -> void;
+    auto UploadMemoryBlock(ID3D12GraphicsCommandList * commandList, MemoryBlock const& memoryBlock, ID3D12Resource * dest) -> void;
 private:
     //auto Alloc(unsigned int size, uint64 fenceValue) -> MemoryBlock &;
     auto TryAllocate(unsigned int size, unsigned int alignment) -> uint8 *;
-    auto AllocateMemoryBlock(unsigned int size, unsigned int alignment) -> MemoryBlock &;
+    auto AllocateMemoryBlock(unsigned int size, unsigned int alignment)->MemoryBlock &;
     auto ReleaseCompletedMemoryBlock() -> void;
 
 private:

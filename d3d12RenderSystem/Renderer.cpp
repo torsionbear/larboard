@@ -56,25 +56,6 @@ auto Renderer::ToggleBackFace() -> void {
 
 }
 
-auto Renderer::RenderShape(core::Shape const * shape) -> void {
-    // draw call
-    auto const& meshRenderData = _resourceManager->GetMeshDataInfo(shape->GetMesh()->_renderDataId);
-    auto const& transformBufferInfo = _resourceManager->GetTransformBufferInfo(shape->GetModel()->_renderDataId);
-
-    // todo: only call the following 2 IASet* functions when necessary
-    auto commandList = _resourceManager->GetCommandList();
-    commandList->IASetVertexBuffers(0, 1, &meshRenderData.vbv);
-    commandList->IASetIndexBuffer(&meshRenderData.ibv);
-    commandList->SetGraphicsRootDescriptorTable(1, transformBufferInfo._gpuHandle);
-    commandList->DrawIndexedInstanced(meshRenderData.indexCount, 1, meshRenderData.indexOffset, meshRenderData.baseVertex, 0);
-}
-
-auto Renderer::UseCamera(core::Camera const * camera) -> void {
-    auto commandList = _resourceManager->GetCommandList();
-    auto const& cameraBufferInfo = _resourceManager->GetCameraBufferInfo(camera->_renderDataId);
-    commandList->SetGraphicsRootDescriptorTable(0, cameraBufferInfo._gpuHandle);
-}
-
 auto Renderer::Init(ResourceManager * resourceManager, unsigned int width, unsigned int height) -> void {
     _resourceManager = resourceManager;
     _viewport.Width = static_cast<float>(width);
@@ -82,6 +63,33 @@ auto Renderer::Init(ResourceManager * resourceManager, unsigned int width, unsig
     _viewport.MaxDepth = 1.0f;
     _scissorRect.right = static_cast<LONG>(width);
     _scissorRect.bottom = static_cast<LONG>(height);
+}
+
+auto Renderer::RenderShape(core::Shape const * shape) -> void {
+    // draw call
+    auto const& meshRenderData = _resourceManager->GetMeshDataInfo(shape->GetMesh()->_renderDataId);
+    auto const& transformBufferInfo = _resourceManager->GetTransformBufferInfo(shape->GetModel()->_renderDataId);
+    auto const& textureBufferInfo = _resourceManager->GetTextureBufferInfo(shape->GetTextures()[0]->_renderDataId);
+
+    // todo: only call the following 2 IASet* functions when necessary
+    auto commandList = _resourceManager->GetCommandList();
+    commandList->IASetVertexBuffers(0, 1, &meshRenderData.vbv);
+    commandList->IASetIndexBuffer(&meshRenderData.ibv);
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Transform, transformBufferInfo._gpuHandle);
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::DiffuseTexture, textureBufferInfo._gpuHandle);
+    commandList->DrawIndexedInstanced(meshRenderData.indexCount, 1, meshRenderData.indexOffset, meshRenderData.baseVertex, 0);
+}
+
+auto Renderer::UseCamera(core::Camera const * camera) -> void {
+    auto commandList = _resourceManager->GetCommandList();
+    auto const& cameraBufferInfo = _resourceManager->GetCameraBufferInfo(camera->_renderDataId);
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Camera, cameraBufferInfo._gpuHandle);
+}
+
+auto Renderer::UseTexture(core::Texture const* texture, core::TextureUsage::TextureType textureType) -> void {
+    auto commandList = _resourceManager->GetCommandList();
+    auto const& textureBufferInfo = _resourceManager->GetTextureBufferInfo(texture->_renderDataId);
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::DiffuseTexture, textureBufferInfo._gpuHandle);
 }
 
 }

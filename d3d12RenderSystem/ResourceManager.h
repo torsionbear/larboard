@@ -19,6 +19,7 @@
 #include "core/Mesh.h"
 #include "core/Model.h"
 #include "core/Camera.h"
+#include "core/Texture.h"
 #include "SwapChainRenderTargets.h"
 #include "FrameResource.h"
 #include "FencedCommandQueue.h"
@@ -28,6 +29,27 @@
 namespace d3d12RenderSystem {
 
 using Microsoft::WRL::ComPtr;
+
+struct RootSignatureParameterIndex {
+  enum {
+      DiffuseTexture = 0u,
+      Transform = 1u,
+      Camera = 2u,
+  };
+};
+
+struct RegisterConvention {
+    enum {
+        Camera = 0u,
+        Transform = 1u,
+    };
+    enum {
+        Diffuse = 0u,
+    };
+    enum {
+        StaticSampler = 0u,
+    };
+};
 
 struct MeshDataInfo {
     D3D12_VERTEX_BUFFER_VIEW vbv;
@@ -70,13 +92,15 @@ public:
 public:
     auto Init(ID3D12Device * device, IDXGIFactory1 * factory, FencedCommandQueue * fencedCommandQueue, unsigned int width, unsigned int height, HWND hwnd) -> void;
     auto PrepareResource() -> void;
-    auto LoadBegin(unsigned int depthStencilCount, unsigned int cameraCount, unsigned int meshCount, unsigned int modelCount) -> void;
+    auto LoadBegin(unsigned int depthStencilCount, unsigned int cameraCount, unsigned int meshCount, unsigned int modelCount, unsigned int textureCount) -> void;
     auto LoadEnd() -> void;
     auto LoadMeshes(core::Mesh ** meshes, unsigned int count, unsigned int stride) -> void;
     auto LoadModels(core::Model ** models, unsigned int count) -> void;
     auto LoadCamera(core::Camera * camera, unsigned int count) -> void;
+    auto LoadTexture(core::Texture * texture) -> void;
     auto UpdateCamera(core::Camera const& camera) -> void;
     auto CreateDepthStencil(unsigned int width, unsigned int height) -> void;
+
     auto GetMeshDataInfo(unsigned int index) -> MeshDataInfo const& {
         return _meshDataInfos[index];
     }
@@ -116,6 +140,9 @@ public:
     auto GetDepthStencilBufferInfo(unsigned int index) -> BufferInfo const& {
         return _depthStencilBufferInfos[index];
     }
+    auto GetTextureBufferInfo(unsigned int index) -> BufferInfo const& {
+        return _textureBufferInfos[index];
+    }
 private:
     auto CreatePso(ID3D12RootSignature * rootSignature)->ComPtr<ID3D12PipelineState>;
     auto CreateRootSignature()->ComPtr<ID3D12RootSignature>;
@@ -130,9 +157,8 @@ private:
     std::vector<BufferInfo> _cameraBufferInfos;
     std::vector<BufferInfo> _transformBufferInfos;
     std::vector<BufferInfo> _depthStencilBufferInfos;
+    std::vector<BufferInfo> _textureBufferInfos;
 
-    std::vector<ComPtr<ID3D12Resource>> _vertexBuffers;
-    std::vector<ComPtr<ID3D12Resource>> _indexBuffers;
     std::vector<ComPtr<ID3D12Resource>> _uploadBuffers;
     std::vector<ComPtr<ID3D12Resource>> _defaultBuffers;
 

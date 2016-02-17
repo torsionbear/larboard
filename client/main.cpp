@@ -145,7 +145,7 @@ int main_dx() {
     renderSystem.GetRenderWindow().RegisterInputHandler(std::function<void(HWND, UINT, WPARAM, LPARAM)>(inputHandler));
 
     // load
-    resourceManager.LoadBegin(1, 1, scene->GetStaticModelGroup().GetMeshes().size(), scene->GetStaticModelGroup().GetModels().size());
+    resourceManager.LoadBegin(1, 1, scene->GetStaticModelGroup().GetMeshes().size(), scene->GetStaticModelGroup().GetModels().size(), scene->GetStaticModelGroup()._textures.size());
     resourceManager.CreateDepthStencil(width, height);
     resourceManager.LoadCamera(scene->GetActiveCamera(), 1);
 
@@ -160,6 +160,10 @@ int main_dx() {
         models.push_back(model.get());
     }
     resourceManager.LoadModels(models.data(), models.size());
+
+    for (auto & t : scene->GetStaticModelGroup()._textures) {
+        resourceManager.LoadTexture(t.second.get());
+    }
     resourceManager.LoadEnd();
 
     while (renderWindow.Step()) {

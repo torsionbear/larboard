@@ -63,6 +63,8 @@ private:
 	unsigned int _height;
 	openglUint _texture;
     TextureUsage::TextureType _type;
+public:
+    unsigned int _renderDataId;
 };
 
 }
