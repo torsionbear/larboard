@@ -48,6 +48,9 @@
     <ClInclude Include="DescriptorHeap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DDSTextureLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="RenderWindow.cpp">
@@ -71,5 +74,11 @@
     <ClCompile Include="FencedCommandQueue.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DDSTextureLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="shaders\shaders.hlsl" />
   </ItemGroup>
 </Project>

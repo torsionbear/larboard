@@ -3,11 +3,15 @@
 #include <array>
 #include <vector>
 #include <memory>
+// for string to wstring conversion
+#include <locale>
+#include <codecvt>
 
 #include "d3dx12.h"
 #include <D3Dcompiler.h>
 
 #include "Common.h"
+#include "DDSTextureLoader.h"
 
 #include "core/Vertex.h"
 
@@ -56,14 +60,14 @@ auto ResourceManager::CreatePso(ID3D12RootSignature * rootSignature) -> ComPtr<I
 
     ComPtr<ID3DBlob> vertexShader;
     ComPtr<ID3DBlob> pixelShader;
+
+    auto compileFlags = D3DCOMPILE_PACK_MATRIX_ROW_MAJOR;
 #if defined(_DEBUG)
     // Enable better shader debugging with the graphics debugging tools.
-    UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_PACK_MATRIX_ROW_MAJOR;
-#else
-    UINT compileFlags = 0;
+    compileFlags = compileFlags | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
-    ThrowIfFailed(D3DCompileFromFile(L"shader/shaders.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
-    ThrowIfFailed(D3DCompileFromFile(L"shader/shaders.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
+    ThrowIfFailed(D3DCompileFromFile(L"d3d12RenderSystem/shaders/shaders.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
+    ThrowIfFailed(D3DCompileFromFile(L"d3d12RenderSystem/shaders/shaders.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
 
     // Define the vertex input layout.
     auto const inputElementDescs = array<D3D12_INPUT_ELEMENT_DESC, 3> {
@@ -119,7 +123,7 @@ auto ResourceManager::CreateRootSignature() -> ComPtr<ID3D12RootSignature> {
     rootParameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_VERTEX);
 
     auto sampler = D3D12_STATIC_SAMPLER_DESC{};
-    sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+    sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
     sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
     sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
     sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
@@ -299,6 +303,32 @@ auto ResourceManager::LoadCamera(core::Camera * cameras, unsigned int count) -> 
         });
     }
     memcpy(mappedPtr, cameraData.data(), cameraData.size());
+}
+
+// quick & dirty implementation to load dds files
+auto ResourceManager::LoadDdsTexture(core::Texture * texture) -> void {
+    // 1. change filename's extension to .dds
+    auto filename = texture->GetFilename();
+    filename.erase(filename.find_last_of('.'));
+    filename += ".dds";
+
+    // 2. change filename from string to wstring
+    typedef std::codecvt_utf8<wchar_t> convert_type;
+    std::wstring_convert<convert_type, wchar_t> converter;
+    auto filename_wchar = converter.from_bytes(filename);
+
+    // 3. create texture
+    _defaultBuffers.emplace_back();
+    auto buffer = _defaultBuffers.back().Get();
+    auto srvDesc = D3D12_SHADER_RESOURCE_VIEW_DESC{};
+    ThrowIfFailed(DirectX::CreateDDSTextureFromFile(_device, filename_wchar.data(), &buffer, &srvDesc));
+
+    auto desc = buffer->GetDesc();
+    // 4. create srv
+    auto bufferInfo = _cbvSrvHeap.GetBufferInfo();
+    _device->CreateShaderResourceView(buffer, &srvDesc, bufferInfo._cpuHandle);
+    texture->_renderDataId = _textureBufferInfos.size();
+    _textureBufferInfos.push_back(bufferInfo);
 }
 
 auto ResourceManager::LoadTexture(core::Texture * texture) -> void {

@@ -97,7 +97,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
@@ -127,6 +127,7 @@
   <ItemGroup>
     <ClInclude Include="Common.h" />
     <ClInclude Include="d3dx12.h" />
+    <ClInclude Include="DDSTextureLoader.h" />
     <ClInclude Include="DescriptorHeap.h" />
     <ClInclude Include="FencedCommandQueue.h" />
     <ClInclude Include="FrameResource.h" />
@@ -138,6 +139,7 @@
     <ClInclude Include="UploadHeap.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DDSTextureLoader.cpp" />
     <ClCompile Include="FencedCommandQueue.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RenderSystem.cpp" />
@@ -145,6 +147,11 @@
     <ClCompile Include="ResourceManager.cpp" />
     <ClCompile Include="SwapChainRenderTargets.cpp" />
     <ClCompile Include="UploadHeap.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="shaders\shaders.hlsl">
+      <FileType>Document</FileType>
+    </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

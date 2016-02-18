@@ -31,10 +31,11 @@ auto Renderer::DrawBegin() -> void {
     auto depthStencilBufferInfo = _resourceManager->GetDepthStencilBufferInfo(0);
     commandList->OMSetRenderTargets(1, &rtv, FALSE, &depthStencilBufferInfo._cpuHandle);
 
-
     // Record commands.
-    const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
+    const float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
     commandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
+    commandList->ClearDepthStencilView(depthStencilBufferInfo._cpuHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 

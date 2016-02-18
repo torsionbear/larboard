@@ -54,6 +54,9 @@ public:
     auto GetType() const {
         return _type;
     }
+    auto GetFilename() const {
+        return _filename;
+    }
 private:
     auto GetTexel(int x, int y) const->Vector4f;
 private:

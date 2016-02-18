@@ -98,6 +98,7 @@ public:
     auto LoadModels(core::Model ** models, unsigned int count) -> void;
     auto LoadCamera(core::Camera * camera, unsigned int count) -> void;
     auto LoadTexture(core::Texture * texture) -> void;
+    auto LoadDdsTexture(core::Texture * texture) -> void;
     auto UpdateCamera(core::Camera const& camera) -> void;
     auto CreateDepthStencil(unsigned int width, unsigned int height) -> void;
 

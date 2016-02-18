@@ -162,7 +162,7 @@ int main_dx() {
     resourceManager.LoadModels(models.data(), models.size());
 
     for (auto & t : scene->GetStaticModelGroup()._textures) {
-        resourceManager.LoadTexture(t.second.get());
+        resourceManager.LoadDdsTexture(t.second.get());
     }
     resourceManager.LoadEnd();
 

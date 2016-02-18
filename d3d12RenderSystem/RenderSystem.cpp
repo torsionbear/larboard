@@ -45,9 +45,9 @@ auto RenderSystem::CreateDevice(IDXGIFactory1 * factory) -> ComPtr<ID3D12Device>
     for (auto i = 0u; DXGI_ERROR_NOT_FOUND != factory->EnumAdapters1(i, &adapter); ++i) {
         auto description = DXGI_ADAPTER_DESC1{};
         adapter->GetDesc1(&description);
-        if (description.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
-            continue;
-        }
+        //if (description.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
+        //    continue;
+        //}
         if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr))) {
             break;
         }
