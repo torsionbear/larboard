@@ -8,4 +8,6 @@ zlib128-dll
 *.sdf
 *.opensdf
 *.opendb
+*.vspx
+*.psess
 media
