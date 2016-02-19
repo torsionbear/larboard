@@ -11,13 +11,31 @@ public:
 		Vector4f direction;
 	};
 public:
-	DirectionalLight();
+	DirectionalLight()
+        : _color{ 1.0f, 1.0f, 1.0f, 1.0f }
+        , _direction{ 0.0f, 0.0f, -1.0f, 0.0f } {
+    }
 public:
-	auto SetColor(Vector3f value) -> void;
-	auto SetDirection(Vector4f value) -> void;
-	auto GetShaderData() const->ShaderData;
+	auto SetColor(Vector3f value) -> void {
+        _color = Vector4f{ value(0), value(1), value(2), 1.0f };
+    }
+	auto SetDirection(Vector4f value) -> void {
+        _direction = value;
+    }
+    auto GetColor() -> Vector4f {
+        return _color;
+    }
+    auto GetDirection() -> Vector4f {
+        return GetTransform() * _direction;
+    }
+	auto GetShaderData() const -> ShaderData {
+        return ShaderData{
+            _color,
+            GetTransform() * _direction,
+        };
+    }
 private:
-	Vector3f _color;
+	Vector4f _color;
 	Vector4f _direction;
 };
 

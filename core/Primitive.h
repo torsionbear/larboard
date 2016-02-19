@@ -13,8 +13,12 @@ using openglEnum = unsigned int; // GLenum
 
 using Float32 = float;
 using size_type = unsigned int;
-using Int16 = std::int16_t;
-using Int32 = std::int32_t;
+using uint8 = std::uint8_t;
+using uint32 = std::uint32_t;
+using uint64 = std::uint64_t;
+using int8 = std::int8_t;
+using int16 = std::int16_t;
+using int32 = std::int32_t;
 
 static Float32 const pi = 3.1415926536f;
 

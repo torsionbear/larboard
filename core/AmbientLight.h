@@ -13,6 +13,9 @@ public:
     auto SetColor(Vector4f color) -> void {
         _color = color;
     }
+    auto GetColor() -> Vector4f {
+        return _color;
+    }
     auto GetShaderData()->ShaderData {
         return ShaderData{ _color };
     }

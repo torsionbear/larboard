@@ -20,6 +20,10 @@
 #include "core/Model.h"
 #include "core/Camera.h"
 #include "core/Texture.h"
+#include "core/AmbientLight.h"
+#include "core/PointLight.h"
+#include "core/DirectionalLight.h"
+#include "core/SpotLight.h"
 #include "SwapChainRenderTargets.h"
 #include "FrameResource.h"
 #include "FencedCommandQueue.h"
@@ -35,6 +39,7 @@ struct RootSignatureParameterIndex {
       DiffuseTexture = 0u,
       Transform = 1u,
       Camera = 2u,
+      Light = 3u,
   };
 };
 
@@ -42,6 +47,7 @@ struct RegisterConvention {
     enum {
         Camera = 0u,
         Transform = 1u,
+        Light = 2u,
     };
     enum {
         Diffuse = 0u,
@@ -74,10 +80,37 @@ struct TransformData {
     core::Matrix4x4f _pad2;
 };
 
-//struct VertexIndexBuffer {
-//    D3D12_VERTEX_BUFFER_VIEW vbv;
-//    D3D12_INDEX_BUFFER_VIEW ibv;
-//};
+struct LightData {
+    enum {
+        MaxAmbientLightCount = 3,
+        MaxDirectionalLightCount = 6u,
+        MaxPointLightCount = 64u,
+        MaxSpotLightCount = 64u,
+    };
+    uint32 ambientLightCount;
+    uint32 directionalLightCount;
+    uint32 pointLightCount;
+    uint32 spotLightCount;
+    struct AmbientLight {
+        core::Vector4f color;
+    } ambientLights[MaxAmbientLightCount];
+    struct DirectionalLight {
+        core::Vector4f color;
+        core::Vector4f direction;
+    } directionalLights[MaxDirectionalLightCount];
+    struct PointLight {
+        core::Vector4f color;
+        core::Vector4f position;
+        core::Vector4f attenuation;
+    } pointLights[MaxPointLightCount];
+    struct SpotLight {
+        core::Vector4f color;
+        core::Vector4f position;
+        core::Vector4f direction;
+        core::Vector4f attenuation;
+        core::Vector4f coneShape; // beamWidth, cutOffAngle, unused, unused
+    } spotLights[MaxSpotLightCount];
+};
 
 struct PersistentMappedBuffer{
     uint8 * _mappedDataPtr;
@@ -97,6 +130,11 @@ public:
     auto LoadMeshes(core::Mesh ** meshes, unsigned int count, unsigned int stride) -> void;
     auto LoadModels(core::Model ** models, unsigned int count) -> void;
     auto LoadCamera(core::Camera * camera, unsigned int count) -> void;
+    auto LoadLight(
+        core::AmbientLight ** ambientLights, unsigned int ambientLightCount,
+        core::DirectionalLight ** directionalLights, unsigned int directionalLightCount,
+        core::PointLight ** pointLights, unsigned int pointLightCount,
+        core::SpotLight ** spotLights, unsigned int spotLightCount) -> void;
     auto LoadTexture(core::Texture * texture) -> void;
     auto LoadDdsTexture(core::Texture * texture) -> void;
     auto UpdateCamera(core::Camera const& camera) -> void;
@@ -144,6 +182,9 @@ public:
     auto GetTextureBufferInfo(unsigned int index) -> BufferInfo const& {
         return _textureBufferInfos[index];
     }
+    auto GetLightBufferInfo() -> BufferInfo const& {
+        return _lightBufferInfo;
+    }
 private:
     auto CreatePso(ID3D12RootSignature * rootSignature)->ComPtr<ID3D12PipelineState>;
     auto CreateRootSignature()->ComPtr<ID3D12RootSignature>;
@@ -159,6 +200,7 @@ private:
     std::vector<BufferInfo> _transformBufferInfos;
     std::vector<BufferInfo> _depthStencilBufferInfos;
     std::vector<BufferInfo> _textureBufferInfos;
+    BufferInfo _lightBufferInfo;
 
     std::vector<ComPtr<ID3D12Resource>> _uploadBuffers;
     std::vector<ComPtr<ID3D12Resource>> _defaultBuffers;

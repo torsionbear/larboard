@@ -79,6 +79,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="shaders\shaders.hlsl" />
+    <FxCompile Include="shaders\default_p.hlsl" />
+    <FxCompile Include="shaders\default_v.hlsl" />
   </ItemGroup>
 </Project>

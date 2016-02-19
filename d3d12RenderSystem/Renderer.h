@@ -18,6 +18,7 @@ public:
     auto RenderShape(core::Shape const* shape) -> void;
     auto UseCamera(core::Camera const* camera) -> void;
     auto UseTexture(core::Texture const* texture, core::TextureUsage::TextureType textureType) -> void;
+    auto UseLight() -> void;
 private:
     ResourceManager * _resourceManager;
     D3D12_VIEWPORT _viewport;

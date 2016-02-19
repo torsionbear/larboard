@@ -93,4 +93,10 @@ auto Renderer::UseTexture(core::Texture const* texture, core::TextureUsage::Text
     commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::DiffuseTexture, textureBufferInfo._gpuHandle);
 }
 
+auto Renderer::UseLight() -> void {
+    auto commandList = _resourceManager->GetCommandList();
+    auto const& lightBufferInfo = _resourceManager->GetLightBufferInfo();
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Light, lightBufferInfo._gpuHandle);
+}
+
 }

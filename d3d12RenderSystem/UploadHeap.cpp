@@ -4,7 +4,7 @@
 
 namespace d3d12RenderSystem {
 
-auto UploadHeap::Init(unsigned int size, ID3D12Device * device, FencedCommandQueue * fencedCommandQueue) -> void {
+auto UploadHeap::Init(uint64 size, ID3D12Device * device, FencedCommandQueue * fencedCommandQueue) -> void {
     _fencedCommandQueue = fencedCommandQueue;
     ThrowIfFailed(device->CreateCommittedResource(
         &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
@@ -27,13 +27,13 @@ auto UploadHeap::UploadSubresources(ID3D12GraphicsCommandList * commandList, ID3
     UpdateSubresources(commandList, dest, _uploadHeap.Get(), memoryBlcok._offset, first, count, subresources);
 }
 
-auto UploadHeap::AllocateAndUploadDataBlock(ID3D12GraphicsCommandList * commandList, ID3D12Resource * dest, unsigned int size, unsigned int alignment, void * data) -> void {
+auto UploadHeap::AllocateAndUploadDataBlock(ID3D12GraphicsCommandList * commandList, ID3D12Resource * dest, uint32 size, uint32 alignment, void * data) -> void {
     auto & memoryBlock = AllocateMemoryBlock(size, alignment);
     memcpy(_heapBegin + memoryBlock._offset, data, size);
     UploadMemoryBlock(commandList, memoryBlock, dest);
 }
 
-auto UploadHeap::AllocateDataBlocks(DataBlock * dataBlocks, unsigned int count) -> MemoryBlock const& {
+auto UploadHeap::AllocateDataBlocks(DataBlock * dataBlocks, uint32 count) -> MemoryBlock const& {
     // 1. compute alignments' lcd
     // alignments' lowest common denominator should be the greatest one.
     auto alignmentLcd = 0u;
@@ -65,21 +65,7 @@ auto UploadHeap::UploadMemoryBlock(ID3D12GraphicsCommandList * commandList, Memo
     commandList->CopyBufferRegion(dest, 0, _uploadHeap.Get(), memoryBlock._offset, memoryBlock._size);
 }
 
-//auto UploadHeap::Alloc(unsigned int size, uint64 fenceValue) -> MemoryBlock & {
-//    auto cur = _end;
-//    if ((_end + size < _begin) || (_end >= _begin && _end + size <= _heapEnd)) {
-//        _memoryBlockQueue.push(MemoryBlock{_end, size, fenceValue});
-//        _end = cur + size;
-//    } else if (_end >= _begin && _heapBegin + size < _begin) {
-//        _memoryBlockQueue.push(MemoryBlock{ _heapBegin, size, fenceValue });
-//        _end = _heapBegin + size;
-//    } else {
-//        throw;
-//    }
-//    return _memoryBlockQueue.back();
-//}
-
-auto UploadHeap::TryAllocate(unsigned int size, unsigned int alignment) -> uint8* {
+auto UploadHeap::TryAllocate(uint32 size, uint32 alignment) -> uint8* {
     auto cur = Align(_end, alignment);
     if ((cur + size < _begin) || (cur >= _begin && cur + size <= _heapEnd) || (cur >= _begin && (cur = Align(_heapBegin, alignment)) + size < _begin)) {
         return cur;
@@ -87,7 +73,7 @@ auto UploadHeap::TryAllocate(unsigned int size, unsigned int alignment) -> uint8
     return nullptr;
 }
 
-auto UploadHeap::AllocateMemoryBlock(unsigned int size, unsigned int alignment) -> MemoryBlock & {
+auto UploadHeap::AllocateMemoryBlock(uint32 size, uint32 alignment) -> MemoryBlock & {
     auto ptr = TryAllocate(size, alignment);
     if (ptr == nullptr) {
         ReleaseCompletedMemoryBlock();
@@ -95,7 +81,7 @@ auto UploadHeap::AllocateMemoryBlock(unsigned int size, unsigned int alignment) 
     }
     if (ptr != nullptr) {
         _end = ptr + size;
-        _memoryBlockQueue.push(MemoryBlock{ alignment, size, static_cast<unsigned int>(ptr - _heapBegin), _fencedCommandQueue->GetFenceValue() });
+        _memoryBlockQueue.push(MemoryBlock{ alignment, size, static_cast<uint32>(ptr - _heapBegin), _fencedCommandQueue->GetFenceValue() });
     } else {
         throw;
     }

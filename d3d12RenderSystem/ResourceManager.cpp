@@ -45,8 +45,9 @@ auto ResourceManager::PrepareResource() -> void {
 }
 
 auto ResourceManager::LoadBegin(unsigned int depthStencilCount, unsigned int cameraCount, unsigned int meshCount, unsigned int modelCount, unsigned int textureCount) -> void {
+    auto const lightDescriptorCount = 1u;
     AllocDsvDescriptorHeap(depthStencilCount);
-    AllocCbvSrvDescriptorHeap(cameraCount + modelCount + textureCount);
+    AllocCbvSrvDescriptorHeap(cameraCount + modelCount + textureCount + lightDescriptorCount);
 }
 
 auto ResourceManager::LoadEnd() -> void {
@@ -66,8 +67,8 @@ auto ResourceManager::CreatePso(ID3D12RootSignature * rootSignature) -> ComPtr<I
     // Enable better shader debugging with the graphics debugging tools.
     compileFlags = compileFlags | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
-    ThrowIfFailed(D3DCompileFromFile(L"d3d12RenderSystem/shaders/shaders.hlsl", nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
-    ThrowIfFailed(D3DCompileFromFile(L"d3d12RenderSystem/shaders/shaders.hlsl", nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
+    ThrowIfFailed(D3DCompileFromFile(L"d3d12RenderSystem/shaders/default_v.hlsl", nullptr, nullptr, "main", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
+    ThrowIfFailed(D3DCompileFromFile(L"d3d12RenderSystem/shaders/default_p.hlsl", nullptr, nullptr, "main", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
 
     // Define the vertex input layout.
     auto const inputElementDescs = array<D3D12_INPUT_ELEMENT_DESC, 3> {
@@ -112,15 +113,17 @@ auto ResourceManager::CreatePso(ID3D12RootSignature * rootSignature) -> ComPtr<I
 auto ResourceManager::CreateRootSignature() -> ComPtr<ID3D12RootSignature> {
     auto ret = ComPtr<ID3D12RootSignature>{ nullptr };
 
-    auto ranges = array<CD3DX12_DESCRIPTOR_RANGE, 3>{};
+    auto ranges = array<CD3DX12_DESCRIPTOR_RANGE, 4>{};
     ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RegisterConvention::Diffuse);	// diffuse texture
     ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Transform);  // transform
     ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Camera);  // camera
+    ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Light);  // light
 
-    auto rootParameters = array<CD3DX12_ROOT_PARAMETER, 3>{};
+    auto rootParameters = array<CD3DX12_ROOT_PARAMETER, 4>{};
     rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
     rootParameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_VERTEX);
-    rootParameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_VERTEX);
+    rootParameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
+    rootParameters[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_PIXEL);
 
     auto sampler = D3D12_STATIC_SAMPLER_DESC{};
     sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
@@ -303,6 +306,48 @@ auto ResourceManager::LoadCamera(core::Camera * cameras, unsigned int count) -> 
         });
     }
     memcpy(mappedPtr, cameraData.data(), cameraData.size());
+}
+
+auto ResourceManager::LoadLight(core::AmbientLight ** ambientLights, unsigned int ambientLightCount,
+    core::DirectionalLight ** directionalLights, unsigned int directionalLightCount,
+    core::PointLight ** pointLights, unsigned int pointLightCount,
+    core::SpotLight ** spotLights, unsigned int spotLightCount) -> void {
+    auto lightData = LightData{ambientLightCount, directionalLightCount, pointLightCount, spotLightCount};
+    for (auto i = 0u; i < ambientLightCount; ++i) {
+        lightData.ambientLights[i] = LightData::AmbientLight{ ambientLights[i]->GetColor()};
+    }
+    for (auto i = 0u; i < directionalLightCount; ++i) {
+        lightData.directionalLights[i] = LightData::DirectionalLight{directionalLights[i]->GetColor(), directionalLights[i]->GetDirection()};
+    }
+    for (auto i = 0u; i < pointLightCount; ++i) {
+        lightData.pointLights[i] = LightData::PointLight{ pointLights[i]->GetColor(), pointLights[i]->GetPosition(), pointLights[i]->GetAttenuation() };
+    }
+    for (auto i = 0u; i < spotLightCount; ++i) {
+        lightData.spotLights[i] = LightData::SpotLight{
+            spotLights[i]->GetColor(),
+            spotLights[i]->GetPosition(),
+            spotLights[i]->GetDirection(),
+            spotLights[i]->GetAttenuation(),
+            core::Vector4f{spotLights[i]->GetBeamWidth(), spotLights[i]->GetCutOffAngle(), 0.0f, 0.0f},
+        };
+    }
+
+    _defaultBuffers.emplace_back();
+    ThrowIfFailed(_device->CreateCommittedResource(
+        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+        D3D12_HEAP_FLAG_NONE,
+        &CD3DX12_RESOURCE_DESC::Buffer(sizeof(LightData)),
+        D3D12_RESOURCE_STATE_COPY_DEST,
+        nullptr,
+        IID_PPV_ARGS(&_defaultBuffers.back())));
+    auto buffer = _defaultBuffers.back().Get();
+
+    _lightBufferInfo = _cbvSrvHeap.GetBufferInfo();
+    auto desc = D3D12_CONSTANT_BUFFER_VIEW_DESC{ buffer->GetGPUVirtualAddress(), sizeof(LightData) };
+    _device->CreateConstantBufferView(&desc, _lightBufferInfo._cpuHandle);
+
+    _uploadHeap.AllocateAndUploadDataBlock(_commandList.Get(), buffer, sizeof(LightData), D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT, &lightData);
+    _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 }
 
 // quick & dirty implementation to load dds files

@@ -29,10 +29,12 @@ auto static const height = 600;
 
 auto LoadScene_dx0(core::Scene * scene) -> void {
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square/square.x3d").Read(scene);
+    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
 }
 
 auto LoadScene_dx1(core::Scene * scene) -> void {
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square2/square2.x3d").Read(scene);
+    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
 }
 
 auto LoadScene0(core::Scene * scene) -> void {
@@ -147,23 +149,46 @@ int main_dx() {
     // load
     resourceManager.LoadBegin(1, 1, scene->GetStaticModelGroup().GetMeshes().size(), scene->GetStaticModelGroup().GetModels().size(), scene->GetStaticModelGroup()._textures.size());
     resourceManager.CreateDepthStencil(width, height);
+    // load cameras
     resourceManager.LoadCamera(scene->GetActiveCamera(), 1);
-
+    // load meshes
     auto meshes = vector<core::Mesh *>{};
     for (auto & m : scene->GetStaticModelGroup().GetMeshes()) {
         meshes.push_back(m.get());
     }
     resourceManager.LoadMeshes(meshes.data(), meshes.size(), sizeof(core::Vertex));
-
+    // load models
     auto models = vector<core::Model *>{};
     for (auto & model : scene->GetStaticModelGroup().GetModels()) {
         models.push_back(model.get());
     }
     resourceManager.LoadModels(models.data(), models.size());
-
+    // load textures
     for (auto & t : scene->GetStaticModelGroup()._textures) {
-        resourceManager.LoadDdsTexture(t.second.get());
+        resourceManager.LoadTexture(t.second.get());
     }
+    // load lights
+    auto ambientLights = vector<core::AmbientLight *>{};
+    for (auto & ambientLight : scene->_ambientLights) {
+        ambientLights.push_back(ambientLight.get());
+    }
+    auto directionalLights = vector<core::DirectionalLight *>{};
+    for (auto & directionalLight : scene->_directionalLights) {
+        directionalLights.push_back(directionalLight.get());
+    }
+    auto pointLights = vector<core::PointLight *>{};
+    for (auto & pointLight : scene->_pointLights) {
+        pointLights.push_back(pointLight.get());
+    }
+    auto spotLights = vector<core::SpotLight *>{};
+    for (auto & spotLight : scene->_spotLights) {
+        spotLights.push_back(spotLight.get());
+    }
+    resourceManager.LoadLight(
+        ambientLights.data(), ambientLights.size(),
+        directionalLights.data(), directionalLights.size(),
+        pointLights.data(), pointLights.size(),
+        spotLights.data(), spotLights.size());
     resourceManager.LoadEnd();
 
     while (renderWindow.Step()) {
@@ -173,6 +198,7 @@ int main_dx() {
         resourceManager.UpdateCamera(*scene->GetActiveCamera());
         renderer.DrawBegin();
         renderer.UseCamera(scene->GetActiveCamera());
+        renderer.UseLight();
         // render
         for (auto & shape : scene->GetStaticModelGroup().GetShapes()) {
             renderer.RenderShape(shape.get());
