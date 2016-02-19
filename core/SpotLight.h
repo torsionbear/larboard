@@ -26,7 +26,7 @@ public:
         _direction = direction;
     }
     auto GetDirection() -> Vector4f {
-        return _direction;
+        return GetTransform() * _direction;
     }
 	auto SetRadius(Float32 radius) -> void {
         _attenuation(3) = radius;

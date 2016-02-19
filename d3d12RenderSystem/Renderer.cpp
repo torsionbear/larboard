@@ -25,6 +25,7 @@ auto Renderer::DrawBegin() -> void {
     // viewport & scissorRect
     commandList->RSSetViewports(1, &_viewport);
     commandList->RSSetScissorRects(1, &_scissorRect);
+    commandList->OMSetStencilRef(0);
 
     // render target
     auto rtv = swapChainRenderTargets.GetCurrentRtv();
@@ -71,6 +72,7 @@ auto Renderer::RenderShape(core::Shape const * shape) -> void {
     auto const& meshRenderData = _resourceManager->GetMeshDataInfo(shape->GetMesh()->_renderDataId);
     auto const& transformBufferInfo = _resourceManager->GetTransformBufferInfo(shape->GetModel()->_renderDataId);
     auto const& textureBufferInfo = _resourceManager->GetTextureBufferInfo(shape->GetTextures()[0]->_renderDataId);
+    auto const& materialBufferInfo = _resourceManager->GetMaterialBufferInfo(shape->GetMaterial()->_renderDataId);
 
     // todo: only call the following 2 IASet* functions when necessary
     auto commandList = _resourceManager->GetCommandList();
@@ -78,6 +80,7 @@ auto Renderer::RenderShape(core::Shape const * shape) -> void {
     commandList->IASetIndexBuffer(&meshRenderData.ibv);
     commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Transform, transformBufferInfo._gpuHandle);
     commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::DiffuseTexture, textureBufferInfo._gpuHandle);
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Material, materialBufferInfo._gpuHandle);
     commandList->DrawIndexedInstanced(meshRenderData.indexCount, 1, meshRenderData.indexOffset, meshRenderData.baseVertex, 0);
 }
 

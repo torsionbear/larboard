@@ -102,6 +102,7 @@ public:
 private:
 	std::array<value_type, ROW * COL> _data;
 };
+using Matrix2x4f = Matrix<Float32, 2, 4>;
 using Matrix3x4f = Matrix<Float32, 3, 4>;
 using Matrix4x4f = Matrix<Float32, 4, 4>;
 using Vector2f = Matrix<Float32, 2, 1>;

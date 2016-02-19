@@ -48,10 +48,12 @@ cbuffer Lights : register(b2) {
     SpotLight spotLights[64];
 };
 
-//cbuffer Material : register(b3) {
-//    float4 diffuseEmissive;
-//    float4 specularShininess;
-//};
+cbuffer Material : register(b3) {
+    float4 diffuseEmissive1;
+    float4 specularShininess;
+    float2x4 _pad1;
+    float4x4 _pad2[3];
+};
 
 Texture2D diffuse : register(t0);
 SamplerState staticSampler : register(s0);
@@ -84,7 +86,6 @@ float4 main(PSInput input) : SV_TARGET
     
     float4 diffuseEmissive = diffuse.Sample(staticSampler, input.texCoord);
     diffuseEmissive.a = 0;
-    float4 specularShininess = { 0.401, 0.401, 0.401, 0.098 };
     float occlusion = 0;
     float3 normal = input.normal.xyz;
     float3 position = input.worldPosition.xyz;

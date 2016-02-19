@@ -24,6 +24,7 @@
 #include "core/PointLight.h"
 #include "core/DirectionalLight.h"
 #include "core/SpotLight.h"
+#include "core/Material.h"
 #include "SwapChainRenderTargets.h"
 #include "FrameResource.h"
 #include "FencedCommandQueue.h"
@@ -38,8 +39,9 @@ struct RootSignatureParameterIndex {
   enum {
       DiffuseTexture = 0u,
       Transform = 1u,
-      Camera = 2u,
-      Light = 3u,
+      Material = 2u,
+      Camera = 3u,
+      Light = 4u,
   };
 };
 
@@ -48,6 +50,7 @@ struct RegisterConvention {
         Camera = 0u,
         Transform = 1u,
         Light = 2u,
+        Material = 3u,
     };
     enum {
         Diffuse = 0u,
@@ -78,6 +81,13 @@ struct TransformData {
     core::Matrix4x4f normalTransform;
     core::Matrix4x4f _pad1;
     core::Matrix4x4f _pad2;
+};
+
+struct MaterialData {
+    core::Vector4f diffuseEmissive;
+    core::Vector4f specularShininess;
+    core::Matrix2x4f _pad;
+    core::Matrix4x4f _pad2[3];
 };
 
 struct LightData {
@@ -125,7 +135,7 @@ public:
 public:
     auto Init(ID3D12Device * device, IDXGIFactory1 * factory, FencedCommandQueue * fencedCommandQueue, unsigned int width, unsigned int height, HWND hwnd) -> void;
     auto PrepareResource() -> void;
-    auto LoadBegin(unsigned int depthStencilCount, unsigned int cameraCount, unsigned int meshCount, unsigned int modelCount, unsigned int textureCount) -> void;
+    auto LoadBegin(unsigned int depthStencilCount, unsigned int cameraCount, unsigned int meshCount, unsigned int modelCount, unsigned int textureCount, unsigned int materialCount) -> void;
     auto LoadEnd() -> void;
     auto LoadMeshes(core::Mesh ** meshes, unsigned int count, unsigned int stride) -> void;
     auto LoadModels(core::Model ** models, unsigned int count) -> void;
@@ -135,6 +145,7 @@ public:
         core::DirectionalLight ** directionalLights, unsigned int directionalLightCount,
         core::PointLight ** pointLights, unsigned int pointLightCount,
         core::SpotLight ** spotLights, unsigned int spotLightCount) -> void;
+    auto LoadMaterials(core::Material ** materials, unsigned int count) -> void;
     auto LoadTexture(core::Texture * texture) -> void;
     auto LoadDdsTexture(core::Texture * texture) -> void;
     auto UpdateCamera(core::Camera const& camera) -> void;
@@ -185,6 +196,9 @@ public:
     auto GetLightBufferInfo() -> BufferInfo const& {
         return _lightBufferInfo;
     }
+    auto GetMaterialBufferInfo(unsigned int index) -> BufferInfo const& {
+        return _materialBufferInfos[index];
+    }
 private:
     auto CreatePso(ID3D12RootSignature * rootSignature)->ComPtr<ID3D12PipelineState>;
     auto CreateRootSignature()->ComPtr<ID3D12RootSignature>;
@@ -201,6 +215,7 @@ private:
     std::vector<BufferInfo> _depthStencilBufferInfos;
     std::vector<BufferInfo> _textureBufferInfos;
     BufferInfo _lightBufferInfo;
+    std::vector<BufferInfo> _materialBufferInfos;
 
     std::vector<ComPtr<ID3D12Resource>> _uploadBuffers;
     std::vector<ComPtr<ID3D12Resource>> _defaultBuffers;

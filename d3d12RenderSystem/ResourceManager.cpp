@@ -26,7 +26,7 @@ auto ResourceManager::Init(ID3D12Device * device, IDXGIFactory1 * factory, Fence
     _frameResourceContainer.Init(device);
     _fencedCommandQueue = fencedCommandQueue;
     _swapChainRenderTargets.Init(factory, device, _fencedCommandQueue->GetCommandQueue(), width, height, hwnd);
-    _uploadHeap.Init(16*1024*1024, device, _fencedCommandQueue);
+    _uploadHeap.Init(64*1024*1024, device, _fencedCommandQueue);
 
     _rootSignature = CreateRootSignature();
     _defaultPso = CreatePso(_rootSignature.Get());
@@ -44,10 +44,16 @@ auto ResourceManager::PrepareResource() -> void {
     ThrowIfFailed(_commandList->Reset(frameResource.GetCommandAllocator(), _defaultPso.Get()));
 }
 
-auto ResourceManager::LoadBegin(unsigned int depthStencilCount, unsigned int cameraCount, unsigned int meshCount, unsigned int modelCount, unsigned int textureCount) -> void {
+auto ResourceManager::LoadBegin(
+    unsigned int depthStencilCount,
+    unsigned int cameraCount,
+    unsigned int meshCount,
+    unsigned int modelCount,
+    unsigned int textureCount,
+    unsigned int materialCount) -> void {
     auto const lightDescriptorCount = 1u;
     AllocDsvDescriptorHeap(depthStencilCount);
-    AllocCbvSrvDescriptorHeap(cameraCount + modelCount + textureCount + lightDescriptorCount);
+    AllocCbvSrvDescriptorHeap(cameraCount + modelCount + textureCount + materialCount + lightDescriptorCount);
 }
 
 auto ResourceManager::LoadEnd() -> void {
@@ -81,6 +87,12 @@ auto ResourceManager::CreatePso(ID3D12RootSignature * rootSignature) -> ComPtr<I
     auto rasterizer_desc = D3D12_RASTERIZER_DESC{
 
     };
+    CD3DX12_DEPTH_STENCIL_DESC depthStencilDesc(D3D12_DEFAULT);
+    depthStencilDesc.DepthEnable = true;
+    depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+    depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+    depthStencilDesc.StencilEnable = FALSE;
+
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
     psoDesc.InputLayout = { inputElementDescs.data(), inputElementDescs.size() };
     psoDesc.pRootSignature = rootSignature;
@@ -99,8 +111,7 @@ auto ResourceManager::CreatePso(ID3D12RootSignature * rootSignature) -> ComPtr<I
         0,
         D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF);
     psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-    psoDesc.DepthStencilState.DepthEnable = FALSE;
-    psoDesc.DepthStencilState.StencilEnable = FALSE;
+    psoDesc.DepthStencilState = depthStencilDesc;
     psoDesc.SampleMask = UINT_MAX;
     psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
     psoDesc.NumRenderTargets = 1;
@@ -113,17 +124,19 @@ auto ResourceManager::CreatePso(ID3D12RootSignature * rootSignature) -> ComPtr<I
 auto ResourceManager::CreateRootSignature() -> ComPtr<ID3D12RootSignature> {
     auto ret = ComPtr<ID3D12RootSignature>{ nullptr };
 
-    auto ranges = array<CD3DX12_DESCRIPTOR_RANGE, 4>{};
-    ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RegisterConvention::Diffuse);	// diffuse texture
-    ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Transform);  // transform
-    ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Camera);  // camera
-    ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Light);  // light
+    auto ranges = array<CD3DX12_DESCRIPTOR_RANGE, 5>{};
+    ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RegisterConvention::Diffuse);
+    ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Transform);
+    ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Material);
+    ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Camera);
+    ranges[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Light);
 
-    auto rootParameters = array<CD3DX12_ROOT_PARAMETER, 4>{};
+    auto rootParameters = array<CD3DX12_ROOT_PARAMETER, 5>{};
     rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
     rootParameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_VERTEX);
-    rootParameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
-    rootParameters[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_ALL);
+    rootParameters[4].InitAsDescriptorTable(1, &ranges[4], D3D12_SHADER_VISIBILITY_PIXEL);
 
     auto sampler = D3D12_STATIC_SAMPLER_DESC{};
     sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
@@ -160,7 +173,7 @@ auto ResourceManager::CreateCommandList(ID3D12PipelineState * pso, ID3D12Command
 auto ResourceManager::CreateDepthStencil(unsigned int width, unsigned int height) -> void {
     auto & bufferInfo = _dsvHeap.GetBufferInfo();
 
-    CD3DX12_RESOURCE_DESC shadowTextureDesc(
+    CD3DX12_RESOURCE_DESC desc(
         D3D12_RESOURCE_DIMENSION_TEXTURE2D,
         0,
         width,
@@ -182,7 +195,7 @@ auto ResourceManager::CreateDepthStencil(unsigned int width, unsigned int height
     ThrowIfFailed(_device->CreateCommittedResource(
         &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
         D3D12_HEAP_FLAG_NONE,
-        &shadowTextureDesc,
+        &desc,
         D3D12_RESOURCE_STATE_DEPTH_WRITE,
         &clearValue,
         IID_PPV_ARGS(&_defaultBuffers.back())));
@@ -347,6 +360,35 @@ auto ResourceManager::LoadLight(core::AmbientLight ** ambientLights, unsigned in
     _device->CreateConstantBufferView(&desc, _lightBufferInfo._cpuHandle);
 
     _uploadHeap.AllocateAndUploadDataBlock(_commandList.Get(), buffer, sizeof(LightData), D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT, &lightData);
+    _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+}
+
+auto ResourceManager::LoadMaterials(core::Material ** materials, unsigned int count) -> void {
+    _defaultBuffers.emplace_back();
+    ThrowIfFailed(_device->CreateCommittedResource(
+        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+        D3D12_HEAP_FLAG_NONE,
+        &CD3DX12_RESOURCE_DESC::Buffer(count * sizeof(MaterialData)),
+        D3D12_RESOURCE_STATE_COPY_DEST,
+        nullptr,
+        IID_PPV_ARGS(&_defaultBuffers.back())));
+    auto buffer = _defaultBuffers.back().Get();
+
+    auto materialData = vector<MaterialData>{};
+    for (auto i = 0u; i < count; ++i) {
+        auto & material = materials[i];
+        material->_renderDataId = _materialBufferInfos.size();
+        auto bufferInfo = _cbvSrvHeap.GetBufferInfo();
+        D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = { buffer->GetGPUVirtualAddress() + i * sizeof(MaterialData), sizeof(MaterialData) };
+        _device->CreateConstantBufferView(&cbvDesc, bufferInfo._cpuHandle);
+        _materialBufferInfos.push_back(bufferInfo);
+        materialData.push_back(MaterialData{
+            material->GetDiffuseEmissive(),
+            material->GetSpecularShininess(),
+        });
+    }
+
+    _uploadHeap.AllocateAndUploadDataBlock(_commandList.Get(), buffer, sizeof(MaterialData) * count, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT, materialData.data());
     _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 }
 

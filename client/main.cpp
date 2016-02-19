@@ -37,6 +37,11 @@ auto LoadScene_dx1(core::Scene * scene) -> void {
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
 }
 
+auto LoadScene_dx2(core::Scene * scene) -> void {
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/8/8.x3d").Read(scene);
+    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
+}
+
 auto LoadScene0(core::Scene * scene) -> void {
 	x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square/square.x3d").Read(scene);
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
@@ -90,7 +95,7 @@ int main_gl() {
     auto scene = make_unique<core::Scene>();
     auto cameraController = make_unique<core::CameraController>(scene.get());
 
-    LoadScene3(scene.get());
+    LoadScene2(scene.get());
     scene->Load();
 
     renderer->Prepare();
@@ -132,7 +137,7 @@ int main_dx() {
 
 
     auto scene = make_unique<core::Scene>();
-    LoadScene_dx1(scene.get());
+    LoadScene_dx2(scene.get());
     scene->Load();
 
     d3d12RenderSystem::RenderSystem renderSystem;
@@ -147,7 +152,13 @@ int main_dx() {
     renderSystem.GetRenderWindow().RegisterInputHandler(std::function<void(HWND, UINT, WPARAM, LPARAM)>(inputHandler));
 
     // load
-    resourceManager.LoadBegin(1, 1, scene->GetStaticModelGroup().GetMeshes().size(), scene->GetStaticModelGroup().GetModels().size(), scene->GetStaticModelGroup()._textures.size());
+    resourceManager.LoadBegin(
+        1,
+        1,
+        scene->GetStaticModelGroup().GetMeshes().size(),
+        scene->GetStaticModelGroup().GetModels().size(),
+        scene->GetStaticModelGroup()._textures.size(),
+        scene->GetStaticModelGroup()._materials.size());
     resourceManager.CreateDepthStencil(width, height);
     // load cameras
     resourceManager.LoadCamera(scene->GetActiveCamera(), 1);
@@ -163,6 +174,12 @@ int main_dx() {
         models.push_back(model.get());
     }
     resourceManager.LoadModels(models.data(), models.size());
+    // load materials
+    auto materials = vector<core::Material *>{};
+    for (auto & material : scene->GetStaticModelGroup()._materials) {
+        materials.push_back(material.second.get());
+    }
+    resourceManager.LoadMaterials(materials.data(), materials.size());
     // load textures
     for (auto & t : scene->GetStaticModelGroup()._textures) {
         resourceManager.LoadTexture(t.second.get());

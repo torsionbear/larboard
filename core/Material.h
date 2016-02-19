@@ -37,6 +37,12 @@ public:
 	auto SetUboOffset(int offset) -> void {
 		_uboOffset = offset;
 	}
+    auto GetDiffuseEmissive() -> Vector4f {
+        return _shaderData._diffuseEmissive;
+    }
+    auto GetSpecularShininess() -> Vector4f {
+        return _shaderData._specularShininess;
+    }
 	auto GetShaderData() const -> ShaderData const& {
 		return _shaderData;
 	}
@@ -45,7 +51,8 @@ private:
 	ShaderData _shaderData;
     openglUint _ubo;
 	openglInt _uboOffset;
-
+public:
+    unsigned int _renderDataId;
 };
 
 }
