@@ -3,7 +3,7 @@ struct PSInput {
     float4 position : SV_POSITION;
     float4 worldPosition : PS_WORLD_POSITION;
     float4 normal : PS_NORMAL;
-    float4 texCoord : PS_TEXCOORD;
+    float2 texCoord : PS_TEXCOORD;
 };
 
 cbuffer Camera : register(b0) {
@@ -88,8 +88,8 @@ float4 main(PSInput input) : SV_TARGET
     diffuseEmissive.a = 0;
     float occlusion = 0;
     float3 normal = input.normal.xyz;
-    float3 position = input.worldPosition.xyz;
-    float3 viewDirection = normalize(viewPosition.xyz - position);
+    float3 worldPosition = input.worldPosition.xyz;
+    float3 viewDirection = normalize(viewPosition.xyz - worldPosition);
 
     float3 ambient = ambientLights[0].color.rgb * diffuseEmissive.rgb * (1 - occlusion) + diffuseEmissive.rgb * diffuseEmissive.a;
     float3 diffuse = { 0.0, 0.0, 0.0 };
@@ -103,15 +103,15 @@ float4 main(PSInput input) : SV_TARGET
     }
     for (uint i2 = 0; i2 < pointLightCount; i2++) {
         PointLight pointLight = pointLights[i2];
-        float attenuation = Attenuation(pointLight.attenuation, length(pointLight.position.xyz - position));
-        float3 lightDirection = normalize(position - pointLight.position.xyz);
+        float attenuation = Attenuation(pointLight.attenuation, length(pointLight.position.xyz - worldPosition));
+        float3 lightDirection = normalize(worldPosition - pointLight.position.xyz);
         diffuse += pointLight.color.rgb * diffuseEmissive.rgb * attenuation * DiffuseCoefficient(normal, lightDirection);
         specular += pointLight.color.rgb * specularShininess.rgb * attenuation * SpecularCoefficient(normal, lightDirection, viewDirection, specularShininess.a);
     }
     for (uint i3 = 0; i3 < spotLightCount; i3++) {
         SpotLight spotLight = spotLights[i3];
-        float attenuation = Attenuation(spotLight.attenuation, length(spotLight.position.xyz - position));
-        float3 lightDirection = normalize(position - spotLight.position.xyz);
+        float attenuation = Attenuation(spotLight.attenuation, length(spotLight.position.xyz - worldPosition));
+        float3 lightDirection = normalize(worldPosition - spotLight.position.xyz);
         float angle = acos(dot(lightDirection, spotLight.direction.xyz));
         float angleFalloff = 0;
         if (angle < spotLight.coneShape.y) {

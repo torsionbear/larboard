@@ -3,7 +3,7 @@ struct PSInput {
     float4 position : SV_POSITION;
     float4 worldPosition : PS_WORLD_POSITION;
     float4 normal : PS_NORMAL;
-    float4 texCoord : PS_TEXCOORD;
+    float2 texCoord : PS_TEXCOORD;
 };
 
 cbuffer Camera : register(b0) {
@@ -21,17 +21,16 @@ cbuffer Transform : register(b1) {
     float4x4 _pad2;
 };
 
-PSInput main(float4 position : POSITION, float4 normal : NORMAL, float4 texCoord : TEXCOORD) {
+PSInput main(float3 position : POSITION, float3 normal : NORMAL, float2 texCoord : TEXCOORD) {
     PSInput result;
 
-    float4 newPosition = position;
+    float4 newPosition = float4(position, 1);
     newPosition = mul(worldTransform, newPosition);
     result.worldPosition = newPosition;
     newPosition = mul(viewTransform, newPosition);
     newPosition = mul(projectTransform, newPosition);
     result.position = newPosition;
-    result.worldPosition = position;
-    result.normal = normal;
+    result.normal = mul(normalTransform, float4(normal, 0));
     result.texCoord = texCoord;
     return result;
 }
