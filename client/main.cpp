@@ -142,7 +142,7 @@ int main_dx() {
 
 
     auto scene = make_unique<core::Scene>();
-    LoadScene_dx3(scene.get());
+    LoadScene_dx1(scene.get());
     scene->Load();
 
     d3d12RenderSystem::RenderSystem renderSystem;
@@ -187,7 +187,7 @@ int main_dx() {
     resourceManager.LoadMaterials(materials.data(), materials.size());
     // load textures
     for (auto & t : scene->GetStaticModelGroup()._textures) {
-        resourceManager.LoadTexture(t.get());
+        resourceManager.LoadDdsTexture(t.get());
     }
     // load lights
     auto ambientLights = vector<core::AmbientLight *>{};

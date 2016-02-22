@@ -433,14 +433,31 @@ auto ResourceManager::LoadDdsTexture(core::Texture * texture) -> void {
     std::wstring_convert<convert_type, wchar_t> converter;
     auto filename_wchar = converter.from_bytes(filename);
 
-    // 3. create texture
-    _defaultBuffers.emplace_back();
-    auto buffer = _defaultBuffers.back().Get();
+    // 3. create texture (CreateDDSTextureFromFile() uses upload heap. Need to upload data to default heap later)
+    _uploadBuffers.emplace_back();
+    auto uploadBuffer = _uploadBuffers.back().Get();
     auto srvDesc = D3D12_SHADER_RESOURCE_VIEW_DESC{};
-    ThrowIfFailed(DirectX::CreateDDSTextureFromFile(_device, filename_wchar.data(), &buffer, &srvDesc));
+    ThrowIfFailed(DirectX::CreateDDSTextureFromFile(_device, filename_wchar.data(), &uploadBuffer, &srvDesc));
 
-    auto desc = buffer->GetDesc();
-    // 4. create srv
+    // 4. upload texture
+    auto desc = uploadBuffer->GetDesc();
+    _defaultBuffers.emplace_back();
+    ThrowIfFailed(_device->CreateCommittedResource(
+        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+        D3D12_HEAP_FLAG_NONE,
+        &desc,
+        D3D12_RESOURCE_STATE_COPY_DEST,
+        nullptr,
+        IID_PPV_ARGS(&_defaultBuffers.back())));
+    auto buffer = _defaultBuffers.back().Get();
+
+    for (auto i = 0u; i < desc.MipLevels; ++i) {
+        CD3DX12_TEXTURE_COPY_LOCATION Dst(buffer, i);
+        CD3DX12_TEXTURE_COPY_LOCATION Src(uploadBuffer, i);
+        _commandList->CopyTextureRegion(&Dst, 0, 0, 0, &Src, nullptr);
+    }
+
+    // 5. create srv
     auto bufferInfo = _cbvSrvHeap.GetBufferInfo();
     _device->CreateShaderResourceView(buffer, &srvDesc, bufferInfo._cpuHandle);
     texture->_renderDataId = _textureBufferInfos.size();
