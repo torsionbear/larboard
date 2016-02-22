@@ -49,13 +49,22 @@ cbuffer Lights : register(b2) {
 };
 
 cbuffer Material : register(b3) {
-    float4 diffuseEmissive1;
-    float4 specularShininess;
-    float2x4 _pad1;
+    float3 diffuse;
+    bool hasDiffuseMap;
+    float3 emissive;
+    bool hasEmissiveMap;
+    float3 specular;
+    bool hasSpecularMap;
+    float shininess;
+    bool hasNormalMap;
+    float2 _pad1;
     float4x4 _pad2[3];
 };
 
-Texture2D diffuse : register(t0);
+Texture2D diffuseMap : register(t0);
+Texture2D normalMap : register(t1);
+Texture2D specularMap : register(t2);
+Texture2D emissiveMap : register(t3);
 SamplerState staticSampler : register(s0);
 
 
@@ -82,31 +91,31 @@ float4 main(PSInput input) : SV_TARGET
 {
     //return input.texCoord;
     //return diffuse.Sample(staticSampler, input.texCoord);
+        
+    float3 diffuseColor = hasDiffuseMap ? diffuseMap.Sample(staticSampler, input.texCoord).rgb : diffuse;
+    float3 specularColor = hasSpecularMap ? specularMap.Sample(staticSampler, input.texCoord).rgb : specular;
+    float3 emissiveColor = hasEmissiveMap ? emissiveMap.Sample(staticSampler, input.texCoord).rgb : emissive;
 
-    
-    float4 diffuseEmissive = diffuse.Sample(staticSampler, input.texCoord);
-    diffuseEmissive.a = 0;
     float occlusion = 0;
     float3 normal = input.normal.xyz;
     float3 worldPosition = input.worldPosition.xyz;
     float3 viewDirection = normalize(viewPosition.xyz - worldPosition);
 
-    float3 ambient = ambientLights[0].color.rgb * diffuseEmissive.rgb * (1 - occlusion) + diffuseEmissive.rgb * diffuseEmissive.a;
-    float3 diffuse = { 0.0, 0.0, 0.0 };
-    float3 specular = { 0.0, 0.0, 0.0 };
-    
+    float3 ambientResult = ambientLights[0].color.rgb * diffuseColor * (1 - occlusion);
+    float3 diffuseResult = float3(0, 0, 0);
+    float3 specularResult = float3(0, 0, 0);
     
     for (uint i = 0; i < directionalLightCount; i++) {
         DirectionalLight directionLight = directionalLights[i];
-        diffuse += directionLight.color.rgb * diffuseEmissive.rgb * DiffuseCoefficient(normal, directionLight.direction.xyz);
-        specular += directionLight.color.rgb * specularShininess.rgb * SpecularCoefficient(normal, directionLight.direction.xyz, viewDirection, specularShininess.a);
+        diffuseResult += directionLight.color.rgb * diffuseColor * DiffuseCoefficient(normal, directionLight.direction.xyz);
+        specularResult += directionLight.color.rgb * specularColor * SpecularCoefficient(normal, directionLight.direction.xyz, viewDirection, shininess);
     }
     for (uint i2 = 0; i2 < pointLightCount; i2++) {
         PointLight pointLight = pointLights[i2];
         float attenuation = Attenuation(pointLight.attenuation, length(pointLight.position.xyz - worldPosition));
         float3 lightDirection = normalize(worldPosition - pointLight.position.xyz);
-        diffuse += pointLight.color.rgb * diffuseEmissive.rgb * attenuation * DiffuseCoefficient(normal, lightDirection);
-        specular += pointLight.color.rgb * specularShininess.rgb * attenuation * SpecularCoefficient(normal, lightDirection, viewDirection, specularShininess.a);
+        diffuseResult += pointLight.color.rgb * diffuseColor * attenuation * DiffuseCoefficient(normal, lightDirection);
+        specularResult += pointLight.color.rgb * specularColor * attenuation * SpecularCoefficient(normal, lightDirection, viewDirection, shininess);
     }
     for (uint i3 = 0; i3 < spotLightCount; i3++) {
         SpotLight spotLight = spotLights[i3];
@@ -117,10 +126,10 @@ float4 main(PSInput input) : SV_TARGET
         if (angle < spotLight.coneShape.y) {
             angleFalloff = angle > spotLight.coneShape.x ? (spotLight.coneShape.y - angle) / (spotLight.coneShape.y - spotLight.coneShape.x) : 1.0;
         }
-        diffuse += spotLight.color.rgb * diffuseEmissive.rgb * attenuation * angleFalloff * DiffuseCoefficient(normal, lightDirection);
-        specular += spotLight.color.rgb * specularShininess.rgb * attenuation * angleFalloff * SpecularCoefficient(normal, lightDirection, viewDirection, specularShininess.a);
+        diffuseResult += spotLight.color.rgb * diffuseColor * attenuation * angleFalloff * DiffuseCoefficient(normal, lightDirection);
+        specularResult += spotLight.color.rgb * specularColor * attenuation * angleFalloff * SpecularCoefficient(normal, lightDirection, viewDirection, shininess);
     }
-    float4 ret = { ambient + diffuse + specular, 1 };
+    float4 ret = { ambientResult + diffuseResult + specularResult + emissiveColor, 1 };
     return ret;
     
     

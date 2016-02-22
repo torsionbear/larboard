@@ -21,17 +21,25 @@ public:
     auto CreateMovable()->Movable *;
     auto CreateModel()->Model *;
     auto CreateShape(Model *)->Shape *;
-    auto CreateMaterial(std::string const& materialName)->Material *;
-    auto CreateTexture(std::string const& textureName, std::string const& filename)->Texture *;
+    auto CreateMaterial() -> Material * {
+        _materials.emplace_back(std::make_unique<Material>());
+        return _materials.back().get();
+    }
+    auto AddMaterial(std::unique_ptr<Material> && material) -> Material * {
+        _materials.push_back(move(material));
+        return _materials.back().get();
+    }
+    auto CreateTexture(std::string const& filename, TextureUsage::TextureType type = TextureUsage::DiffuseMap) -> Texture * {
+        _textures.emplace_back(std::make_unique<Texture>(filename, type));
+        return _textures.back().get();
+    }
     template <typename... Args>
     auto CreateMesh(Args&&... args) -> Mesh * {
-        _meshes.push_back(make_unique<Mesh>(std::forward<Args>(args)...));
+        _meshes.push_back(std::make_unique<Mesh>(std::forward<Args>(args)...));
         return _meshes.back().get();
     }
     auto CreateShaderProgram(std::string name, std::string const& vertexShaderFile, std::string const& fragmentShaderFile) -> ShaderProgram *;
     auto GetShaderProgram(std::string name) const -> ShaderProgram*;
-    auto GetMaterial(std::string const& materialName) const -> Material *;
-    auto GetTexture(std::string const& textureName) const -> Texture *;
     auto GetBvh() -> Bvh * {
         return _bvh.get();
     }
@@ -47,8 +55,8 @@ public:
     std::vector<std::unique_ptr<Movable>> _movables;
     std::vector<std::unique_ptr<Model>> _models;
     std::vector<std::unique_ptr<Shape>> _shapes;
-    std::map<std::string, std::unique_ptr<Material>> _materials;
-    std::map<std::string, std::unique_ptr<Texture>> _textures;
+    std::vector<std::unique_ptr<Texture>> _textures;
+    std::vector<std::unique_ptr<Material>> _materials;
     std::vector<std::unique_ptr<Mesh>> _meshes;
     std::unordered_map<std::string, std::unique_ptr < ShaderProgram >> _shaderProgram;
     std::unique_ptr<Bvh> _bvh = nullptr;

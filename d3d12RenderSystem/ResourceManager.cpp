@@ -26,7 +26,7 @@ auto ResourceManager::Init(ID3D12Device * device, IDXGIFactory1 * factory, Fence
     _frameResourceContainer.Init(device);
     _fencedCommandQueue = fencedCommandQueue;
     _swapChainRenderTargets.Init(factory, device, _fencedCommandQueue->GetCommandQueue(), width, height, hwnd);
-    _uploadHeap.Init(64*1024*1024, device, _fencedCommandQueue);
+    _uploadHeap.Init(256*1024*1024, device, _fencedCommandQueue);
 
     _rootSignature = CreateRootSignature();
     _defaultPso = CreatePso(_rootSignature.Get());
@@ -52,8 +52,24 @@ auto ResourceManager::LoadBegin(
     unsigned int textureCount,
     unsigned int materialCount) -> void {
     auto const lightDescriptorCount = 1u;
+    auto const nullDescriptorCount = 4u;
     AllocDsvDescriptorHeap(depthStencilCount);
-    AllocCbvSrvDescriptorHeap(cameraCount + modelCount + textureCount + materialCount + lightDescriptorCount);
+    AllocCbvSrvDescriptorHeap(cameraCount + modelCount + textureCount + materialCount + lightDescriptorCount + nullDescriptorCount);
+
+    // create null descriptor
+    for (auto i = 0u; i < nullDescriptorCount; ++i) {
+        D3D12_SHADER_RESOURCE_VIEW_DESC nullSrvDesc = {};
+        nullSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+        nullSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+        nullSrvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        nullSrvDesc.Texture2D.MipLevels = 1;
+        nullSrvDesc.Texture2D.MostDetailedMip = 0;
+        nullSrvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+
+        auto bufferInfo = _cbvSrvHeap.GetBufferInfo();
+        _nullBufferInfo.push_back(bufferInfo);
+        _device->CreateShaderResourceView(nullptr, &nullSrvDesc, bufferInfo._cpuHandle);
+    }
 }
 
 auto ResourceManager::LoadEnd() -> void {
@@ -115,6 +131,7 @@ auto ResourceManager::CreatePso(ID3D12RootSignature * rootSignature) -> ComPtr<I
     psoDesc.SampleMask = UINT_MAX;
     psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
     psoDesc.NumRenderTargets = 1;
+    psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
     psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
     psoDesc.SampleDesc.Count = 1;
     ThrowIfFailed(_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&ret)));
@@ -124,25 +141,31 @@ auto ResourceManager::CreatePso(ID3D12RootSignature * rootSignature) -> ComPtr<I
 auto ResourceManager::CreateRootSignature() -> ComPtr<ID3D12RootSignature> {
     auto ret = ComPtr<ID3D12RootSignature>{ nullptr };
 
-    auto ranges = array<CD3DX12_DESCRIPTOR_RANGE, 5>{};
-    ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RegisterConvention::Diffuse);
-    ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Transform);
-    ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Material);
-    ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Camera);
-    ranges[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Light);
+    auto ranges = array<CD3DX12_DESCRIPTOR_RANGE, 8>{};
+    ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RegisterConvention::DiffuseMap);
+    ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RegisterConvention::NormalMap);
+    ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RegisterConvention::SpecularMap);
+    ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RegisterConvention::EmissiveMap);
+    ranges[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Transform);
+    ranges[5].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Material);
+    ranges[6].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Camera);
+    ranges[7].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Light);
 
-    auto rootParameters = array<CD3DX12_ROOT_PARAMETER, 5>{};
+    auto rootParameters = array<CD3DX12_ROOT_PARAMETER, 8>{};
     rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
-    rootParameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_VERTEX);
+    rootParameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
     rootParameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_PIXEL);
-    rootParameters[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_ALL);
-    rootParameters[4].InitAsDescriptorTable(1, &ranges[4], D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[4].InitAsDescriptorTable(1, &ranges[4], D3D12_SHADER_VISIBILITY_VERTEX);
+    rootParameters[5].InitAsDescriptorTable(1, &ranges[5], D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[6].InitAsDescriptorTable(1, &ranges[6], D3D12_SHADER_VISIBILITY_ALL);
+    rootParameters[7].InitAsDescriptorTable(1, &ranges[7], D3D12_SHADER_VISIBILITY_PIXEL);
 
     auto sampler = D3D12_STATIC_SAMPLER_DESC{};
     sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-    sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-    sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-    sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+    sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
     sampler.MipLODBias = 0;
     sampler.MaxAnisotropy = 0;
     sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
@@ -383,8 +406,14 @@ auto ResourceManager::LoadMaterials(core::Material ** materials, unsigned int co
         _device->CreateConstantBufferView(&cbvDesc, bufferInfo._cpuHandle);
         _materialBufferInfos.push_back(bufferInfo);
         materialData.push_back(MaterialData{
-            material->GetDiffuseEmissive(),
-            material->GetSpecularShininess(),
+            material->GetDiffuse(),
+            material->_hasDiffuseMap,
+            material->GetEmissive(),
+            material->_hasEmissiveMap,
+            material->GetSpecular(),
+            material->_hasSpecularMap,
+            material->GetShininess(),
+            material->_hasNormalMap,
         });
     }
 

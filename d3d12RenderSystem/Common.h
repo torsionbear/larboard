@@ -9,6 +9,9 @@ namespace d3d12RenderSystem {
 using core::uint8;
 using core::uint32;
 using core::uint64;
+using core::int8;
+using core::int16;
+using core::int32;
 
 inline auto ThrowIfFailed(HRESULT hr) -> void {
     if (FAILED(hr)) {

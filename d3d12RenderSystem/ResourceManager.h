@@ -36,13 +36,31 @@ namespace d3d12RenderSystem {
 using Microsoft::WRL::ComPtr;
 
 struct RootSignatureParameterIndex {
-  enum {
-      DiffuseTexture = 0u,
-      Transform = 1u,
-      Material = 2u,
-      Camera = 3u,
-      Light = 4u,
+    enum {
+        DiffuseMap = 0u,
+        NormalMap = 1u,
+        SpecularMap = 2u,
+        EmissiveMap = 3u,
+        Transform = 4u,
+        Material = 5u,
+        Camera = 6u,
+        Light = 7u,
+        RootSignatureParameterIndexCount = Light + 1u,
   };
+  static auto GetTextureRootSignatureParameterIndex(core::TextureUsage::TextureType type) -> unsigned int {
+      switch (type) {
+      case core::TextureUsage::DiffuseMap:
+          return DiffuseMap;
+      case core::TextureUsage::NormalMap:
+          return NormalMap;
+      case core::TextureUsage::SpecularMap:
+          return SpecularMap;
+      case core::TextureUsage::EmissiveMap:
+          return EmissiveMap;
+      }
+      assert(false);
+      return 0u;
+  }
 };
 
 struct RegisterConvention {
@@ -53,7 +71,10 @@ struct RegisterConvention {
         Material = 3u,
     };
     enum {
-        Diffuse = 0u,
+        DiffuseMap = 0u,
+        NormalMap = 1u,
+        SpecularMap = 2u,
+        EmissiveMap = 3u,
     };
     enum {
         StaticSampler = 0u,
@@ -67,7 +88,7 @@ struct MeshDataInfo {
     unsigned int indexOffset;
     int baseVertex;
 };
-// constant buffer data members must be 4*32 bytes aligned, constant buffer itself must be D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT(256) bytes aligned.
+// constant buffer data members are 4*4 bytes packed, constant buffer itself must be D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT(256) bytes aligned.
 struct CameraData {
     core::Matrix4x4f viewTransform;
     core::Matrix4x4f projectTransform;
@@ -84,9 +105,15 @@ struct TransformData {
 };
 
 struct MaterialData {
-    core::Vector4f diffuseEmissive;
-    core::Vector4f specularShininess;
-    core::Matrix2x4f _pad;
+    core::Vector3f diffuse;
+    int32 hasDiffuseMap;
+    core::Vector3f emissive;
+    int32 hasEmissiveMap;
+    core::Vector3f specular;
+    int32 hasSpecularMap;
+    core::Float32 shininess;
+    int32 hasNormalMap;
+    core::Vector2f _pad1;
     core::Matrix4x4f _pad2[3];
 };
 
@@ -199,6 +226,9 @@ public:
     auto GetMaterialBufferInfo(unsigned int index) -> BufferInfo const& {
         return _materialBufferInfos[index];
     }
+    auto GetNullBufferInfo(unsigned int index) -> BufferInfo const& {
+        return _nullBufferInfo[index];
+    }
 private:
     auto CreatePso(ID3D12RootSignature * rootSignature)->ComPtr<ID3D12PipelineState>;
     auto CreateRootSignature()->ComPtr<ID3D12RootSignature>;
@@ -215,6 +245,7 @@ private:
     std::vector<BufferInfo> _depthStencilBufferInfos;
     std::vector<BufferInfo> _textureBufferInfos;
     BufferInfo _lightBufferInfo;
+    std::vector<BufferInfo> _nullBufferInfo;
     std::vector<BufferInfo> _materialBufferInfos;
 
     std::vector<ComPtr<ID3D12Resource>> _uploadBuffers;

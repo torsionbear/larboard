@@ -8,7 +8,7 @@ namespace core {
 auto StaticModelGroup::Load() -> void {
     // texture
     for (auto & t : _textures) {
-        t.second->Load();
+        t->Load();
     }
     // build BVH
     auto shapes = vector<Shape *>{};
@@ -51,20 +51,6 @@ auto StaticModelGroup::CreateShape(Model* model) -> Shape * {
     return _shapes.back().get();
 }
 
-auto StaticModelGroup::CreateMaterial(std::string const & materialName) -> Material * {
-    auto newMaterial = make_unique<Material>();
-    auto ret = newMaterial.get();
-    _materials[materialName] = move(newMaterial);
-    return ret;
-}
-
-auto StaticModelGroup::CreateTexture(string const& textureName, string const& filename) -> Texture * {
-    auto newTexture = make_unique<Texture>(filename);
-    auto ret = newTexture.get();
-    _textures[textureName] = move(newTexture);
-    return ret;
-}
-
 auto StaticModelGroup::GetShaderProgram(std::string name) const -> ShaderProgram * {
     if (_shaderProgram.find(name) == _shaderProgram.end()) {
         return nullptr;
@@ -75,14 +61,6 @@ auto StaticModelGroup::GetShaderProgram(std::string name) const -> ShaderProgram
 auto StaticModelGroup::CreateShaderProgram(string name, string const& vertexShaderFile, string const& fragmentShaderFile) -> ShaderProgram * {
     _shaderProgram[name] = make_unique<ShaderProgram>(vertexShaderFile, fragmentShaderFile);
     return _shaderProgram.at(name).get();
-}
-
-auto StaticModelGroup::GetMaterial(std::string const & materialName) const -> Material * {
-    return _materials.at(materialName).get();
-}
-
-auto StaticModelGroup::GetTexture(std::string const & textureName) const -> Texture * {
-    return _textures.at(textureName).get();
 }
 
 }

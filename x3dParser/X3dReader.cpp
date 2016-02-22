@@ -130,10 +130,10 @@ auto X3dReader::ReadShapes(vector<Shape*> const& shapes, core::StaticModelGroup 
 	for (auto const& shape : shapes) {
 		auto newShape = staticModelGroup.CreateShape(ret);
 
-		auto appearance = shape->GetAppearance();
-		auto imageTexture = appearance->GetImageTexture();
-		if (nullptr != imageTexture) {
-			newShape->AddTexture(ReadImageTexture(*imageTexture, staticModelGroup));
+		auto appearanceNode = shape->GetAppearance();
+		auto imageTextureNode = appearanceNode->GetImageTexture();
+		if (nullptr != imageTextureNode) {
+			newShape->AddTexture(ReadImageTexture(*imageTextureNode, staticModelGroup));
             if (staticModelGroup.GetShaderProgram("textured") == nullptr) {
                 staticModelGroup.CreateShaderProgram("textured", "shader/textured_v.shader", "shader/textured_f.shader");
             }
@@ -144,10 +144,27 @@ auto X3dReader::ReadShapes(vector<Shape*> const& shapes, core::StaticModelGroup 
             }
             newShape->SetShaderProgram(staticModelGroup.GetShaderProgram("untextured"));
         }
-		auto material = appearance->GetMaterial();
-		if (nullptr != material) {
-			newShape->SetMaterial(ReadMaterial(*material, staticModelGroup));
-		}
+        auto materialNode = appearanceNode->GetMaterial();
+        if (nullptr != materialNode) {
+            auto material = ReadMaterial(*materialNode, staticModelGroup);
+            for (auto & texture : newShape->GetTextures()) {
+                switch (texture->GetType()) {
+                case core::TextureUsage::DiffuseMap:
+                    material->_hasDiffuseMap = true;
+                    break;
+                case core::TextureUsage::NormalMap:
+                    material->_hasNormalMap = true;
+                    break;
+                case core::TextureUsage::SpecularMap:
+                    material->_hasSpecularMap = true;
+                    break;
+                case core::TextureUsage::EmissiveMap:
+                    material->_hasEmissiveMap = true;
+                    break;
+                }
+            }
+            newShape->SetMaterial(material);
+        }
 		auto indexedTriangleSet = shape->GetIndexedTriangleSet();
 		if (indexedTriangleSet != nullptr) {
 			newShape->SetMesh(ReadIndexedTriangleSet(*indexedTriangleSet, staticModelGroup));
@@ -163,34 +180,58 @@ auto X3dReader::ReadShapes(vector<Shape*> const& shapes, core::StaticModelGroup 
 auto X3dReader::ReadMaterial(Material const & material, core::StaticModelGroup & staticModelGroup) -> core::Material * {
 	auto use = material.GetUse();
 	if (!use.empty()) {
-		return staticModelGroup.GetMaterial(use);
+        // hack here: always make a new copy of material in case of USE.
+        // core::Material contains texture information, which may be altered later,
+        // so the 2 same x3dParser::Material nodes might become 2 different core::Material instance.
+        auto copy = make_unique<core::Material>(*_materials[use]);
+        return staticModelGroup.AddMaterial(std::move(copy));
 	}
-	auto materialName = material.GetDef();
-	auto ret = staticModelGroup.CreateMaterial(materialName);
-
+	auto ret = staticModelGroup.CreateMaterial();
 	auto diffuse = material.GetDiffuseColor();
-	ret->SetDiffuse({ diffuse.x, diffuse.y, diffuse.z, 1.0f });
+	ret->SetDiffuse(ToVector3(diffuse));
 	auto specular = material.GetSpecularColor();
-	ret->SetSpecular({ specular.x, specular.y, specular.z, 1.0f });
+	ret->SetSpecular(ToVector3(specular));
 	auto emissive = material.GetEmissiveColor();
-	ret->SetEmissive(0.0f);
+	ret->SetEmissive(ToVector3(material.GetEmissiveColor()));
 	ret->SetShininess(material.GetShininess());
 	ret->SetTransparency(material.GetTransparency());
 
+    auto materialName = material.GetDef();
+    if (!materialName.empty()) {
+        _materials[materialName] = ret;
+    }
 	return ret;
 }
 
-auto X3dReader::ReadImageTexture(ImageTexture const& imageTexture, core::StaticModelGroup & staticModelGroup) -> core::Texture * {
+auto X3dReader::ReadImageTexture(ImageTexture const& imageTexture, core::StaticModelGroup & staticModelGroup) -> Texture * {
 	auto use = imageTexture.GetUse();
 	if (!use.empty()) {
-		return staticModelGroup.GetTexture(use);
-	}
-	auto textureName = imageTexture.GetDef();
-	auto urls = imageTexture.GetUrl();
+        return _imageTextures[use];
+    }
+    auto urls = imageTexture.GetUrl();
 	// todo: support multiple urls. for now only use first url 
 	// which is relative path in x3d file generated from blender
+    auto url = urls[0];
+    auto type = core::TextureUsage::TextureType::DiffuseMap;
+    auto suffixBegin = url.find_last_of('_');
+    if (suffixBegin != string::npos) {
+        auto suffixEnd = url.find_last_of('.');
+        auto suffix = url.substr(suffixBegin, suffixEnd - suffixBegin);
+        if (suffix == "_normalMap") {
+            type = core::TextureUsage::NormalMap;
+        } else if (suffix == "_specularMap") {
+            type = core::TextureUsage::SpecularMap;
+        } else if (suffix == "_emissiveMap") {
+            type = core::TextureUsage::EmissiveMap;
+        }
+    }
 	auto pathName = _pathName.parent_path().append(urls[0]);
-	return staticModelGroup.CreateTexture(textureName, pathName.generic_string());
+	auto ret = staticModelGroup.CreateTexture(pathName.generic_string(), type);
+    auto textureName = imageTexture.GetDef();
+    if (!textureName.empty()) {
+        _imageTextures[textureName] = ret;
+    }
+    return ret;
 }
 
 auto X3dReader::ReadViewpoint(Viewpoint const& viewpoint) -> Camera * {

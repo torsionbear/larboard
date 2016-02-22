@@ -42,6 +42,11 @@ auto LoadScene_dx2(core::Scene * scene) -> void {
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
 }
 
+auto LoadScene_dx3(core::Scene * scene) -> void {
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_02/xsh_02_house.x3d").Read(scene);
+    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
+}
+
 auto LoadScene0(core::Scene * scene) -> void {
 	x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square/square.x3d").Read(scene);
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
@@ -95,7 +100,7 @@ int main_gl() {
     auto scene = make_unique<core::Scene>();
     auto cameraController = make_unique<core::CameraController>(scene.get());
 
-    LoadScene2(scene.get());
+    LoadScene3(scene.get());
     scene->Load();
 
     renderer->Prepare();
@@ -137,7 +142,7 @@ int main_dx() {
 
 
     auto scene = make_unique<core::Scene>();
-    LoadScene_dx2(scene.get());
+    LoadScene_dx3(scene.get());
     scene->Load();
 
     d3d12RenderSystem::RenderSystem renderSystem;
@@ -177,12 +182,12 @@ int main_dx() {
     // load materials
     auto materials = vector<core::Material *>{};
     for (auto & material : scene->GetStaticModelGroup()._materials) {
-        materials.push_back(material.second.get());
+        materials.push_back(material.get());
     }
     resourceManager.LoadMaterials(materials.data(), materials.size());
     // load textures
     for (auto & t : scene->GetStaticModelGroup()._textures) {
-        resourceManager.LoadTexture(t.second.get());
+        resourceManager.LoadTexture(t.get());
     }
     // load lights
     auto ambientLights = vector<core::AmbientLight *>{};

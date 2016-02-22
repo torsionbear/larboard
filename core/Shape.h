@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
 #include "Material.h"
 #include "Texture.h"
@@ -43,8 +44,20 @@ public:
     auto GetTextures() const -> std::vector<Texture *> const& {
         return _textures;
     }
-    auto AddTexture(Texture * texture) -> void;
-    auto GetAabb() -> Aabb const&;
+    auto AddTexture(Texture * texture) -> void {
+        _textures.push_back(texture);
+    }
+    auto GetAabb() -> Aabb const& {
+        // todo: need to update Aabb when shape's model is transformed
+        if (_aabb == nullptr) {
+            _aabb = std::make_unique<Aabb>();
+            for (auto const& vertex : _mesh->GetVertex()) {
+                auto transformedVertex = _model->GetTransform() * Point4f { vertex.coord(0), vertex.coord(1), vertex.coord(2), 1.0f };
+                _aabb->Expand(transformedVertex);
+            }
+        }
+        return *_aabb;
+    }
 private:
 	Material * _material;
 	Model * _model;

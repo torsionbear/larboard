@@ -44,14 +44,14 @@ auto ResourceManager::LoadStaticModelGroup(StaticModelGroup * staticModelGroup) 
     LoadModels(staticModelGroup->_models);
     auto materials = vector<Material *>();
     for (auto & m : staticModelGroup->_materials) {
-        materials.push_back(m.second.get());
+        materials.push_back(m.get());
     }
     LoadMaterials(materials);
     for (auto & s : staticModelGroup->_shaderProgram) {
         s.second->SendToCard();
     }
     for (auto & t : staticModelGroup->_textures) {
-        LoadTexture(t.second.get());
+        LoadTexture(t.get());
     }
     LoadMeshes(staticModelGroup->_meshes);
     LoadBvh(staticModelGroup->_bvh.get());

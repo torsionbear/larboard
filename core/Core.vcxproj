@@ -99,7 +99,6 @@
     <ClCompile Include="SceneNode.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="ShaderProgram.cpp" />
-    <ClCompile Include="Shape.cpp" />
     <ClCompile Include="SkyBox.cpp" />
     <ClCompile Include="Ssao.cpp" />
     <ClCompile Include="StaticModelGroup.cpp" />

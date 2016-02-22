@@ -32,6 +32,12 @@ auto Renderer::DrawBegin() -> void {
     auto depthStencilBufferInfo = _resourceManager->GetDepthStencilBufferInfo(0);
     commandList->OMSetRenderTargets(1, &rtv, FALSE, &depthStencilBufferInfo._cpuHandle);
 
+    // null descriptors
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::DiffuseMap, _resourceManager->GetNullBufferInfo(0)._gpuHandle);
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::NormalMap, _resourceManager->GetNullBufferInfo(1)._gpuHandle);
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::SpecularMap, _resourceManager->GetNullBufferInfo(2)._gpuHandle);
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::EmissiveMap, _resourceManager->GetNullBufferInfo(3)._gpuHandle);
+
     // Record commands.
     const float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
     commandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
@@ -68,19 +74,24 @@ auto Renderer::Init(ResourceManager * resourceManager, unsigned int width, unsig
 }
 
 auto Renderer::RenderShape(core::Shape const * shape) -> void {
-    // draw call
-    auto const& meshRenderData = _resourceManager->GetMeshDataInfo(shape->GetMesh()->_renderDataId);
-    auto const& transformBufferInfo = _resourceManager->GetTransformBufferInfo(shape->GetModel()->_renderDataId);
-    auto const& textureBufferInfo = _resourceManager->GetTextureBufferInfo(shape->GetTextures()[0]->_renderDataId);
-    auto const& materialBufferInfo = _resourceManager->GetMaterialBufferInfo(shape->GetMaterial()->_renderDataId);
-
-    // todo: only call the following 2 IASet* functions when necessary
     auto commandList = _resourceManager->GetCommandList();
+    // transform
+    auto const& transformBufferInfo = _resourceManager->GetTransformBufferInfo(shape->GetModel()->_renderDataId);
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Transform, transformBufferInfo._gpuHandle);
+    // material
+    auto const& materialBufferInfo = _resourceManager->GetMaterialBufferInfo(shape->GetMaterial()->_renderDataId);
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Material, materialBufferInfo._gpuHandle);
+    // texture
+    for (auto texture : shape->GetTextures()) {
+        auto const& textureBufferInfo = _resourceManager->GetTextureBufferInfo(shape->GetTextures()[0]->_renderDataId);
+        auto parameterIndex = RootSignatureParameterIndex::GetTextureRootSignatureParameterIndex(texture->GetType());
+        commandList->SetGraphicsRootDescriptorTable(parameterIndex, textureBufferInfo._gpuHandle);
+    }
+    // vertex
+    auto const& meshRenderData = _resourceManager->GetMeshDataInfo(shape->GetMesh()->_renderDataId);
+    // todo: only call the following 2 IASet* functions when necessary
     commandList->IASetVertexBuffers(0, 1, &meshRenderData.vbv);
     commandList->IASetIndexBuffer(&meshRenderData.ibv);
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Transform, transformBufferInfo._gpuHandle);
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::DiffuseTexture, textureBufferInfo._gpuHandle);
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Material, materialBufferInfo._gpuHandle);
     commandList->DrawIndexedInstanced(meshRenderData.indexCount, 1, meshRenderData.indexOffset, meshRenderData.baseVertex, 0);
 }
 
@@ -88,12 +99,6 @@ auto Renderer::UseCamera(core::Camera const * camera) -> void {
     auto commandList = _resourceManager->GetCommandList();
     auto const& cameraBufferInfo = _resourceManager->GetCameraBufferInfo(camera->_renderDataId);
     commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Camera, cameraBufferInfo._gpuHandle);
-}
-
-auto Renderer::UseTexture(core::Texture const* texture, core::TextureUsage::TextureType textureType) -> void {
-    auto commandList = _resourceManager->GetCommandList();
-    auto const& textureBufferInfo = _resourceManager->GetTextureBufferInfo(texture->_renderDataId);
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::DiffuseTexture, textureBufferInfo._gpuHandle);
 }
 
 auto Renderer::UseLight() -> void {
