@@ -64,7 +64,7 @@ auto Renderer::ToggleBackFace() -> void {
 
 }
 
-auto Renderer::Init(ResourceManager * resourceManager, unsigned int width, unsigned int height) -> void {
+Renderer::Renderer(ResourceManager * resourceManager, unsigned int width, unsigned int height) {
     _resourceManager = resourceManager;
     _viewport.Width = static_cast<float>(width);
     _viewport.Height = static_cast<float>(height);

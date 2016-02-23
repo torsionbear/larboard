@@ -8,27 +8,34 @@
 
 using Microsoft::WRL::ComPtr;
 using std::array;
+using std::make_unique;
 
 namespace d3d12RenderSystem {
+
+RenderSystem::~RenderSystem() {
+    _resourceManager.reset();
+    _renderer.reset();
+#if defined(_DEBUG)
+    //check if any d3d object is leaked
+    _dxgiDebug1->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+#endif
+}
 
 auto RenderSystem::Init(unsigned int width, unsigned int height) -> void {
     EnableDebugLayer();
     auto factory = CreateFactory();
-    _device = CreateDevice(factory.Get());
-    _fencedCommandQueue.Init(_device.Get());
     _renderWindow.Create(width, height, L"RenderWindow");
-    _resourceManager.Init(_device.Get(), factory.Get(), &_fencedCommandQueue, width, height, _renderWindow.GetHwnd());
-    _srvHeap = CreateSrvHeap(_device.Get(), 1);
-    _renderer.Init(&_resourceManager, width, height);
+    _resourceManager = make_unique<ResourceManager>(factory.Get(), width, height, _renderWindow.GetHwnd());
+    _renderer = make_unique<Renderer>(_resourceManager.get(), width, height);
 }
 
 auto RenderSystem::EnableDebugLayer() -> void {
 #if defined(_DEBUG)
-    // 0. enable d3d12 debug layer
     auto d3d12Debug = ComPtr<ID3D12Debug>{ nullptr };
     if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&d3d12Debug)))) {
         d3d12Debug->EnableDebugLayer();
     }
+    DXGIGetDebugInterface1(0, IID_PPV_ARGS(&_dxgiDebug1));
 #endif
 }
 
@@ -40,7 +47,6 @@ auto RenderSystem::CreateFactory() -> ComPtr<IDXGIFactory1> {
 
 auto RenderSystem::CreateDevice(IDXGIFactory1 * factory) -> ComPtr<ID3D12Device> {
     ComPtr<ID3D12Device> device;
-
     auto adapter = ComPtr<IDXGIAdapter1>{ nullptr };
     for (auto i = 0u; DXGI_ERROR_NOT_FOUND != factory->EnumAdapters1(i, &adapter); ++i) {
         auto description = DXGI_ADAPTER_DESC1{};
@@ -54,16 +60,6 @@ auto RenderSystem::CreateDevice(IDXGIFactory1 * factory) -> ComPtr<ID3D12Device>
     }
     ThrowIfFailed(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device)));
     return device;
-}
-
-auto RenderSystem::CreateSrvHeap(ID3D12Device * device, unsigned int descriptorCount) -> ComPtr<ID3D12DescriptorHeap> {
-    auto ret = ComPtr<ID3D12DescriptorHeap>{ nullptr };
-    D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-    srvHeapDesc.NumDescriptors = descriptorCount;
-    srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-    srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    ThrowIfFailed(device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&ret)));
-    return ret;
 }
 
 }

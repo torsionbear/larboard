@@ -142,52 +142,52 @@ int main_dx() {
 
 
     auto scene = make_unique<core::Scene>();
-    LoadScene_dx1(scene.get());
+    LoadScene_dx2(scene.get());
     scene->Load();
 
     d3d12RenderSystem::RenderSystem renderSystem;
     renderSystem.Init(width, height);
 
-    auto & resourceManager = renderSystem.GetResourceManager();
-    auto & renderer = renderSystem.GetRenderer();
+    auto resourceManager = renderSystem.GetResourceManager();
+    auto renderer = renderSystem.GetRenderer();
     auto & renderWindow = renderSystem.GetRenderWindow();
     auto cameraController = core::CameraController(scene.get());
 
-    auto inputHandler = InputHandler(&renderer, scene.get(), &cameraController, width, height);
+    auto inputHandler = InputHandler(renderer, scene.get(), &cameraController, width, height);
     renderSystem.GetRenderWindow().RegisterInputHandler(std::function<void(HWND, UINT, WPARAM, LPARAM)>(inputHandler));
 
     // load
-    resourceManager.LoadBegin(
+    resourceManager->LoadBegin(
         1,
         1,
         scene->GetStaticModelGroup().GetMeshes().size(),
         scene->GetStaticModelGroup().GetModels().size(),
         scene->GetStaticModelGroup()._textures.size(),
         scene->GetStaticModelGroup()._materials.size());
-    resourceManager.CreateDepthStencil(width, height);
+    resourceManager->CreateDepthStencil(width, height);
     // load cameras
-    resourceManager.LoadCamera(scene->GetActiveCamera(), 1);
+    resourceManager->LoadCamera(scene->GetActiveCamera(), 1);
     // load meshes
     auto meshes = vector<core::Mesh *>{};
     for (auto & m : scene->GetStaticModelGroup().GetMeshes()) {
         meshes.push_back(m.get());
     }
-    resourceManager.LoadMeshes(meshes.data(), meshes.size(), sizeof(core::Vertex));
+    resourceManager->LoadMeshes(meshes.data(), meshes.size(), sizeof(core::Vertex));
     // load models
     auto models = vector<core::Model *>{};
     for (auto & model : scene->GetStaticModelGroup().GetModels()) {
         models.push_back(model.get());
     }
-    resourceManager.LoadModels(models.data(), models.size());
+    resourceManager->LoadModels(models.data(), models.size());
     // load materials
     auto materials = vector<core::Material *>{};
     for (auto & material : scene->GetStaticModelGroup()._materials) {
         materials.push_back(material.get());
     }
-    resourceManager.LoadMaterials(materials.data(), materials.size());
+    resourceManager->LoadMaterials(materials.data(), materials.size());
     // load textures
     for (auto & t : scene->GetStaticModelGroup()._textures) {
-        resourceManager.LoadDdsTexture(t.get());
+        resourceManager->LoadDdsTexture(t.get());
     }
     // load lights
     auto ambientLights = vector<core::AmbientLight *>{};
@@ -206,26 +206,26 @@ int main_dx() {
     for (auto & spotLight : scene->_spotLights) {
         spotLights.push_back(spotLight.get());
     }
-    resourceManager.LoadLight(
+    resourceManager->LoadLight(
         ambientLights.data(), ambientLights.size(),
         directionalLights.data(), directionalLights.size(),
         pointLights.data(), pointLights.size(),
         spotLights.data(), spotLights.size());
-    resourceManager.LoadEnd();
+    resourceManager->LoadEnd();
 
     while (renderWindow.Step()) {
-        resourceManager.PrepareResource();
+        resourceManager->PrepareResource();
         // update
         cameraController.Step();
-        resourceManager.UpdateCamera(*scene->GetActiveCamera());
-        renderer.DrawBegin();
-        renderer.UseCamera(scene->GetActiveCamera());
-        renderer.UseLight();
+        resourceManager->UpdateCamera(*scene->GetActiveCamera());
+        renderer->DrawBegin();
+        renderer->UseCamera(scene->GetActiveCamera());
+        renderer->UseLight();
         // render
         for (auto & shape : scene->GetStaticModelGroup().GetShapes()) {
-            renderer.RenderShape(shape.get());
+            renderer->RenderShape(shape.get());
         }
-        renderer.DrawEnd();
+        renderer->DrawEnd();
     }
 
     return 0;

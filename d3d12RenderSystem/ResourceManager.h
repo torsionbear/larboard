@@ -157,10 +157,13 @@ struct PersistentMappedBuffer{
 
 class ResourceManager {
 public:
-    ResourceManager() {
+    auto static CreateDevice(IDXGIFactory1 * factory)->ComPtr<ID3D12Device>;
+public:
+    ResourceManager(IDXGIFactory1 * factory, unsigned int width, unsigned int height, HWND hwnd);
+    ~ResourceManager() {
+        _fencedCommandQueue.SyncLatest();
     }
 public:
-    auto Init(ID3D12Device * device, IDXGIFactory1 * factory, FencedCommandQueue * fencedCommandQueue, unsigned int width, unsigned int height, HWND hwnd) -> void;
     auto PrepareResource() -> void;
     auto LoadBegin(unsigned int depthStencilCount, unsigned int cameraCount, unsigned int meshCount, unsigned int modelCount, unsigned int textureCount, unsigned int materialCount) -> void;
     auto LoadEnd() -> void;
@@ -194,7 +197,7 @@ public:
         return _swapChainRenderTargets;
     }
     auto GetFencedCommandQueue() -> FencedCommandQueue * {
-        return _fencedCommandQueue;
+        return &_fencedCommandQueue;
     }
     auto GetCbvSrvDescriptorHeap() const -> DescriptorHeap const& {
         return _cbvSrvHeap;
@@ -203,10 +206,10 @@ public:
         return _dsvHeap;
     }
     auto AllocCbvSrvDescriptorHeap(unsigned int size) -> void {
-        _cbvSrvHeap.Init(_device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, size, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+        _cbvSrvHeap.Init(_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, size, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
     }
     auto AllocDsvDescriptorHeap(unsigned int size) -> void {
-        _dsvHeap.Init(_device, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, size, D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
+        _dsvHeap.Init(_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_DSV, size, D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
     }
     auto GetCameraBufferInfo(unsigned int index) -> BufferInfo const& {
         return _cameraBufferInfos[index];
@@ -234,7 +237,7 @@ private:
     auto CreateRootSignature()->ComPtr<ID3D12RootSignature>;
     auto CreateCommandList(ID3D12PipelineState * pso, ID3D12CommandAllocator * allocator)->ComPtr<ID3D12GraphicsCommandList>;
 private:
-    ID3D12Device * _device;
+    ComPtr<ID3D12Device> _device;
     UploadHeap _uploadHeap;
 
     DescriptorHeap _dsvHeap;
@@ -253,7 +256,7 @@ private:
 
     FrameResourceContainer<FrameResource, 2> _frameResourceContainer;
     SwapChainRenderTargets _swapChainRenderTargets;
-    FencedCommandQueue * _fencedCommandQueue;
+    FencedCommandQueue _fencedCommandQueue;
 
     ComPtr<ID3D12GraphicsCommandList> _commandList;
     ComPtr<ID3D12PipelineState> _defaultPso;

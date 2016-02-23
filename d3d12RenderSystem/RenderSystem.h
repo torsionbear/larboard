@@ -4,6 +4,7 @@
 
 #include <d3d12.h>
 #include <dxgi1_4.h>
+#include <dxgidebug.h>
 
 #include <wrl.h>
 
@@ -26,37 +27,30 @@ struct Vertex {
 
 class RenderSystem {
 public:
-    ~RenderSystem() {
-        _fencedCommandQueue.SyncLatest();
-    }
+    ~RenderSystem();
 public:
-    auto GetResourceManager() -> ResourceManager & {
-        return _resourceManager;
+    auto GetResourceManager() -> ResourceManager * {
+        return _resourceManager.get();
     }
-    auto GetRenderer() -> Renderer & {
-        return _renderer;
+    auto GetRenderer() -> Renderer * {
+        return _renderer.get();
     }
     auto GetRenderWindow() -> RenderWindow & {
         return _renderWindow;
     }
     auto Init(unsigned int width, unsigned int height) -> void;
 private:
-    auto static EnableDebugLayer() -> void;
+    auto EnableDebugLayer() -> void;
     auto static CreateFactory() -> ComPtr<IDXGIFactory1>;
     auto static CreateDevice(IDXGIFactory1 * factory) -> ComPtr<ID3D12Device>;
-    auto static CreateSrvHeap(ID3D12Device * device, unsigned int descriptorCount) -> ComPtr<ID3D12DescriptorHeap>;
 
 private:
-    ComPtr<ID3D12Device> _device;
-    FencedCommandQueue _fencedCommandQueue;
-
-    ComPtr<ID3D12DescriptorHeap> _srvHeap;
-    ComPtr<ID3D12GraphicsCommandList> _commandList;
-    ComPtr<ID3D12Resource> _uploadHeap;
-
-    ResourceManager _resourceManager;
-    Renderer _renderer;
+    std::unique_ptr<ResourceManager> _resourceManager;
+    std::unique_ptr<Renderer> _renderer;
     RenderWindow _renderWindow;
+#if defined(_DEBUG)
+    ComPtr<IDXGIDebug1> _dxgiDebug1;
+#endif
 };
 
 }

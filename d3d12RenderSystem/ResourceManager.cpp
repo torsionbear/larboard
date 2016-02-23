@@ -21,12 +21,29 @@ using std::unique_ptr;
 
 namespace d3d12RenderSystem {
 
-auto ResourceManager::Init(ID3D12Device * device, IDXGIFactory1 * factory, FencedCommandQueue * fencedCommandQueue, unsigned int width, unsigned int height, HWND hwnd) -> void {
-    _device = device;
-    _frameResourceContainer.Init(device);
-    _fencedCommandQueue = fencedCommandQueue;
-    _swapChainRenderTargets.Init(factory, device, _fencedCommandQueue->GetCommandQueue(), width, height, hwnd);
-    _uploadHeap.Init(256*1024*1024, device, _fencedCommandQueue);
+auto ResourceManager::CreateDevice(IDXGIFactory1 * factory) -> ComPtr<ID3D12Device> {
+    ComPtr<ID3D12Device> device;
+    auto adapter = ComPtr<IDXGIAdapter1>{ nullptr };
+    for (auto i = 0u; DXGI_ERROR_NOT_FOUND != factory->EnumAdapters1(i, &adapter); ++i) {
+        auto description = DXGI_ADAPTER_DESC1{};
+        adapter->GetDesc1(&description);
+        //if (description.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
+        //    continue;
+        //}
+        if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr))) {
+            break;
+        }
+    }
+    ThrowIfFailed(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device)));
+    return device;
+}
+
+ResourceManager::ResourceManager(IDXGIFactory1 * factory, unsigned int width, unsigned int height, HWND hwnd){
+    _device = CreateDevice(factory);
+    _frameResourceContainer.Init(_device.Get());
+    _fencedCommandQueue.Init(_device.Get());
+    _swapChainRenderTargets.Init(factory, _device.Get(), _fencedCommandQueue.GetCommandQueue(), width, height, hwnd);
+    _uploadHeap.Init(256*1024*1024, _device.Get(), &_fencedCommandQueue);
 
     _rootSignature = CreateRootSignature();
     _defaultPso = CreatePso(_rootSignature.Get());
@@ -36,9 +53,9 @@ auto ResourceManager::Init(ID3D12Device * device, IDXGIFactory1 * factory, Fence
 
 auto ResourceManager::PrepareResource() -> void {
     auto & frameResource = _frameResourceContainer.Switch();
-    _fencedCommandQueue->Sync(frameResource.GetFenceValue());
+    _fencedCommandQueue.Sync(frameResource.GetFenceValue());
     frameResource.Reset();
-    frameResource.SetFenceValue(_fencedCommandQueue->GetFenceValue());
+    frameResource.SetFenceValue(_fencedCommandQueue.GetFenceValue());
 
     // reset command list immediately after submission to reuse the allocated memory.
     ThrowIfFailed(_commandList->Reset(frameResource.GetCommandAllocator(), _defaultPso.Get()));
@@ -74,8 +91,8 @@ auto ResourceManager::LoadBegin(
 
 auto ResourceManager::LoadEnd() -> void {
     ThrowIfFailed(_commandList->Close());
-    _fencedCommandQueue->ExecuteCommandList(_commandList.Get(), 1);
-    _fencedCommandQueue->SyncLatest();
+    _fencedCommandQueue.ExecuteCommandList(_commandList.Get(), 1);
+    _fencedCommandQueue.SyncLatest();
 }
 
 auto ResourceManager::CreatePso(ID3D12RootSignature * rootSignature) -> ComPtr<ID3D12PipelineState> {
@@ -222,10 +239,9 @@ auto ResourceManager::CreateDepthStencil(unsigned int width, unsigned int height
         D3D12_RESOURCE_STATE_DEPTH_WRITE,
         &clearValue,
         IID_PPV_ARGS(&_defaultBuffers.back())));
-    auto buffer = _defaultBuffers.back().Get();
 
     // Create the depth stencil view.
-    _device->CreateDepthStencilView(buffer, nullptr, bufferInfo._cpuHandle);
+    _device->CreateDepthStencilView(_defaultBuffers.back().Get(), nullptr, bufferInfo._cpuHandle);
     _depthStencilBufferInfos.push_back(bufferInfo);
 }
 
@@ -434,10 +450,16 @@ auto ResourceManager::LoadDdsTexture(core::Texture * texture) -> void {
     auto filename_wchar = converter.from_bytes(filename);
 
     // 3. create texture (CreateDDSTextureFromFile() uses upload heap. Need to upload data to default heap later)
-    _uploadBuffers.emplace_back();
-    auto uploadBuffer = _uploadBuffers.back().Get();
+    //_uploadBuffers.emplace_back();
+    //auto uploadBuffer = _uploadBuffers.back().Get();
+    auto uploadBuffer = static_cast<ID3D12Resource *>(nullptr);
     auto srvDesc = D3D12_SHADER_RESOURCE_VIEW_DESC{};
-    ThrowIfFailed(DirectX::CreateDDSTextureFromFile(_device, filename_wchar.data(), &uploadBuffer, &srvDesc));
+    ThrowIfFailed(DirectX::CreateDDSTextureFromFile(_device.Get(), filename_wchar.data(), &uploadBuffer, &srvDesc));
+
+    _uploadBuffers.emplace_back();
+    _uploadBuffers.back().Attach(uploadBuffer);
+    //_uploadBuffers.emplace_back(uploadBuffer);
+    //uploadBuffer->Release();
 
     // 4. upload texture
     auto desc = uploadBuffer->GetDesc();
