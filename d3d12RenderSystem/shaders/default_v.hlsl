@@ -31,6 +31,6 @@ PSInput main(float3 position : POSITION, float3 normal : NORMAL, float2 texCoord
     newPosition = mul(projectTransform, newPosition);
     result.position = newPosition;
     result.normal = mul(normalTransform, float4(normal, 0));
-    result.texCoord = texCoord;
+    result.texCoord = float2(texCoord.x, 1.0 - texCoord.y); // reverse y coordinate because dx's texture coordinate origin is at top left
     return result;
 }
