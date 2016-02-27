@@ -3,9 +3,6 @@
 #include <array>
 #include <vector>
 #include <memory>
-// for string to wstring conversion
-#include <locale>
-#include <codecvt>
 
 #include "d3dx12.h"
 #include <D3Dcompiler.h>
@@ -18,6 +15,7 @@
 using std::array;
 using std::vector;
 using std::unique_ptr;
+using std::string;
 
 namespace d3d12RenderSystem {
 
@@ -46,9 +44,8 @@ ResourceManager::ResourceManager(IDXGIFactory1 * factory, unsigned int width, un
     _uploadHeap.Init(256*1024*1024, _device.Get(), &_fencedCommandQueue);
 
     _rootSignature = CreateRootSignature();
-    _defaultPso = CreatePso(_rootSignature.Get());
     auto allocator = _frameResourceContainer.GetCurrent().GetCommandAllocator();
-    _commandList = CreateCommandList(_defaultPso.Get(), allocator);
+    _commandList = CreateCommandList(nullptr, allocator);
 }
 
 auto ResourceManager::PrepareResource() -> void {
@@ -58,7 +55,7 @@ auto ResourceManager::PrepareResource() -> void {
     frameResource.SetFenceValue(_fencedCommandQueue.GetFenceValue());
 
     // reset command list immediately after submission to reuse the allocated memory.
-    ThrowIfFailed(_commandList->Reset(frameResource.GetCommandAllocator(), _defaultPso.Get()));
+    ThrowIfFailed(_commandList->Reset(frameResource.GetCommandAllocator(), nullptr));
 }
 
 auto ResourceManager::LoadBegin(
@@ -67,11 +64,12 @@ auto ResourceManager::LoadBegin(
     unsigned int meshCount,
     unsigned int modelCount,
     unsigned int textureCount,
-    unsigned int materialCount) -> void {
+    unsigned int materialCount,
+    unsigned int skyBoxCount) -> void {
     auto const lightDescriptorCount = 1u;
     auto const nullDescriptorCount = 4u;
     AllocDsvDescriptorHeap(depthStencilCount);
-    AllocCbvSrvDescriptorHeap(cameraCount + modelCount + textureCount + materialCount + lightDescriptorCount + nullDescriptorCount);
+    AllocCbvSrvDescriptorHeap(cameraCount + modelCount + textureCount + materialCount + lightDescriptorCount + nullDescriptorCount + skyBoxCount);
 
     // create null descriptor
     for (auto i = 0u; i < nullDescriptorCount; ++i) {
@@ -95,63 +93,9 @@ auto ResourceManager::LoadEnd() -> void {
     _fencedCommandQueue.SyncLatest();
 }
 
-auto ResourceManager::CreatePso(ID3D12RootSignature * rootSignature) -> ComPtr<ID3D12PipelineState> {
+auto ResourceManager::CreatePso(D3D12_GRAPHICS_PIPELINE_STATE_DESC const* psoDesc) -> ComPtr<ID3D12PipelineState> {
     auto ret = ComPtr<ID3D12PipelineState>{ nullptr };
-
-    ComPtr<ID3DBlob> vertexShader;
-    ComPtr<ID3DBlob> pixelShader;
-
-    auto compileFlags = D3DCOMPILE_PACK_MATRIX_ROW_MAJOR;
-#if defined(_DEBUG)
-    // Enable better shader debugging with the graphics debugging tools.
-    compileFlags = compileFlags | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#endif
-    ThrowIfFailed(D3DCompileFromFile(L"d3d12RenderSystem/shaders/default_v.hlsl", nullptr, nullptr, "main", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
-    ThrowIfFailed(D3DCompileFromFile(L"d3d12RenderSystem/shaders/default_p.hlsl", nullptr, nullptr, "main", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
-
-    // Define the vertex input layout.
-    auto const inputElementDescs = array<D3D12_INPUT_ELEMENT_DESC, 3> {
-        D3D12_INPUT_ELEMENT_DESC{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-            D3D12_INPUT_ELEMENT_DESC{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-            D3D12_INPUT_ELEMENT_DESC{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-    };
-
-    // Describe and create the graphics pipeline state object (PSO).
-    auto rasterizer_desc = D3D12_RASTERIZER_DESC{
-
-    };
-    CD3DX12_DEPTH_STENCIL_DESC depthStencilDesc(D3D12_DEFAULT);
-    depthStencilDesc.DepthEnable = true;
-    depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-    depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-    depthStencilDesc.StencilEnable = FALSE;
-
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-    psoDesc.InputLayout = { inputElementDescs.data(), inputElementDescs.size() };
-    psoDesc.pRootSignature = rootSignature;
-    psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader.Get());
-    psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader.Get());
-    psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(
-        D3D12_FILL_MODE_SOLID,
-        D3D12_CULL_MODE_BACK,
-        TRUE,   // make ccw front here
-        D3D12_DEFAULT_DEPTH_BIAS,
-        D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
-        D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS,
-        TRUE,
-        FALSE,
-        FALSE,
-        0,
-        D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF);
-    psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-    psoDesc.DepthStencilState = depthStencilDesc;
-    psoDesc.SampleMask = UINT_MAX;
-    psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-    psoDesc.NumRenderTargets = 1;
-    psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
-    psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-    psoDesc.SampleDesc.Count = 1;
-    ThrowIfFailed(_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&ret)));
+    ThrowIfFailed(_device->CreateGraphicsPipelineState(psoDesc, IID_PPV_ARGS(&ret)));
     return ret;
 }
 
@@ -207,6 +151,18 @@ auto ResourceManager::CreateRootSignature() -> ComPtr<ID3D12RootSignature> {
 auto ResourceManager::CreateCommandList(ID3D12PipelineState * pso, ID3D12CommandAllocator * allocator) -> ComPtr<ID3D12GraphicsCommandList> {
     auto ret = ComPtr<ID3D12GraphicsCommandList>{ nullptr };
     ThrowIfFailed(_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, allocator, pso, IID_PPV_ARGS(&ret)));
+    return ret;
+}
+
+auto ResourceManager::CompileShader(string const& filename, string const& target) -> ComPtr<ID3DBlob> {
+    auto compileFlags = D3DCOMPILE_PACK_MATRIX_ROW_MAJOR;
+#if defined(_DEBUG)
+    // Enable better shader debugging with the graphics debugging tools.
+    compileFlags = compileFlags | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#endif
+
+    ComPtr<ID3DBlob> ret;
+    ThrowIfFailed(D3DCompileFromFile(StringToWstring(filename).data(), nullptr, nullptr, "main", target.data(), compileFlags, 0, &ret, nullptr));
     return ret;
 }
 
@@ -438,30 +394,21 @@ auto ResourceManager::LoadMaterials(core::Material ** materials, unsigned int co
 }
 
 // quick & dirty implementation to load dds files
-auto ResourceManager::LoadDdsTexture(core::Texture * texture) -> void {
-    // 1. change filename's extension to .dds
-    auto filename = texture->GetFilename();
-    filename.erase(filename.find_last_of('.'));
-    filename += ".dds";
+auto ResourceManager::LoadDdsTexture(string const& filename) -> unsigned int {
 
-    // 2. change filename from string to wstring
-    typedef std::codecvt_utf8<wchar_t> convert_type;
-    std::wstring_convert<convert_type, wchar_t> converter;
-    auto filename_wchar = converter.from_bytes(filename);
-
-    // 3. create texture (CreateDDSTextureFromFile() uses upload heap. Need to upload data to default heap later)
+    // 2. create texture (CreateDDSTextureFromFile() uses upload heap. Need to upload data to default heap later)
     //_uploadBuffers.emplace_back();
     //auto uploadBuffer = _uploadBuffers.back().Get();
     auto uploadBuffer = static_cast<ID3D12Resource *>(nullptr);
     auto srvDesc = D3D12_SHADER_RESOURCE_VIEW_DESC{};
-    ThrowIfFailed(DirectX::CreateDDSTextureFromFile(_device.Get(), filename_wchar.data(), &uploadBuffer, &srvDesc));
+    ThrowIfFailed(DirectX::CreateDDSTextureFromFile(_device.Get(), StringToWstring(filename).data(), &uploadBuffer, &srvDesc));
 
     _uploadBuffers.emplace_back();
     _uploadBuffers.back().Attach(uploadBuffer);
     //_uploadBuffers.emplace_back(uploadBuffer);
     //uploadBuffer->Release();
 
-    // 4. upload texture
+    // 3. upload texture
     auto desc = uploadBuffer->GetDesc();
     _defaultBuffers.emplace_back();
     ThrowIfFailed(_device->CreateCommittedResource(
@@ -472,18 +419,22 @@ auto ResourceManager::LoadDdsTexture(core::Texture * texture) -> void {
         nullptr,
         IID_PPV_ARGS(&_defaultBuffers.back())));
     auto buffer = _defaultBuffers.back().Get();
-
     for (auto i = 0u; i < desc.MipLevels; ++i) {
-        CD3DX12_TEXTURE_COPY_LOCATION Dst(buffer, i);
-        CD3DX12_TEXTURE_COPY_LOCATION Src(uploadBuffer, i);
-        _commandList->CopyTextureRegion(&Dst, 0, 0, 0, &Src, nullptr);
+        for (auto j = 0u; j < desc.DepthOrArraySize; ++j) {
+            auto const subresourceIndex = i * desc.DepthOrArraySize + j;
+            CD3DX12_TEXTURE_COPY_LOCATION Dst(buffer, subresourceIndex);
+            CD3DX12_TEXTURE_COPY_LOCATION Src(uploadBuffer, subresourceIndex);
+            _commandList->CopyTextureRegion(&Dst, 0, 0, 0, &Src, nullptr);
+        }
     }
+    _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 
-    // 5. create srv
+    // 4. create srv
     auto bufferInfo = _cbvSrvHeap.GetBufferInfo();
     _device->CreateShaderResourceView(buffer, &srvDesc, bufferInfo._cpuHandle);
-    texture->_renderDataId = _textureBufferInfos.size();
+    auto ret = _textureBufferInfos.size();
     _textureBufferInfos.push_back(bufferInfo);
+    return ret;
 }
 
 auto ResourceManager::LoadTexture(core::Texture * texture) -> void {
@@ -526,6 +477,57 @@ auto ResourceManager::LoadTexture(core::Texture * texture) -> void {
     _device->CreateShaderResourceView(buffer, &srvDesc, bufferInfo._cpuHandle);
     texture->_renderDataId = _textureBufferInfos.size();
     _textureBufferInfos.push_back(bufferInfo);
+}
+auto ResourceManager::LoadSkyBox(core::SkyBox * skybox) -> void {
+    auto vertexData = vector<core::Vector3f>{
+        core::Vector3f{ -1, 1, -1 },
+        core::Vector3f{ -1, -1, -1 },
+        core::Vector3f{ 1, -1, -1 },
+        core::Vector3f{ 1, 1, -1 },
+        core::Vector3f{ -1, 1, 1 },
+        core::Vector3f{ -1, -1, 1 },
+        core::Vector3f{ 1, -1, 1 },
+        core::Vector3f{ 1, 1, 1 } };
+    auto indexData = vector<unsigned int>{
+        0, 1, 2, 0, 2, 3,
+        0, 4, 5, 0, 5, 1,
+        0, 3, 7, 0, 7, 4,
+        2, 6, 7, 2, 7, 3,
+        1, 5, 6, 1, 6, 2,
+        7, 6, 5, 7, 5, 4 };
+
+    auto const vertexBufferSize = vertexData.size() * sizeof(core::Vector3f);
+    auto const indexBufferSize = indexData.size() * sizeof(unsigned int);
+    _defaultBuffers.emplace_back();
+    ThrowIfFailed(_device->CreateCommittedResource(
+        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+        D3D12_HEAP_FLAG_NONE,
+        &CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize),
+        D3D12_RESOURCE_STATE_COPY_DEST,
+        nullptr,
+        IID_PPV_ARGS(&_defaultBuffers.back())));
+    auto vertexBuffer = _defaultBuffers.back().Get();
+    auto const vbv = D3D12_VERTEX_BUFFER_VIEW{ vertexBuffer->GetGPUVirtualAddress(), vertexBufferSize, sizeof(core::Vector3f) };
+
+    _defaultBuffers.emplace_back();
+    ThrowIfFailed(_device->CreateCommittedResource(
+        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+        D3D12_HEAP_FLAG_NONE,
+        &CD3DX12_RESOURCE_DESC::Buffer(indexBufferSize),
+        D3D12_RESOURCE_STATE_COPY_DEST,
+        nullptr,
+        IID_PPV_ARGS(&_defaultBuffers.back())));
+    auto indexBuffer = _defaultBuffers.back().Get();
+    auto const ibv = D3D12_INDEX_BUFFER_VIEW{ indexBuffer->GetGPUVirtualAddress(), indexBufferSize, DXGI_FORMAT_R32_UINT };
+    _skyBoxMeshInfo = MeshDataInfo{ vbv, ibv, indexData.size(), 0u, 0u, };
+
+    _uploadHeap.AllocateAndUploadDataBlock(_commandList.Get(), vertexBuffer, vertexBufferSize, sizeof(float), vertexData.data());
+    _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(vertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+
+    _uploadHeap.AllocateAndUploadDataBlock(_commandList.Get(), indexBuffer, indexBufferSize, sizeof(float), indexData.data());
+    _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(indexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER));
+
+    skybox->SetRenderDataId(LoadDdsTexture(skybox->GetFilename()));
 }
 
 auto ResourceManager::UpdateCamera(core::Camera const & camera) -> void {

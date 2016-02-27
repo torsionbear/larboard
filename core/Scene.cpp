@@ -70,6 +70,10 @@ auto Scene::CreateSkyBox(std::array<std::string, 6>&& filenames) -> void {
     _skyBox = make_unique<SkyBox>(move(filenames));
 }
 
+auto Scene::CreateSkyBox(std::string const & filename) -> void {
+    _skyBox = make_unique<SkyBox>(filename);
+}
+
 auto Scene::Picking(Ray & ray) -> bool {
     auto ret = false;
     auto bvhRoot = _staticModelGroup->GetBvh()->GetRoot();

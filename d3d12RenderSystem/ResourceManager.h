@@ -25,6 +25,7 @@
 #include "core/DirectionalLight.h"
 #include "core/SpotLight.h"
 #include "core/Material.h"
+#include "core/Skybox.h"
 #include "SwapChainRenderTargets.h"
 #include "FrameResource.h"
 #include "FencedCommandQueue.h"
@@ -165,7 +166,7 @@ public:
     }
 public:
     auto PrepareResource() -> void;
-    auto LoadBegin(unsigned int depthStencilCount, unsigned int cameraCount, unsigned int meshCount, unsigned int modelCount, unsigned int textureCount, unsigned int materialCount) -> void;
+    auto LoadBegin(unsigned int depthStencilCount, unsigned int cameraCount, unsigned int meshCount, unsigned int modelCount, unsigned int textureCount, unsigned int materialCount, unsigned int skyBoxCount) -> void;
     auto LoadEnd() -> void;
     auto LoadMeshes(core::Mesh ** meshes, unsigned int count, unsigned int stride) -> void;
     auto LoadModels(core::Model ** models, unsigned int count) -> void;
@@ -177,9 +178,12 @@ public:
         core::SpotLight ** spotLights, unsigned int spotLightCount) -> void;
     auto LoadMaterials(core::Material ** materials, unsigned int count) -> void;
     auto LoadTexture(core::Texture * texture) -> void;
-    auto LoadDdsTexture(core::Texture * texture) -> void;
+    auto LoadDdsTexture(std::string const& filename) -> unsigned int;
+    auto LoadSkyBox(core::SkyBox * skybox) -> void;
     auto UpdateCamera(core::Camera const& camera) -> void;
     auto CreateDepthStencil(unsigned int width, unsigned int height) -> void;
+    auto CreatePso(D3D12_GRAPHICS_PIPELINE_STATE_DESC const* psoDesc) -> ComPtr<ID3D12PipelineState>;
+    auto CompileShader(std::string const& filename, std::string const& target)->ComPtr<ID3DBlob>;
 
     auto GetMeshDataInfo(unsigned int index) -> MeshDataInfo const& {
         return _meshDataInfos[index];
@@ -232,8 +236,10 @@ public:
     auto GetNullBufferInfo(unsigned int index) -> BufferInfo const& {
         return _nullBufferInfo[index];
     }
+    auto GetSkyBoxMeshInfo() -> MeshDataInfo const& {
+        return _skyBoxMeshInfo;
+    }
 private:
-    auto CreatePso(ID3D12RootSignature * rootSignature)->ComPtr<ID3D12PipelineState>;
     auto CreateRootSignature()->ComPtr<ID3D12RootSignature>;
     auto CreateCommandList(ID3D12PipelineState * pso, ID3D12CommandAllocator * allocator)->ComPtr<ID3D12GraphicsCommandList>;
 private:
@@ -250,6 +256,7 @@ private:
     BufferInfo _lightBufferInfo;
     std::vector<BufferInfo> _nullBufferInfo;
     std::vector<BufferInfo> _materialBufferInfos;
+    MeshDataInfo _skyBoxMeshInfo;
 
     std::vector<ComPtr<ID3D12Resource>> _uploadBuffers;
     std::vector<ComPtr<ID3D12Resource>> _defaultBuffers;
@@ -259,7 +266,6 @@ private:
     FencedCommandQueue _fencedCommandQueue;
 
     ComPtr<ID3D12GraphicsCommandList> _commandList;
-    ComPtr<ID3D12PipelineState> _defaultPso;
     ComPtr<ID3D12RootSignature> _rootSignature;
 };
 

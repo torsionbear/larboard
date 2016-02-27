@@ -30,21 +30,25 @@ auto static const height = 600;
 auto LoadScene_dx0(core::Scene * scene) -> void {
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square/square.x3d").Read(scene);
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
+    scene->CreateSkyBox("media/skybox/mt.dds");
 }
 
 auto LoadScene_dx1(core::Scene * scene) -> void {
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square2/square2.x3d").Read(scene);
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
+    scene->CreateSkyBox("media/skybox/cloudy_noon.dds");
 }
 
 auto LoadScene_dx2(core::Scene * scene) -> void {
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/8/8.x3d").Read(scene);
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
+    scene->CreateSkyBox("media/skybox/mt.dds");
 }
 
 auto LoadScene_dx3(core::Scene * scene) -> void {
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_02/xsh_02_house.x3d").Read(scene);
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
+    scene->CreateSkyBox("media/skybox/cloudy_noon.dds");
 }
 
 auto LoadScene0(core::Scene * scene) -> void {
@@ -142,8 +146,8 @@ int main_dx() {
 
 
     auto scene = make_unique<core::Scene>();
-    LoadScene_dx2(scene.get());
-    scene->Load();
+    LoadScene_dx3(scene.get());
+    scene->GetStaticModelGroup().Load();
 
     d3d12RenderSystem::RenderSystem renderSystem;
     renderSystem.Init(width, height);
@@ -163,8 +167,13 @@ int main_dx() {
         scene->GetStaticModelGroup().GetMeshes().size(),
         scene->GetStaticModelGroup().GetModels().size(),
         scene->GetStaticModelGroup()._textures.size(),
-        scene->GetStaticModelGroup()._materials.size());
+        scene->GetStaticModelGroup()._materials.size(),
+        scene->_skyBox == nullptr ? 0 : 1);
     resourceManager->CreateDepthStencil(width, height);
+    // skybox
+    if (scene->_skyBox != nullptr) {
+        resourceManager->LoadSkyBox(scene->_skyBox.get());
+    }
     // load cameras
     resourceManager->LoadCamera(scene->GetActiveCamera(), 1);
     // load meshes
@@ -187,7 +196,11 @@ int main_dx() {
     resourceManager->LoadMaterials(materials.data(), materials.size());
     // load textures
     for (auto & t : scene->GetStaticModelGroup()._textures) {
-        resourceManager->LoadDdsTexture(t.get());
+        // change filename's extension to .dds
+        auto filename = t->GetFilename();
+        filename.erase(filename.find_last_of('.'));
+        filename += ".dds";
+        t->_renderDataId = resourceManager->LoadDdsTexture(filename);
     }
     // load lights
     auto ambientLights = vector<core::AmbientLight *>{};
@@ -213,6 +226,7 @@ int main_dx() {
         spotLights.data(), spotLights.size());
     resourceManager->LoadEnd();
 
+    renderer->Prepare();
     while (renderWindow.Step()) {
         resourceManager->PrepareResource();
         // update
@@ -221,6 +235,7 @@ int main_dx() {
         renderer->DrawBegin();
         renderer->UseCamera(scene->GetActiveCamera());
         renderer->UseLight();
+        renderer->RenderSkyBox(scene->_skyBox.get());
         // render
         for (auto & shape : scene->GetStaticModelGroup().GetShapes()) {
             renderer->RenderShape(shape.get());
@@ -233,6 +248,6 @@ int main_dx() {
 
 int main()
 {
-    //return main_gl();
-    return main_dx();
+    return main_gl();
+    //return main_dx();
 }

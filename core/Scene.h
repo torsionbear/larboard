@@ -43,7 +43,8 @@ public:
         return _terrain.get();
     }
     auto CreateTerrain(std::vector<std::string> && diffuseMapFiles, std::string const& heightMap) -> void;
-    auto CreateSkyBox(std::array<std::string, 6> && filenames) -> void;
+    auto CreateSkyBox(std::array<std::string, 6>&& filenames) -> void;
+    auto CreateSkyBox(std::string const& filename) -> void;
     auto Picking(Ray & ray) -> bool;
 
     auto ToggleBvh() -> void;
