@@ -215,26 +215,26 @@ public:
     auto AllocDsvDescriptorHeap(unsigned int size) -> void {
         _dsvHeap.Init(_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_DSV, size, D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
     }
-    auto GetCameraBufferInfo(unsigned int index) -> BufferInfo const& {
-        return _cameraBufferInfos[index];
+    auto GetCameraDescriptorInfo(unsigned int index) -> DescriptorInfo const& {
+        return _cameraDescriptorInfos[index];
     }
-    auto GetTransformBufferInfo(unsigned int index) -> BufferInfo const& {
-        return _transformBufferInfos[index];
+    auto GetTransformDescriptorInfo(unsigned int index) -> DescriptorInfo const& {
+        return _transformDescriptorInfos[index];
     }
-    auto GetDepthStencilBufferInfo(unsigned int index) -> BufferInfo const& {
-        return _depthStencilBufferInfos[index];
+    auto GetDepthStencilDescriptorInfo(unsigned int index) -> DescriptorInfo const& {
+        return _depthStencilDescriptorInfos[index];
     }
-    auto GetTextureBufferInfo(unsigned int index) -> BufferInfo const& {
-        return _textureBufferInfos[index];
+    auto GetTextureDescriptorInfo(unsigned int index) -> DescriptorInfo const& {
+        return _textureDescriptorInfos[index];
     }
-    auto GetLightBufferInfo() -> BufferInfo const& {
-        return _lightBufferInfo;
+    auto GetLightDescriptorInfo() -> DescriptorInfo const& {
+        return _lightDescriptorInfo;
     }
-    auto GetMaterialBufferInfo(unsigned int index) -> BufferInfo const& {
-        return _materialBufferInfos[index];
+    auto GetMaterialDescriptorInfo(unsigned int index) -> DescriptorInfo const& {
+        return _materialDescriptorInfos[index];
     }
-    auto GetNullBufferInfo(unsigned int index) -> BufferInfo const& {
-        return _nullBufferInfo[index];
+    auto GetNullDescriptorInfo(unsigned int index) -> DescriptorInfo const& {
+        return _nullDescriptorInfo[index];
     }
     auto GetSkyBoxMeshInfo() -> MeshDataInfo const& {
         return _skyBoxMeshInfo;
@@ -249,13 +249,13 @@ private:
     DescriptorHeap _dsvHeap;
     DescriptorHeap _cbvSrvHeap;
     std::vector<MeshDataInfo> _meshDataInfos;
-    std::vector<BufferInfo> _cameraBufferInfos;
-    std::vector<BufferInfo> _transformBufferInfos;
-    std::vector<BufferInfo> _depthStencilBufferInfos;
-    std::vector<BufferInfo> _textureBufferInfos;
-    BufferInfo _lightBufferInfo;
-    std::vector<BufferInfo> _nullBufferInfo;
-    std::vector<BufferInfo> _materialBufferInfos;
+    std::vector<DescriptorInfo> _cameraDescriptorInfos;
+    std::vector<DescriptorInfo> _transformDescriptorInfos;
+    std::vector<DescriptorInfo> _depthStencilDescriptorInfos;
+    std::vector<DescriptorInfo> _textureDescriptorInfos;
+    DescriptorInfo _lightDescriptorInfo;
+    std::vector<DescriptorInfo> _nullDescriptorInfo;
+    std::vector<DescriptorInfo> _materialDescriptorInfos;
     MeshDataInfo _skyBoxMeshInfo;
 
     std::vector<ComPtr<ID3D12Resource>> _uploadBuffers;

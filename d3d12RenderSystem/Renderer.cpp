@@ -31,19 +31,19 @@ auto Renderer::DrawBegin() -> void {
 
     // render target
     auto rtv = swapChainRenderTargets.GetCurrentRtv();
-    auto depthStencilBufferInfo = _resourceManager->GetDepthStencilBufferInfo(0);
-    commandList->OMSetRenderTargets(1, &rtv, FALSE, &depthStencilBufferInfo._cpuHandle);
+    auto depthStencilDescriptorInfo = _resourceManager->GetDepthStencilDescriptorInfo(0);
+    commandList->OMSetRenderTargets(1, &rtv, FALSE, &depthStencilDescriptorInfo._cpuHandle);
 
     // null descriptors
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::DiffuseMap, _resourceManager->GetNullBufferInfo(0)._gpuHandle);
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::NormalMap, _resourceManager->GetNullBufferInfo(1)._gpuHandle);
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::SpecularMap, _resourceManager->GetNullBufferInfo(2)._gpuHandle);
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::EmissiveMap, _resourceManager->GetNullBufferInfo(3)._gpuHandle);
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::DiffuseMap, _resourceManager->GetNullDescriptorInfo(0)._gpuHandle);
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::NormalMap, _resourceManager->GetNullDescriptorInfo(1)._gpuHandle);
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::SpecularMap, _resourceManager->GetNullDescriptorInfo(2)._gpuHandle);
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::EmissiveMap, _resourceManager->GetNullDescriptorInfo(3)._gpuHandle);
 
     // Record commands.
     const float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
     commandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
-    commandList->ClearDepthStencilView(depthStencilBufferInfo._cpuHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+    commandList->ClearDepthStencilView(depthStencilDescriptorInfo._cpuHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
     _currentPso = _defaultPso.Get();
     commandList->SetPipelineState(_currentPso);
@@ -84,16 +84,16 @@ auto Renderer::RenderShape(core::Shape const * shape) -> void {
         commandList->SetPipelineState(_currentPso);
     }
     // transform
-    auto const& transformBufferInfo = _resourceManager->GetTransformBufferInfo(shape->GetModel()->_renderDataId);
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Transform, transformBufferInfo._gpuHandle);
+    auto const& transformDescriptorInfo = _resourceManager->GetTransformDescriptorInfo(shape->GetModel()->_renderDataId);
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Transform, transformDescriptorInfo._gpuHandle);
     // material
-    auto const& materialBufferInfo = _resourceManager->GetMaterialBufferInfo(shape->GetMaterial()->_renderDataId);
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Material, materialBufferInfo._gpuHandle);
+    auto const& materialDescriptorInfo = _resourceManager->GetMaterialDescriptorInfo(shape->GetMaterial()->_renderDataId);
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Material, materialDescriptorInfo._gpuHandle);
     // texture
     for (auto texture : shape->GetTextures()) {
-        auto const& textureBufferInfo = _resourceManager->GetTextureBufferInfo(shape->GetTextures()[0]->_renderDataId);
+        auto const& textureDescriptorInfo = _resourceManager->GetTextureDescriptorInfo(shape->GetTextures()[0]->_renderDataId);
         auto parameterIndex = RootSignatureParameterIndex::GetTextureRootSignatureParameterIndex(texture->GetType());
-        commandList->SetGraphicsRootDescriptorTable(parameterIndex, textureBufferInfo._gpuHandle);
+        commandList->SetGraphicsRootDescriptorTable(parameterIndex, textureDescriptorInfo._gpuHandle);
     }
     // vertex
     auto const& meshRenderData = _resourceManager->GetMeshDataInfo(shape->GetMesh()->_renderDataId);
@@ -112,8 +112,8 @@ auto Renderer::RenderSkyBox(core::SkyBox const* skyBox) -> void {
         commandList->SetPipelineState(_currentPso);
     }
     // texture
-    auto textureBufferInfo = _resourceManager->GetTextureBufferInfo(skyBox->GetRenderDataId());
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::DiffuseMap, textureBufferInfo._gpuHandle);
+    auto textureDescriptorInfo = _resourceManager->GetTextureDescriptorInfo(skyBox->GetRenderDataId());
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::DiffuseMap, textureDescriptorInfo._gpuHandle);
     // vertex
     auto const& skyBoxMeshInfo = _resourceManager->GetSkyBoxMeshInfo();
     // todo: only call the following 2 IASet* functions when necessary
@@ -126,14 +126,14 @@ auto Renderer::RenderSkyBox(core::SkyBox const* skyBox) -> void {
 
 auto Renderer::UseCamera(core::Camera const * camera) -> void {
     auto commandList = _resourceManager->GetCommandList();
-    auto const& cameraBufferInfo = _resourceManager->GetCameraBufferInfo(camera->_renderDataId);
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Camera, cameraBufferInfo._gpuHandle);
+    auto const& cameraDescriptorInfo = _resourceManager->GetCameraDescriptorInfo(camera->_renderDataId);
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Camera, cameraDescriptorInfo._gpuHandle);
 }
 
 auto Renderer::UseLight() -> void {
     auto commandList = _resourceManager->GetCommandList();
-    auto const& lightBufferInfo = _resourceManager->GetLightBufferInfo();
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Light, lightBufferInfo._gpuHandle);
+    auto const& lightDescriptorInfo = _resourceManager->GetLightDescriptorInfo();
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Light, lightDescriptorInfo._gpuHandle);
 }
 
 auto Renderer::CreateDefaultPso() -> void {

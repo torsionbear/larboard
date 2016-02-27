@@ -248,6 +248,6 @@ int main_dx() {
 
 int main()
 {
-    return main_gl();
-    //return main_dx();
+    //return main_gl();
+    return main_dx();
 }
