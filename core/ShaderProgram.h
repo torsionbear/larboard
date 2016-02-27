@@ -13,45 +13,45 @@
 namespace core {
 
 enum class UniformBufferType : unsigned int {
-	Camera = 0u,
-	Transform = 1u,
-	Material = 2u,
-	Light = 3u,
+    Camera = 0u,
+    Transform = 1u,
+    Material = 2u,
+    Light = 3u,
     Terrain = 4u,
 };
 
 auto inline GetIndex(UniformBufferType t) {
-	return static_cast<unsigned int>(t);
+    return static_cast<unsigned int>(t);
 }
 
 class ShaderProgram : public Resource {
 public:
-	friend auto swap(ShaderProgram & first, ShaderProgram & second) -> void;
+    friend auto swap(ShaderProgram & first, ShaderProgram & second) -> void;
     ShaderProgram() = default;
-	ShaderProgram(std::string const& vertexShaderFile, std::string const& fragmentShaderFile);
-	ShaderProgram(ShaderProgram const &) = delete;
-	ShaderProgram(ShaderProgram && other);
-	ShaderProgram& operator=(ShaderProgram const&) = delete;
-	ShaderProgram& operator=(ShaderProgram && other);
-	~ShaderProgram();
+    ShaderProgram(std::string const& vertexShaderFile, std::string const& fragmentShaderFile);
+    ShaderProgram(ShaderProgram const &) = delete;
+    ShaderProgram(ShaderProgram && other);
+    ShaderProgram& operator=(ShaderProgram const&) = delete;
+    ShaderProgram& operator=(ShaderProgram && other);
+    ~ShaderProgram();
 
 private:
-	auto LoadImpl() -> bool override;
-	auto UnloadImpl() -> bool override;
-	auto SendToCardImpl() -> bool override;
-	auto FreeFromCardImpl() -> bool override;
+    auto LoadImpl() -> bool override;
+    auto UnloadImpl() -> bool override;
+    auto SendToCardImpl() -> bool override;
+    auto FreeFromCardImpl() -> bool override;
 
 public:
-	auto SetVertexShader(std::string const& filename) -> void;
-	auto SetFragmentShader(std::string const& filename) -> void;
+    auto SetVertexShader(std::string const& filename) -> void;
+    auto SetFragmentShader(std::string const& filename) -> void;
     auto SetTessellationControlShader(std::string const& filename) -> void;
     auto SetTessellationEvaluationShader(std::string const& filename) -> void;
-	auto Use() const -> void;
-	auto GetHandler() const -> openglUint;
-	
+    auto Use() const -> void;
+    auto GetHandler() const->openglUint;
+
 private:
-	openglUint _program = 0;
-	std::vector<Shader> _shaders;
+    openglUint _program = 0;
+    std::vector<Shader> _shaders;
 };
 
 }

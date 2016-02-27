@@ -9,9 +9,9 @@ using std::make_unique;
 namespace core {
 
 void swap(Mesh& first, Mesh& second) {
-	using std::swap;
-	swap(first._vertexes, second._vertexes);
-	swap(first._renderData, second._renderData);
+    using std::swap;
+    swap(first._vertexes, second._vertexes);
+    swap(first._renderData, second._renderData);
 }
 
 Mesh::Mesh(std::vector<Vertex>&& vertexData, std::vector<unsigned int>&& index)
@@ -28,20 +28,20 @@ Mesh::Mesh(std::vector<Vertex>&& vertexData)
 }
 
 Mesh::Mesh(Mesh&& other)
-	: Mesh() {
-	swap(*this, other);
+    : Mesh() {
+    swap(*this, other);
 }
 
 Mesh::~Mesh() = default;
 
 Mesh& Mesh::operator=(Mesh rhs) {
-	swap(*this, rhs);
-	return *this;
+    swap(*this, rhs);
+    return *this;
 }
 
 Mesh& Mesh::operator=(Mesh && rhs) {
-	swap(*this, rhs);
-	return *this;
+    swap(*this, rhs);
+    return *this;
 }
 
 }

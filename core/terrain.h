@@ -80,10 +80,10 @@ public:
     auto GetTileCount() const -> unsigned int {
         return _tileCoord.size();
     }
-    auto GetSpecialTiles() const -> std::vector<Mesh *>;
-    auto GetTileCoordinate(Camera const* camera) -> std::vector<Vector3f> const&;
+    auto GetSpecialTiles() const->std::vector<Mesh *>;
+    auto GetTileCoordinate(Camera const* camera)->std::vector<Vector3f> const&;
 private:
-    auto GetViewFrustumCoverage(Camera const* camera) const -> std::array<Vector2f, 2>;
+    auto GetViewFrustumCoverage(Camera const* camera) const->std::array<Vector2f, 2>;
 private:
     ShaderData _shaderData = {
         Vector2i{ -5, -5 },

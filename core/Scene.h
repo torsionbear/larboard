@@ -23,19 +23,19 @@ namespace core {
 class Scene {
 public:
     Scene();
-	Scene(Scene const&) = delete;
-	Scene& operator=(Scene const&) = delete;
+    Scene(Scene const&) = delete;
+    Scene& operator=(Scene const&) = delete;
 public:
     auto Load() -> void;
-	auto CreateCamera() -> Camera *;
-    auto CreateAmbientLight() -> AmbientLight *;
-    auto CreateDirectionalLight() -> DirectionalLight *;
-	auto CreatePointLight() -> PointLight *;
-	auto CreateSpotLight() -> SpotLight *;
-	auto Stage(Movable *) -> void;
-	auto Unstage(Movable *) -> void;
+    auto CreateCamera()->Camera *;
+    auto CreateAmbientLight()->AmbientLight *;
+    auto CreateDirectionalLight()->DirectionalLight *;
+    auto CreatePointLight()->PointLight *;
+    auto CreateSpotLight()->SpotLight *;
+    auto Stage(Movable *) -> void;
+    auto Unstage(Movable *) -> void;
 
-    auto GetActiveCamera() const -> Camera *;
+    auto GetActiveCamera() const->Camera *;
     auto GetStaticModelGroup() -> StaticModelGroup & {
         return *_staticModelGroup;
     }
@@ -50,12 +50,12 @@ public:
     auto ToggleBvh() -> void;
 
 public:
-	Movable _root;
-	std::vector<std::unique_ptr<Camera>> _cameras;
+    Movable _root;
+    std::vector<std::unique_ptr<Camera>> _cameras;
     std::vector<std::unique_ptr<AmbientLight>> _ambientLights;
-	std::vector<std::unique_ptr<PointLight>> _pointLights;
-	std::vector<std::unique_ptr<DirectionalLight>> _directionalLights;
-	std::vector<std::unique_ptr<SpotLight>> _spotLights;
+    std::vector<std::unique_ptr<PointLight>> _pointLights;
+    std::vector<std::unique_ptr<DirectionalLight>> _directionalLights;
+    std::vector<std::unique_ptr<SpotLight>> _spotLights;
 
     std::unique_ptr<SkyBox> _skyBox = nullptr;
     std::unique_ptr<StaticModelGroup> _staticModelGroup = nullptr;

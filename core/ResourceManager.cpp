@@ -66,37 +66,37 @@ auto ResourceManager::LoadMeshes(vector<unique_ptr<Mesh>> const& meshes) -> void
     _vertexBuffers.emplace_back();
     auto & vertexBuffer = _vertexBuffers.back();
 
-	glGenVertexArrays(1, &vertexBuffer._vao);
-	glBindVertexArray(vertexBuffer._vao);
+    glGenVertexArrays(1, &vertexBuffer._vao);
+    glBindVertexArray(vertexBuffer._vao);
 
-	glGenBuffers(1, &vertexBuffer._vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer._vbo);
+    glGenBuffers(1, &vertexBuffer._vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer._vbo);
 
-	glGenBuffers(1, &vertexBuffer._veo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertexBuffer._veo);
+    glGenBuffers(1, &vertexBuffer._veo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertexBuffer._veo);
 
-	auto vertexData = vector<Vertex>();
-	auto indexData = vector<unsigned int>();
-	for (auto const& mesh : meshes) {
+    auto vertexData = vector<Vertex>();
+    auto indexData = vector<unsigned int>();
+    for (auto const& mesh : meshes) {
         mesh->SetRenderData(Mesh::RenderData{
             vertexBuffer._vao,
             indexData.size() * sizeof(unsigned int),
             static_cast<GLint>(vertexData.size()),
         });
-		vertexData.insert(vertexData.end(), mesh->GetVertex().cbegin(), mesh->GetVertex().cend());
-		indexData.insert(indexData.end(), mesh->GetIndex().cbegin(), mesh->GetIndex().cend());
-	}
-	glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(Vertex), vertexData.data(), GL_STATIC_DRAW);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexData.size() * sizeof(unsigned int), indexData.data(), GL_STATIC_DRAW);
+        vertexData.insert(vertexData.end(), mesh->GetVertex().cbegin(), mesh->GetVertex().cend());
+        indexData.insert(indexData.end(), mesh->GetIndex().cbegin(), mesh->GetIndex().cend());
+    }
+    glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(Vertex), vertexData.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexData.size() * sizeof(unsigned int), indexData.data(), GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(sizeof(Vector3f)));
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(2 * sizeof(Vector3f)));
-	glEnableVertexAttribArray(2);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(sizeof(Vector3f)));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid*)(2 * sizeof(Vector3f)));
+    glEnableVertexAttribArray(2);
 
-	glBindVertexArray(0);
+    glBindVertexArray(0);
 }
 
 auto ResourceManager::LoadSkyBoxMesh(SkyBox * skyBox) -> void {
@@ -448,7 +448,7 @@ auto ResourceManager::UseCameraData(Camera const * camera) -> void {
 
 auto ResourceManager::InitLightData(
     vector<unique_ptr<AmbientLight>> const& ambientLights,
-    vector<unique_ptr<PointLight>> const& pointLights, 
+    vector<unique_ptr<PointLight>> const& pointLights,
     vector<unique_ptr<DirectionalLight>> const& directionalLights,
     vector<unique_ptr<SpotLight>> const& spotLights) -> void {
     auto data = LightShaderData{};

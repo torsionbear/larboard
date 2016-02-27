@@ -11,22 +11,22 @@ namespace core {
 
 class PngReader {
 private:
-	class PngReaderImpl;
+    class PngReaderImpl;
 
 public:
-	PngReader(std::string const&);
-	PngReader(PngReader const&) = delete;
-	PngReader& operator=(PngReader const&) = delete;
-	~PngReader();
+    PngReader(std::string const&);
+    PngReader(PngReader const&) = delete;
+    PngReader& operator=(PngReader const&) = delete;
+    ~PngReader();
 
 public:
-	auto ReadPng() -> void;
-	auto GetData() ->std::vector<Vector4f>;
-	auto Height() -> unsigned int;
-	auto Width() -> unsigned int;
+    auto ReadPng() -> void;
+    auto GetData()->std::vector<Vector4f>;
+    auto Height() -> unsigned int;
+    auto Width() -> unsigned int;
 
 private:
-	std::unique_ptr<PngReaderImpl> _impl;
+    std::unique_ptr<PngReaderImpl> _impl;
 };
 
 }

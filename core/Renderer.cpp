@@ -73,7 +73,7 @@ auto Renderer::Render(Shape const* shape) -> void {
     // draw call
     auto mesh = shape->GetMesh();
     auto const& meshRenderData = mesh->GetRenderData();
-    
+
     glBindVertexArray(meshRenderData._vao);
     glDrawElementsBaseVertex(GL_TRIANGLES, mesh->GetIndex().size(), GL_UNSIGNED_INT, reinterpret_cast<GLvoid*>(meshRenderData._indexOffset), meshRenderData._baseVertex);
     glBindVertexArray(0);

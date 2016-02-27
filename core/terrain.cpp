@@ -39,12 +39,12 @@ auto Terrain::AddSpecialTiles(std::vector<std::unique_ptr<Shape>> && shapes, vec
     _specialTileMeshes = move(meshes);
     for (auto & shape : _specialTileShapes) {
         auto center = shape->GetAabb().GetCenter();
-        _holeTiles.push_back(Vector2i{static_cast<int>(floor(center(0) / _shaderData.tileSize)), static_cast<int>(floor(center(1) / _shaderData.tileSize)) });
+        _holeTiles.push_back(Vector2i{ static_cast<int>(floor(center(0) / _shaderData.tileSize)), static_cast<int>(floor(center(1) / _shaderData.tileSize)) });
     }
 }
 
 auto Terrain::GetHeight(Vector2f coord) const -> Float32 {
-    auto heightMapCoord = static_cast<Vector2f>(coord / _shaderData.tileSize -_shaderData.heightMapOrigin);
+    auto heightMapCoord = static_cast<Vector2f>(coord / _shaderData.tileSize - _shaderData.heightMapOrigin);
     auto texel = _heightMap.GetBilinearFilteredTexel(heightMapCoord(0) / _shaderData.heightMapSize(0), heightMapCoord(1) / _shaderData.heightMapSize(1));
     return texel(0) * 30.0f - 0.6f; // todo: get rid of this dirty hard-coded expression
 }
@@ -82,7 +82,7 @@ auto Terrain::GetSpecialTiles() const -> std::vector<Mesh *> {
     return ret;
 }
 
-auto Terrain::GetViewFrustumCoverage(Camera const * camera) const -> std::array<Vector2f, 2>
+auto Terrain::GetViewFrustumCoverage(Camera const * camera) const->std::array<Vector2f, 2>
 {
     auto near = camera->GetNearPlane();
     auto far = camera->GetFarPlane();

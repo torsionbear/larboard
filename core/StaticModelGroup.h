@@ -14,9 +14,9 @@ namespace core {
 class StaticModelGroup {
 public:
     auto Load() -> void;
-    auto GetShapes() -> std::vector<std::unique_ptr<Shape>>&;
-    auto AcquireShapes() -> std::vector<std::unique_ptr<Shape>>;
-    auto AcquireMeshes() -> std::vector<std::unique_ptr<Mesh>>;
+    auto GetShapes()->std::vector<std::unique_ptr<Shape>>&;
+    auto AcquireShapes()->std::vector<std::unique_ptr<Shape>>;
+    auto AcquireMeshes()->std::vector<std::unique_ptr<Mesh>>;
 
     auto CreateMovable()->Movable *;
     auto CreateModel()->Model *;
@@ -38,8 +38,8 @@ public:
         _meshes.push_back(std::make_unique<Mesh>(std::forward<Args>(args)...));
         return _meshes.back().get();
     }
-    auto CreateShaderProgram(std::string name, std::string const& vertexShaderFile, std::string const& fragmentShaderFile) -> ShaderProgram *;
-    auto GetShaderProgram(std::string name) const -> ShaderProgram*;
+    auto CreateShaderProgram(std::string name, std::string const& vertexShaderFile, std::string const& fragmentShaderFile)->ShaderProgram *;
+    auto GetShaderProgram(std::string name) const->ShaderProgram*;
     auto GetBvh() -> Bvh * {
         return _bvh.get();
     }

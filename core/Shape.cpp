@@ -7,7 +7,7 @@ using std::make_unique;
 namespace core {
 
 auto Shape::AddTexture(Texture * texture) -> void {
-	_textures.push_back(texture);
+    _textures.push_back(texture);
 }
 
 auto Shape::GetAabb() -> Aabb const& {

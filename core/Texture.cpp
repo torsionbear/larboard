@@ -10,11 +10,11 @@ using std::make_unique;
 namespace core {
 
 void swap(Texture& first, Texture& second) {
-	std::swap(first._filename, second._filename);
-	std::swap(first._data, second._data);
-	std::swap(first._width, second._width);
-	std::swap(first._height, second._height);
-	std::swap(first._texture, second._texture);
+    std::swap(first._filename, second._filename);
+    std::swap(first._data, second._data);
+    std::swap(first._width, second._width);
+    std::swap(first._height, second._height);
+    std::swap(first._texture, second._texture);
 }
 
 auto Texture::Load() -> void {
@@ -39,7 +39,7 @@ auto Texture::GetBilinearFilteredTexel(Float32 coord0, Float32 coord1) const -> 
     auto indexX = static_cast<int>(floor(coordX));
     auto indexY = static_cast<int>(floor(coordY));
 
-    auto texel00 = GetTexel(indexX, indexY );
+    auto texel00 = GetTexel(indexX, indexY);
     auto texel10 = GetTexel(indexX + 1, indexY);
     auto texel01 = GetTexel(indexX, indexY + 1);
     auto texel11 = GetTexel(indexX + 1, indexY + 1);

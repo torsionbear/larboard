@@ -49,7 +49,7 @@ public:
     auto LoadScene(Scene * scene) -> void;
     auto LoadStaticModelGroup(StaticModelGroup * staticModelGroup) -> void;
     auto LoadBvh(Bvh * bvh) -> void;
-	auto LoadMeshes(std::vector<std::unique_ptr<Mesh>> const& meshes) -> void;
+    auto LoadMeshes(std::vector<std::unique_ptr<Mesh>> const& meshes) -> void;
     auto LoadSkyBox(SkyBox * skyBox) -> void;
 
     auto LoadMaterials(std::vector<Material *> const& materials) -> void;
@@ -72,7 +72,7 @@ public:
 private:
     auto LoadSkyBoxMesh(SkyBox * skyBox) -> void;
 private:
-	std::vector<VertexBuffer> _vertexBuffers;
+    std::vector<VertexBuffer> _vertexBuffers;
     std::vector<openglUint> _instanceBuffers;
     std::vector<openglUint> _materialBuffers;
     std::vector<openglUint> _transformBuffers;

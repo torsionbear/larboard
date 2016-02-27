@@ -14,19 +14,19 @@
 namespace core {
 
 class Shape {
-	friend class Scene;
+    friend class Scene;
 public:
-	Shape(Model * model)
+    Shape(Model * model)
         : _model(model) {
     }
 public:
-	auto SetMaterial(Material * material) -> void {
+    auto SetMaterial(Material * material) -> void {
         _material = material;
     }
-	auto SetMesh(Mesh * mesh) -> void {
+    auto SetMesh(Mesh * mesh) -> void {
         _mesh = mesh;
     }
-	auto SetShaderProgram(ShaderProgram * shaderProgram) -> void {
+    auto SetShaderProgram(ShaderProgram * shaderProgram) -> void {
         _shaderProgram = shaderProgram;
     }
     auto GetMaterial() const -> Material const* {
@@ -59,11 +59,11 @@ public:
         return *_aabb;
     }
 private:
-	Material * _material;
-	Model * _model;
-	Mesh * _mesh;
-	std::vector<Texture *> _textures;
-	ShaderProgram * _shaderProgram;
+    Material * _material;
+    Model * _model;
+    Mesh * _mesh;
+    std::vector<Texture *> _textures;
+    ShaderProgram * _shaderProgram;
     std::unique_ptr<Aabb> _aabb = nullptr;
 };
 

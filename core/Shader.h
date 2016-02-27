@@ -14,22 +14,22 @@ public:
         TessellationEvaluation,
     };
 public:
-	Shader(openglEnum type, std::string const& filename)
-		: _type(type)
-		, _filename(filename) {
-	}
+    Shader(openglEnum type, std::string const& filename)
+        : _type(type)
+        , _filename(filename) {
+    }
 
 public:
-	auto Load() -> bool;
-	auto Unload() -> void;
-	auto Compile() -> openglUint;
-	auto DeleteShader() -> void;
+    auto Load() -> bool;
+    auto Unload() -> void;
+    auto Compile()->openglUint;
+    auto DeleteShader() -> void;
 
 private:
-	std::string _filename;
-	std::string _source;
-	openglEnum _type;
-	openglUint _shader;
+    std::string _filename;
+    std::string _source;
+    openglEnum _type;
+    openglUint _shader;
 };
 
 }

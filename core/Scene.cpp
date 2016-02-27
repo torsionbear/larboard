@@ -26,8 +26,8 @@ auto Scene::Load() -> void {
 }
 
 auto Scene::CreateCamera() -> Camera * {
-	_cameras.push_back(make_unique<Camera>());
-	return _cameras.back().get();
+    _cameras.push_back(make_unique<Camera>());
+    return _cameras.back().get();
 }
 
 auto Scene::CreateAmbientLight() -> AmbientLight * {
@@ -36,30 +36,30 @@ auto Scene::CreateAmbientLight() -> AmbientLight * {
 }
 
 auto Scene::CreateDirectionalLight() -> DirectionalLight * {
-	_directionalLights.push_back(make_unique<DirectionalLight>());
-	return _directionalLights.back().get();
+    _directionalLights.push_back(make_unique<DirectionalLight>());
+    return _directionalLights.back().get();
 }
 
 auto Scene::CreatePointLight() -> PointLight * {
-	_pointLights.push_back(make_unique<PointLight>());
-	return _pointLights.back().get();
+    _pointLights.push_back(make_unique<PointLight>());
+    return _pointLights.back().get();
 }
 
 auto Scene::CreateSpotLight() -> SpotLight * {
-	_spotLights.push_back(make_unique<SpotLight>());
-	return _spotLights.back().get();
+    _spotLights.push_back(make_unique<SpotLight>());
+    return _spotLights.back().get();
 }
 
 auto Scene::Stage(Movable * movable) -> void {
-	movable->AttachTo(_root);
+    movable->AttachTo(_root);
 }
 
 auto Scene::Unstage(Movable * movable) -> void {
-	movable->DetachFrom();
+    movable->DetachFrom();
 }
 
 auto Scene::GetActiveCamera() const -> Camera * {
-	return _cameras.front().get();
+    return _cameras.front().get();
 }
 
 auto Scene::CreateTerrain(vector<string> && diffuseMapFiles, string const& heightMap) -> void {
@@ -92,7 +92,7 @@ auto Scene::Picking(Ray & ray) -> bool {
         if (currentNode->LeftChild() != nullptr) {
             nodeStack.push(currentNode->LeftChild());
         }
-        if(currentNode->IsLeaf()) {
+        if (currentNode->IsLeaf()) {
             auto shapes = currentNode->GetShapes();
             for (auto shape : shapes) {
                 auto length = shape->GetAabb().IntersectRay(ray);
