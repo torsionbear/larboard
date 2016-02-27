@@ -242,6 +242,11 @@ public:
 private:
     auto CreateRootSignature()->ComPtr<ID3D12RootSignature>;
     auto CreateCommandList(ID3D12PipelineState * pso, ID3D12CommandAllocator * allocator)->ComPtr<ID3D12GraphicsCommandList>;
+    auto CreateCommittedResource(
+        D3D12_RESOURCE_DESC const* desc,
+        D3D12_RESOURCE_STATES resourceState,
+        D3D12_HEAP_TYPE heapType,
+        D3D12_CLEAR_VALUE * clearValue = nullptr) -> ID3D12Resource *;
 private:
     ComPtr<ID3D12Device> _device;
     UploadHeap _uploadHeap;

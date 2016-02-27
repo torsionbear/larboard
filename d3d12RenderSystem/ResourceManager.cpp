@@ -154,6 +154,32 @@ auto ResourceManager::CreateCommandList(ID3D12PipelineState * pso, ID3D12Command
     return ret;
 }
 
+auto ResourceManager::CreateCommittedResource(
+    D3D12_RESOURCE_DESC const * desc,
+    D3D12_RESOURCE_STATES resourceState,
+    D3D12_HEAP_TYPE heapType,
+    D3D12_CLEAR_VALUE * clearValue) -> ID3D12Resource * {
+    auto buffers = static_cast<vector<ComPtr<ID3D12Resource>> *>(nullptr);
+    switch (heapType) {
+    case D3D12_HEAP_TYPE_DEFAULT:
+        buffers = &_defaultBuffers;
+        break;
+    case D3D12_HEAP_TYPE_UPLOAD:
+        buffers = &_uploadBuffers;
+        break;
+    }
+
+    buffers->emplace_back();
+    ThrowIfFailed(_device->CreateCommittedResource(
+        &CD3DX12_HEAP_PROPERTIES(heapType),
+        D3D12_HEAP_FLAG_NONE,
+        desc,
+        resourceState,
+        clearValue,
+        IID_PPV_ARGS(&buffers->back())));
+    return buffers->back().Get();
+}
+
 auto ResourceManager::CompileShader(string const& filename, string const& target) -> ComPtr<ID3DBlob> {
     auto compileFlags = D3DCOMPILE_PACK_MATRIX_ROW_MAJOR;
 #if defined(_DEBUG)
@@ -167,27 +193,14 @@ auto ResourceManager::CompileShader(string const& filename, string const& target
 }
 
 auto ResourceManager::CreateDepthStencil(unsigned int width, unsigned int height) -> void {
-    auto & descriptorInfo = _dsvHeap.GetDescriptorInfo();
-
     auto const flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL | D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
     auto desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, width, height, 1u, 1u, 1u, 0u, flags);
-
-    D3D12_CLEAR_VALUE clearValue;	// tell the runtime at resource creation the desired clear value for better performance.
-    clearValue.Format = DXGI_FORMAT_D32_FLOAT;
-    clearValue.DepthStencil.Depth = 1.0f;
-    clearValue.DepthStencil.Stencil = 0;
-
-    _defaultBuffers.emplace_back();
-    ThrowIfFailed(_device->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-        D3D12_HEAP_FLAG_NONE,
-        &desc,
-        D3D12_RESOURCE_STATE_DEPTH_WRITE,
-        &clearValue,
-        IID_PPV_ARGS(&_defaultBuffers.back())));
+    auto clearValue = CD3DX12_CLEAR_VALUE(DXGI_FORMAT_D32_FLOAT, 1.0f, 0u);
+    auto buffer = CreateCommittedResource(&desc, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_HEAP_TYPE_DEFAULT, &clearValue);
 
     // Create the depth stencil view.
-    _device->CreateDepthStencilView(_defaultBuffers.back().Get(), nullptr, descriptorInfo._cpuHandle);
+    auto & descriptorInfo = _dsvHeap.GetDescriptorInfo();
+    _device->CreateDepthStencilView(buffer, nullptr, descriptorInfo._cpuHandle);
     _depthStencilDescriptorInfos.push_back(descriptorInfo);
 }
 
@@ -198,26 +211,10 @@ auto ResourceManager::LoadMeshes(core::Mesh ** meshes, unsigned int count, unsig
         vertexBufferSize += meshes[i]->GetVertex().size() * stride;
         indexBufferSize += meshes[i]->GetIndex().size() * sizeof(unsigned int);
     }
-    _defaultBuffers.emplace_back();
-    ThrowIfFailed(_device->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-        D3D12_HEAP_FLAG_NONE,
-        &CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize),
-        D3D12_RESOURCE_STATE_COPY_DEST,
-        nullptr,
-        IID_PPV_ARGS(&_defaultBuffers.back())));
-    auto vertexBuffer = _defaultBuffers.back().Get();
+    auto vertexBuffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
     auto const vbv = D3D12_VERTEX_BUFFER_VIEW{ vertexBuffer->GetGPUVirtualAddress(), vertexBufferSize, stride };
 
-    _defaultBuffers.emplace_back();
-    ThrowIfFailed(_device->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-        D3D12_HEAP_FLAG_NONE,
-        &CD3DX12_RESOURCE_DESC::Buffer(indexBufferSize),
-        D3D12_RESOURCE_STATE_COPY_DEST,
-        nullptr,
-        IID_PPV_ARGS(&_defaultBuffers.back())));
-    auto indexBuffer = _defaultBuffers.back().Get();
+    auto indexBuffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(indexBufferSize), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
     auto const ibv = D3D12_INDEX_BUFFER_VIEW{ indexBuffer->GetGPUVirtualAddress(), indexBufferSize, DXGI_FORMAT_R32_UINT };
 
     auto vertexData = vector<core::Vertex>();
@@ -244,15 +241,7 @@ auto ResourceManager::LoadMeshes(core::Mesh ** meshes, unsigned int count, unsig
 
 auto ResourceManager::LoadModels(core::Model ** models, unsigned int count) -> void {
     // create resource
-    _defaultBuffers.emplace_back();
-    ThrowIfFailed(_device->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-        D3D12_HEAP_FLAG_NONE,
-        &CD3DX12_RESOURCE_DESC::Buffer(count * sizeof(TransformData)),
-        D3D12_RESOURCE_STATE_COPY_DEST,
-        nullptr,
-        IID_PPV_ARGS(&_defaultBuffers.back())));
-    auto buffer = _defaultBuffers.back().Get();
+    auto buffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(count * sizeof(TransformData)), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
     // aggregate data, populate _transformDescriptorInfos and set model._renderDataId
     auto transformData = vector<TransformData>{};
     for (auto i = 0u; i < count; ++i) {
@@ -273,15 +262,7 @@ auto ResourceManager::LoadModels(core::Model ** models, unsigned int count) -> v
 }
 
 auto ResourceManager::LoadCamera(core::Camera * cameras, unsigned int count) -> void {
-    _uploadBuffers.emplace_back();
-    ThrowIfFailed(_device->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-        D3D12_HEAP_FLAG_NONE,
-        &CD3DX12_RESOURCE_DESC::Buffer(count * sizeof(CameraData)),
-        D3D12_RESOURCE_STATE_GENERIC_READ,
-        nullptr,
-        IID_PPV_ARGS(&_uploadBuffers.back())));
-    auto buffer = _uploadBuffers.back().Get();
+    auto buffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(count * sizeof(CameraData)), D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_TYPE_UPLOAD);
     // Map the constant buffers and cache their heap pointers.
     uint8 * mappedPtr = nullptr;
     CD3DX12_RANGE readRange(0, 0);		// no intend to read from this resource on the CPU.
@@ -330,15 +311,7 @@ auto ResourceManager::LoadLight(core::AmbientLight ** ambientLights, unsigned in
         };
     }
 
-    _defaultBuffers.emplace_back();
-    ThrowIfFailed(_device->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-        D3D12_HEAP_FLAG_NONE,
-        &CD3DX12_RESOURCE_DESC::Buffer(sizeof(LightData)),
-        D3D12_RESOURCE_STATE_COPY_DEST,
-        nullptr,
-        IID_PPV_ARGS(&_defaultBuffers.back())));
-    auto buffer = _defaultBuffers.back().Get();
+    auto buffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(sizeof(LightData)), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
 
     _lightDescriptorInfo = _cbvSrvHeap.GetDescriptorInfo();
     auto desc = D3D12_CONSTANT_BUFFER_VIEW_DESC{ buffer->GetGPUVirtualAddress(), sizeof(LightData) };
@@ -349,15 +322,7 @@ auto ResourceManager::LoadLight(core::AmbientLight ** ambientLights, unsigned in
 }
 
 auto ResourceManager::LoadMaterials(core::Material ** materials, unsigned int count) -> void {
-    _defaultBuffers.emplace_back();
-    ThrowIfFailed(_device->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-        D3D12_HEAP_FLAG_NONE,
-        &CD3DX12_RESOURCE_DESC::Buffer(count * sizeof(MaterialData)),
-        D3D12_RESOURCE_STATE_COPY_DEST,
-        nullptr,
-        IID_PPV_ARGS(&_defaultBuffers.back())));
-    auto buffer = _defaultBuffers.back().Get();
+    auto buffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(count * sizeof(MaterialData)), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
 
     auto materialData = vector<MaterialData>{};
     for (auto i = 0u; i < count; ++i) {
@@ -400,15 +365,7 @@ auto ResourceManager::LoadDdsTexture(string const& filename) -> unsigned int {
 
     // 3. upload texture
     auto desc = uploadBuffer->GetDesc();
-    _defaultBuffers.emplace_back();
-    ThrowIfFailed(_device->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-        D3D12_HEAP_FLAG_NONE,
-        &desc,
-        D3D12_RESOURCE_STATE_COPY_DEST,
-        nullptr,
-        IID_PPV_ARGS(&_defaultBuffers.back())));
-    auto buffer = _defaultBuffers.back().Get();
+    auto buffer = CreateCommittedResource(&desc, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
     _commandList->CopyResource(buffer, uploadBuffer);
     _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 
@@ -425,16 +382,7 @@ auto ResourceManager::LoadTexture(core::Texture * texture) -> void {
     auto const format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 
     auto desc = CD3DX12_RESOURCE_DESC::Tex2D(format, texture->GetWidth(), texture->GetHeight(), 1u, mipmapLevel);
-
-    _defaultBuffers.emplace_back();
-    ThrowIfFailed(_device->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-        D3D12_HEAP_FLAG_NONE,
-        &desc,
-        D3D12_RESOURCE_STATE_COPY_DEST,
-        nullptr,
-        IID_PPV_ARGS(&_defaultBuffers.back())));
-    auto buffer = _defaultBuffers.back().Get();
+    auto buffer = CreateCommittedResource(&desc, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
     D3D12_SUBRESOURCE_DATA textureData = { texture->GetData().data(), texture->GetWidth() * sizeof(core::Vector4f), texture->GetData().size() * sizeof(core::Vector4f) };
     _uploadHeap.UploadSubresources(_commandList.Get(), buffer, 0, 1, &textureData);
     _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
@@ -471,26 +419,10 @@ auto ResourceManager::LoadSkyBox(core::SkyBox * skybox) -> void {
 
     auto const vertexBufferSize = vertexData.size() * sizeof(core::Vector3f);
     auto const indexBufferSize = indexData.size() * sizeof(unsigned int);
-    _defaultBuffers.emplace_back();
-    ThrowIfFailed(_device->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-        D3D12_HEAP_FLAG_NONE,
-        &CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize),
-        D3D12_RESOURCE_STATE_COPY_DEST,
-        nullptr,
-        IID_PPV_ARGS(&_defaultBuffers.back())));
-    auto vertexBuffer = _defaultBuffers.back().Get();
+    auto vertexBuffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
     auto const vbv = D3D12_VERTEX_BUFFER_VIEW{ vertexBuffer->GetGPUVirtualAddress(), vertexBufferSize, sizeof(core::Vector3f) };
 
-    _defaultBuffers.emplace_back();
-    ThrowIfFailed(_device->CreateCommittedResource(
-        &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-        D3D12_HEAP_FLAG_NONE,
-        &CD3DX12_RESOURCE_DESC::Buffer(indexBufferSize),
-        D3D12_RESOURCE_STATE_COPY_DEST,
-        nullptr,
-        IID_PPV_ARGS(&_defaultBuffers.back())));
-    auto indexBuffer = _defaultBuffers.back().Get();
+    auto indexBuffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(indexBufferSize), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
     auto const ibv = D3D12_INDEX_BUFFER_VIEW{ indexBuffer->GetGPUVirtualAddress(), indexBufferSize, DXGI_FORMAT_R32_UINT };
     _skyBoxMeshInfo = MeshDataInfo{ vbv, ibv, indexData.size(), 0u, 0u, };
 
