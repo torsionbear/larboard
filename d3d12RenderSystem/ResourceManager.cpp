@@ -169,18 +169,8 @@ auto ResourceManager::CompileShader(string const& filename, string const& target
 auto ResourceManager::CreateDepthStencil(unsigned int width, unsigned int height) -> void {
     auto & descriptorInfo = _dsvHeap.GetDescriptorInfo();
 
-    CD3DX12_RESOURCE_DESC desc(
-        D3D12_RESOURCE_DIMENSION_TEXTURE2D,
-        0,
-        width,
-        height,
-        1,
-        1,
-        DXGI_FORMAT_D32_FLOAT,
-        1,
-        0,
-        D3D12_TEXTURE_LAYOUT_UNKNOWN,
-        D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL | D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE);
+    auto const flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL | D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
+    auto desc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, width, height, 1u, 1u, 1u, 0u, flags);
 
     D3D12_CLEAR_VALUE clearValue;	// tell the runtime at resource creation the desired clear value for better performance.
     clearValue.Format = DXGI_FORMAT_D32_FLOAT;
@@ -419,14 +409,7 @@ auto ResourceManager::LoadDdsTexture(string const& filename) -> unsigned int {
         nullptr,
         IID_PPV_ARGS(&_defaultBuffers.back())));
     auto buffer = _defaultBuffers.back().Get();
-    for (auto i = 0u; i < desc.MipLevels; ++i) {
-        for (auto j = 0u; j < desc.DepthOrArraySize; ++j) {
-            auto const subresourceIndex = i * desc.DepthOrArraySize + j;
-            CD3DX12_TEXTURE_COPY_LOCATION Dst(buffer, subresourceIndex);
-            CD3DX12_TEXTURE_COPY_LOCATION Src(uploadBuffer, subresourceIndex);
-            _commandList->CopyTextureRegion(&Dst, 0, 0, 0, &Src, nullptr);
-        }
-    }
+    _commandList->CopyResource(buffer, uploadBuffer);
     _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 
     // 4. create srv
@@ -440,18 +423,8 @@ auto ResourceManager::LoadDdsTexture(string const& filename) -> unsigned int {
 auto ResourceManager::LoadTexture(core::Texture * texture) -> void {
     auto const mipmapLevel = 1u; // dx12 does not support auto mipmap generation :(
     auto const format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-    CD3DX12_RESOURCE_DESC desc(
-        D3D12_RESOURCE_DIMENSION_TEXTURE2D,
-        0,
-        texture->GetWidth(),
-        texture->GetHeight(),
-        1,
-        mipmapLevel,
-        format,
-        1,
-        0,
-        D3D12_TEXTURE_LAYOUT_UNKNOWN,
-        D3D12_RESOURCE_FLAG_NONE);
+
+    auto desc = CD3DX12_RESOURCE_DESC::Tex2D(format, texture->GetWidth(), texture->GetHeight(), 1u, mipmapLevel);
 
     _defaultBuffers.emplace_back();
     ThrowIfFailed(_device->CreateCommittedResource(
