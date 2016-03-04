@@ -5,6 +5,7 @@
 
 #include "d3dx12.h"
 #include "Common.h"
+#include "SsaoRenderer.h"
 
 using Microsoft::WRL::ComPtr;
 using std::array;
@@ -26,7 +27,7 @@ auto RenderSystem::Init(unsigned int width, unsigned int height) -> void {
     auto factory = CreateFactory();
     _renderWindow.Create(width, height, L"RenderWindow");
     _resourceManager = make_unique<ResourceManager>(factory.Get(), width, height, _renderWindow.GetHwnd());
-    _renderer = make_unique<Renderer>(_resourceManager.get(), width, height);
+    _renderer = make_unique<SsaoRenderer>(_resourceManager.get(), width, height);
 }
 
 auto RenderSystem::EnableDebugLayer() -> void {

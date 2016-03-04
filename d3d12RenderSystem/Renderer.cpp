@@ -6,7 +6,17 @@ using std::array;
 
 namespace d3d12RenderSystem {
 
+Renderer::Renderer(ResourceManager * resourceManager, unsigned int width, unsigned int height) {
+    _resourceManager = resourceManager;
+    _viewport.Width = static_cast<float>(width);
+    _viewport.Height = static_cast<float>(height);
+    _viewport.MaxDepth = 1.0f;
+    _scissorRect.right = static_cast<LONG>(width);
+    _scissorRect.bottom = static_cast<LONG>(height);
+}
+
 auto Renderer::Prepare() -> void {
+    _depthStencil = _resourceManager->CreateDepthStencil(_viewport.Width, _viewport.Height, nullptr);
     CreateDefaultPso();
     CreateSkyBoxPso();
 }
@@ -31,8 +41,7 @@ auto Renderer::DrawBegin() -> void {
 
     // render target
     auto rtv = swapChainRenderTargets.GetCurrentRtv();
-    auto depthStencilDescriptorInfo = _resourceManager->GetDepthStencilDescriptorInfo(0);
-    commandList->OMSetRenderTargets(1, &rtv, FALSE, &depthStencilDescriptorInfo._cpuHandle);
+    commandList->OMSetRenderTargets(1, &rtv, FALSE, &_depthStencil._cpuHandle);
 
     // null descriptors
     commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::DiffuseMap, _resourceManager->GetNullDescriptorInfo(0)._gpuHandle);
@@ -43,7 +52,7 @@ auto Renderer::DrawBegin() -> void {
     // Record commands.
     const float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
     commandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
-    commandList->ClearDepthStencilView(depthStencilDescriptorInfo._cpuHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+    commandList->ClearDepthStencilView(_depthStencil._cpuHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
     _currentPso = _defaultPso.Get();
     commandList->SetPipelineState(_currentPso);
@@ -67,13 +76,30 @@ auto Renderer::ToggleBackFace() -> void {
 
 }
 
-Renderer::Renderer(ResourceManager * resourceManager, unsigned int width, unsigned int height) {
-    _resourceManager = resourceManager;
-    _viewport.Width = static_cast<float>(width);
-    _viewport.Height = static_cast<float>(height);
-    _viewport.MaxDepth = 1.0f;
-    _scissorRect.right = static_cast<LONG>(width);
-    _scissorRect.bottom = static_cast<LONG>(height);
+auto Renderer::Draw(core::Camera const* camera, core::SkyBox const* skyBox, core::Shape const*const* shapes, unsigned int shapeCount) -> void {
+    DrawBegin();
+    UseCamera(camera);
+    UseLight();
+    RenderSkyBox(skyBox);
+    for (auto i = 0u; i < shapeCount; ++i) {
+        RenderShape(shapes[i]);
+    }
+    DrawEnd();
+}
+
+auto Renderer::AllocateDescriptorHeap(
+    unsigned int cameraCount,
+    unsigned int meshCount,
+    unsigned int modelCount,
+    unsigned int textureCount,
+    unsigned int materialCount,
+    unsigned int skyBoxCount,
+    unsigned int nullDescriptorCount) -> void {
+    _resourceManager->AllocDsvDescriptorHeap(1);
+    auto const lightDescriptorCount = 1u;
+    auto const cbvCount = cameraCount + modelCount + materialCount + lightDescriptorCount;
+    auto const srvCount = textureCount + nullDescriptorCount + skyBoxCount;
+    _resourceManager->AllocCbvSrvDescriptorHeap(cbvCount + srvCount);
 }
 
 auto Renderer::RenderShape(core::Shape const * shape) -> void {

@@ -107,6 +107,7 @@ using Matrix3x4f = Matrix<Float32, 3, 4>;
 using Matrix4x4f = Matrix<Float32, 4, 4>;
 using Vector2f = Matrix<Float32, 2, 1>;
 using Vector2i = Matrix<int, 2, 1>;
+using Vector3i = Matrix<int, 3, 1>;
 using Vector2i32 = Matrix<int32, 2, 1>;
 using Vector3f = Matrix<Float32, 3, 1>;
 using Vector4f = Matrix<Float32, 4, 1>;

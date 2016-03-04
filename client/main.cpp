@@ -28,26 +28,26 @@ auto static const width = 800;
 auto static const height = 600;
 
 auto LoadScene_dx0(core::Scene * scene) -> void {
-    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square/square.x3d").Read(scene);
-    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square/square_dx.x3d").Read(scene);
+    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.4f, 0.4f, 0.4f, 1.0f });
     scene->CreateSkyBox("media/skybox/mt.dds");
 }
 
 auto LoadScene_dx1(core::Scene * scene) -> void {
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square2/square2.x3d").Read(scene);
-    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
+    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.4f, 0.4f, 0.4f, 1.0f });
     scene->CreateSkyBox("media/skybox/cloudy_noon.dds");
 }
 
 auto LoadScene_dx2(core::Scene * scene) -> void {
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/8/8.x3d").Read(scene);
-    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
+    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.4f, 0.4f, 0.4f, 1.0f });
     scene->CreateSkyBox("media/skybox/mt.dds");
 }
 
 auto LoadScene_dx3(core::Scene * scene) -> void {
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_02/xsh_02_house.x3d").Read(scene);
-    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.1f, 0.1f, 0.1f, 1.0f });
+    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.4f, 0.4f, 0.4f, 1.0f });
     scene->CreateSkyBox("media/skybox/cloudy_noon.dds");
 }
 
@@ -160,87 +160,42 @@ int main_dx() {
     auto inputHandler = InputHandler(renderer, scene.get(), &cameraController, width, height);
     renderSystem.GetRenderWindow().RegisterInputHandler(std::function<void(HWND, UINT, WPARAM, LPARAM)>(inputHandler));
 
-    // load
-    resourceManager->LoadBegin(
-        1,
-        1,
-        scene->GetStaticModelGroup().GetMeshes().size(),
-        scene->GetStaticModelGroup().GetModels().size(),
-        scene->GetStaticModelGroup()._textures.size(),
-        scene->GetStaticModelGroup()._materials.size(),
-        scene->_skyBox == nullptr ? 0 : 1);
-    resourceManager->CreateDepthStencil(width, height);
-    // skybox
-    if (scene->_skyBox != nullptr) {
-        resourceManager->LoadSkyBox(scene->_skyBox.get());
+    renderSystem.RegisterSkyBox(scene->_skyBox.get());
+    renderSystem.RegisterCamera(scene->GetActiveCamera());
+    for (auto & shape : scene->GetStaticModelGroup().GetShapes()) {
+        renderSystem.RegisterShape(shape.get());
     }
-    // load cameras
-    resourceManager->LoadCamera(scene->GetActiveCamera(), 1);
-    // load meshes
-    auto meshes = vector<core::Mesh *>{};
-    for (auto & m : scene->GetStaticModelGroup().GetMeshes()) {
-        meshes.push_back(m.get());
+    for (auto & mesh : scene->GetStaticModelGroup().GetMeshes()) {
+        renderSystem.RegisterMesh(mesh.get());
     }
-    resourceManager->LoadMeshes(meshes.data(), meshes.size(), sizeof(core::Vertex));
-    // load models
-    auto models = vector<core::Model *>{};
     for (auto & model : scene->GetStaticModelGroup().GetModels()) {
-        models.push_back(model.get());
+        renderSystem.RegisterModel(model.get());
     }
-    resourceManager->LoadModels(models.data(), models.size());
-    // load materials
-    auto materials = vector<core::Material *>{};
     for (auto & material : scene->GetStaticModelGroup()._materials) {
-        materials.push_back(material.get());
+        renderSystem.RegisterMaterial(material.get());
     }
-    resourceManager->LoadMaterials(materials.data(), materials.size());
-    // load textures
-    for (auto & t : scene->GetStaticModelGroup()._textures) {
-        // change filename's extension to .dds
-        auto filename = t->GetFilename();
-        filename.erase(filename.find_last_of('.'));
-        filename += ".dds";
-        t->_renderDataId = resourceManager->LoadDdsTexture(filename);
+    for (auto & texture : scene->GetStaticModelGroup()._textures) {
+        renderSystem.RegisterTexture(texture.get());
     }
-    // load lights
-    auto ambientLights = vector<core::AmbientLight *>{};
     for (auto & ambientLight : scene->_ambientLights) {
-        ambientLights.push_back(ambientLight.get());
+        renderSystem.RegisterAmbientLight(ambientLight.get());
     }
-    auto directionalLights = vector<core::DirectionalLight *>{};
     for (auto & directionalLight : scene->_directionalLights) {
-        directionalLights.push_back(directionalLight.get());
+        renderSystem.RegisterDirectionalLight(directionalLight.get());
     }
-    auto pointLights = vector<core::PointLight *>{};
     for (auto & pointLight : scene->_pointLights) {
-        pointLights.push_back(pointLight.get());
+        renderSystem.RegisterPointLight(pointLight.get());
     }
-    auto spotLights = vector<core::SpotLight *>{};
     for (auto & spotLight : scene->_spotLights) {
-        spotLights.push_back(spotLight.get());
+        renderSystem.RegisterSpotLight(spotLight.get());
     }
-    resourceManager->LoadLight(
-        ambientLights.data(), ambientLights.size(),
-        directionalLights.data(), directionalLights.size(),
-        pointLights.data(), pointLights.size(),
-        spotLights.data(), spotLights.size());
-    resourceManager->LoadEnd();
-
-    renderer->Prepare();
+    renderSystem.Load();
     while (renderWindow.Step()) {
-        resourceManager->PrepareResource();
         // update
         cameraController.Step();
-        resourceManager->UpdateCamera(*scene->GetActiveCamera());
-        renderer->DrawBegin();
-        renderer->UseCamera(scene->GetActiveCamera());
-        renderer->UseLight();
-        renderer->RenderSkyBox(scene->_skyBox.get());
-        // render
-        for (auto & shape : scene->GetStaticModelGroup().GetShapes()) {
-            renderer->RenderShape(shape.get());
-        }
-        renderer->DrawEnd();
+        renderSystem.Update();
+        // draw
+        renderSystem.Draw();
     }
 
     return 0;

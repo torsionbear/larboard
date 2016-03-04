@@ -89,5 +89,11 @@
     <FxCompile Include="shaders\default_v.hlsl" />
     <FxCompile Include="shaders\skyBox_v.hlsl" />
     <FxCompile Include="shaders\skyBox_p.hlsl" />
+    <FxCompile Include="shaders\ssao_default_p.hlsl" />
+    <FxCompile Include="shaders\ssao_default_v.hlsl" />
+    <FxCompile Include="shaders\ssao_ssao_p.hlsl" />
+    <FxCompile Include="shaders\ssao_ssao_v.hlsl" />
+    <FxCompile Include="shaders\ssao_lighting_p.hlsl" />
+    <FxCompile Include="shaders\ssao_lighting_v.hlsl" />
   </ItemGroup>
 </Project>

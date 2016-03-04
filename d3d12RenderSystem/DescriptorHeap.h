@@ -15,6 +15,7 @@ struct DescriptorInfo {
     uint8 * _mappedDataPtr;
     D3D12_GPU_DESCRIPTOR_HANDLE _gpuHandle;
     D3D12_CPU_DESCRIPTOR_HANDLE _cpuHandle;
+    ID3D12Resource * _resource;
 };
 
 class DescriptorHeap {
@@ -32,9 +33,9 @@ public:
         _gpuHandle = _heap->GetGPUDescriptorHandleForHeapStart();
         _cpuHandle = _heap->GetCPUDescriptorHandleForHeapStart();
     }
-    auto GetDescriptorInfo() -> DescriptorInfo {
+    auto GetDescriptorInfo(ID3D12Resource * resource) -> DescriptorInfo {
         assert(_end <= _size);
-        auto ret = DescriptorInfo{ nullptr, GetGpuHandle(_end), GetCpuHandle(_end) };
+        auto ret = DescriptorInfo{ nullptr, GetGpuHandle(_end), GetCpuHandle(_end), resource };
         ++_end;
         return ret;
     }

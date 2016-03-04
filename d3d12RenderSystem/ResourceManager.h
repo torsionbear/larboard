@@ -39,13 +39,14 @@ using Microsoft::WRL::ComPtr;
 struct RootSignatureParameterIndex {
     enum {
         DiffuseMap = 0u,
-        NormalMap = 1u,
-        SpecularMap = 2u,
-        EmissiveMap = 3u,
-        Transform = 4u,
-        Material = 5u,
-        Camera = 6u,
-        Light = 7u,
+        NormalMap,
+        SpecularMap,
+        EmissiveMap,
+        Map4,
+        Transform,
+        Material,
+        Camera,
+        Light,
         RootSignatureParameterIndexCount = Light + 1u,
   };
   static auto GetTextureRootSignatureParameterIndex(core::TextureUsage::TextureType type) -> unsigned int {
@@ -76,6 +77,7 @@ struct RegisterConvention {
         NormalMap = 1u,
         SpecularMap = 2u,
         EmissiveMap = 3u,
+        Map4,
     };
     enum {
         StaticSampler = 0u,
@@ -166,7 +168,7 @@ public:
     }
 public:
     auto PrepareResource() -> void;
-    auto LoadBegin(unsigned int depthStencilCount, unsigned int cameraCount, unsigned int meshCount, unsigned int modelCount, unsigned int textureCount, unsigned int materialCount, unsigned int skyBoxCount) -> void;
+    auto LoadBegin() -> void;
     auto LoadEnd() -> void;
     auto LoadMeshes(core::Mesh ** meshes, unsigned int count, unsigned int stride) -> void;
     auto LoadModels(core::Model ** models, unsigned int count) -> void;
@@ -178,13 +180,18 @@ public:
         core::SpotLight ** spotLights, unsigned int spotLightCount) -> void;
     auto LoadMaterials(core::Material ** materials, unsigned int count) -> void;
     auto LoadTexture(core::Texture * texture) -> void;
+    auto LoadDdsTexture(core::Texture ** texture, unsigned int count) -> void;
     auto LoadDdsTexture(std::string const& filename) -> unsigned int;
     auto LoadSkyBox(core::SkyBox * skybox) -> void;
-    auto UpdateCamera(core::Camera const& camera) -> void;
-    auto CreateDepthStencil(unsigned int width, unsigned int height) -> void;
+    auto UpdateCamera(core::Camera const* camera) -> void;
+    auto CreateDepthStencil(unsigned int width, unsigned int height, DescriptorInfo * srv) -> DescriptorInfo;
     auto CreatePso(D3D12_GRAPHICS_PIPELINE_STATE_DESC const* psoDesc) -> ComPtr<ID3D12PipelineState>;
     auto CompileShader(std::string const& filename, std::string const& target)->ComPtr<ID3DBlob>;
-
+    auto CreateRenderTarget(DXGI_FORMAT format, unsigned int width, unsigned int height, uint8 size, DescriptorInfo * srv) -> DescriptorInfo;
+    auto CreateTexture2d(DXGI_FORMAT format, uint64 width, uint32 height, void const* data, uint32 size, uint8 stride)->DescriptorInfo;
+    auto UploadConstantBufferData(unsigned int size, void const* data) -> DescriptorInfo;
+    auto UploadVertexData(unsigned int size, unsigned int stride, void const* data) -> D3D12_VERTEX_BUFFER_VIEW;
+    auto UploadIndexData(unsigned int size, void const* data) -> D3D12_INDEX_BUFFER_VIEW;
     auto GetMeshDataInfo(unsigned int index) -> MeshDataInfo const& {
         return _meshDataInfos[index];
     }
@@ -215,14 +222,14 @@ public:
     auto AllocDsvDescriptorHeap(unsigned int size) -> void {
         _dsvHeap.Init(_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_DSV, size, D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
     }
+    auto AllocRtvDescriptorHeap(unsigned int size) -> void {
+        _rtvHeap.Init(_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, size, D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
+    }
     auto GetCameraDescriptorInfo(unsigned int index) -> DescriptorInfo const& {
         return _cameraDescriptorInfos[index];
     }
     auto GetTransformDescriptorInfo(unsigned int index) -> DescriptorInfo const& {
         return _transformDescriptorInfos[index];
-    }
-    auto GetDepthStencilDescriptorInfo(unsigned int index) -> DescriptorInfo const& {
-        return _depthStencilDescriptorInfos[index];
     }
     auto GetTextureDescriptorInfo(unsigned int index) -> DescriptorInfo const& {
         return _textureDescriptorInfos[index];
@@ -253,10 +260,10 @@ private:
 
     DescriptorHeap _dsvHeap;
     DescriptorHeap _cbvSrvHeap;
+    DescriptorHeap _rtvHeap;
     std::vector<MeshDataInfo> _meshDataInfos;
     std::vector<DescriptorInfo> _cameraDescriptorInfos;
     std::vector<DescriptorInfo> _transformDescriptorInfos;
-    std::vector<DescriptorInfo> _depthStencilDescriptorInfos;
     std::vector<DescriptorInfo> _textureDescriptorInfos;
     DescriptorInfo _lightDescriptorInfo;
     std::vector<DescriptorInfo> _nullDescriptorInfo;

@@ -18,8 +18,12 @@ Camera::Camera()
     : Movable(Vector4f{ 0.0f, 0.0f, -1.0f, 0.0f }, Vector4f{ 0.0f, 1.0f, 0.0f, 0.0f }) {	// Camera looks at -z by default
 }
 
-auto Camera::GetProjectTransform() const -> Matrix4x4f const & {
+auto Camera::GetProjectTransform() const -> Matrix4x4f const& {
     return _projectTransform;
+}
+
+auto Camera::GetProjectTransformDx() const -> Matrix4x4f const& {
+    return _projectTransformDx;
 }
 
 auto Camera::GetRayTo(Vector2f windowCoordinate) const -> Ray {
@@ -48,6 +52,12 @@ auto Camera::SetPerspective(Point4f lowerLeft, Point4f upperRight, Float32 farPl
         2 * lowerLeft(2) / (upperRight(0) - lowerLeft(0)), 0, (upperRight(0) + lowerLeft(0)) / (upperRight(0) - lowerLeft(0)), 0,
         0, 2 * lowerLeft(2) / (upperRight(1) - lowerLeft(1)), (upperRight(1) + lowerLeft(1)) / (upperRight(1) - lowerLeft(1)), 0,
         0, 0, -(farPlane + lowerLeft(2)) / (farPlane - lowerLeft(2)), -2 * farPlane*lowerLeft(2) / (farPlane - lowerLeft(2)),
+        0, 0, -1, 0
+    };
+    _projectTransformDx = Matrix4x4f{
+        2 * lowerLeft(2) / (upperRight(0) - lowerLeft(0)), 0, (upperRight(0) + lowerLeft(0)) / (upperRight(0) - lowerLeft(0)), 0,
+        0, 2 * lowerLeft(2) / (upperRight(1) - lowerLeft(1)), (upperRight(1) + lowerLeft(1)) / (upperRight(1) - lowerLeft(1)), 0,
+        0, 0, -farPlane / (farPlane - lowerLeft(2)), -farPlane*lowerLeft(2) / (farPlane - lowerLeft(2)),
         0, 0, -1, 0
     };
 }

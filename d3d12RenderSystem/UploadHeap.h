@@ -32,7 +32,7 @@ class UploadHeap {
 public:
     auto Init(uint64 size, ID3D12Device * device, FencedCommandQueue * fencedCommandQueue) -> void;
     auto UploadSubresources(ID3D12GraphicsCommandList * commandList, ID3D12Resource * dest, unsigned int first, unsigned int count, D3D12_SUBRESOURCE_DATA * subresources) -> void;
-    auto AllocateAndUploadDataBlock(ID3D12GraphicsCommandList * commandList, ID3D12Resource * dest, uint32 size, uint32 alignment, void * data) -> void;
+    auto AllocateAndUploadDataBlock(ID3D12GraphicsCommandList * commandList, ID3D12Resource * dest, uint32 size, uint32 alignment, void const* data) -> void;
     auto AllocateDataBlocks(DataBlock * dataBlocks, uint32 count) -> MemoryBlock const&;
     auto UploadMemoryBlock(ID3D12GraphicsCommandList * commandList, MemoryBlock const& memoryBlock, ID3D12Resource * dest) -> void;
 private:

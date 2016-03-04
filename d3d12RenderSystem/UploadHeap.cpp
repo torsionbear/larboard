@@ -27,7 +27,7 @@ auto UploadHeap::UploadSubresources(ID3D12GraphicsCommandList * commandList, ID3
     UpdateSubresources(commandList, dest, _uploadHeap.Get(), memoryBlcok._offset, first, count, subresources);
 }
 
-auto UploadHeap::AllocateAndUploadDataBlock(ID3D12GraphicsCommandList * commandList, ID3D12Resource * dest, uint32 size, uint32 alignment, void * data) -> void {
+auto UploadHeap::AllocateAndUploadDataBlock(ID3D12GraphicsCommandList * commandList, ID3D12Resource * dest, uint32 size, uint32 alignment, void const* data) -> void {
     auto & memoryBlock = AllocateMemoryBlock(size, alignment);
     memcpy(_heapBegin + memoryBlock._offset, data, size);
     UploadMemoryBlock(commandList, memoryBlock, dest);
