@@ -188,7 +188,8 @@ auto ResourceManager::CreateRenderTarget(DXGI_FORMAT format, unsigned int width,
     auto const mipmapLevel = 1u; // dx12 does not support auto mipmap generation :(
 
     auto desc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height, size, mipmapLevel, 1u, 0u, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
-    auto buffer = CreateCommittedResource(&desc, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_HEAP_TYPE_DEFAULT);
+    auto clearValue = std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 0.0f, };
+    auto buffer = CreateCommittedResource(&desc, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_HEAP_TYPE_DEFAULT, &CD3DX12_CLEAR_VALUE(format, clearValue.data()));
     if (srv != nullptr) {
         D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
         srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
@@ -205,7 +206,6 @@ auto ResourceManager::CreateRenderTarget(DXGI_FORMAT format, unsigned int width,
     D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
     rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
     rtvDesc.Format = format;
-
     rtvDesc.Texture2DArray.ArraySize = size;
     rtvDesc.Texture2DArray.FirstArraySlice = 0u;
     rtvDesc.Texture2DArray.MipSlice = 0u;

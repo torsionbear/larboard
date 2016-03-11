@@ -26,8 +26,6 @@ auto SsaoRenderer::Draw(core::Camera const * camera, core::SkyBox const * skyBox
     DrawBegin();
 
     auto commandList = _resourceManager->GetCommandList();
-    _currentPso = _ssaoDefaultPso.Get();
-    commandList->SetPipelineState(_currentPso);
     const float clearColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
     commandList->ClearRenderTargetView(_gBufferDiffuse._cpuHandle, clearColor, 0, nullptr);
     commandList->ClearRenderTargetView(_gBufferNormal._cpuHandle, clearColor, 0, nullptr);
@@ -36,13 +34,17 @@ auto SsaoRenderer::Draw(core::Camera const * camera, core::SkyBox const * skyBox
     commandList->ClearDepthStencilView(_gBufferDepthStencil._cpuHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
     UseCamera(camera);
-    RenderSkyBox(skyBox);
+    if (skyBox != nullptr) {
+        RenderSkyBox(skyBox);
+    }
 
     auto renderTargets = array< D3D12_CPU_DESCRIPTOR_HANDLE, 3>{_gBufferDiffuse._cpuHandle, _gBufferNormal._cpuHandle, _gBufferSpecular._cpuHandle};
     commandList->OMSetRenderTargets(renderTargets.size(), renderTargets.data(), FALSE, &_gBufferDepthStencil._cpuHandle);
-
     for (auto i = 0u; i < shapeCount; ++i) {
         RenderShape(shapes[i]);
+    }
+    if (terrain != nullptr) {
+        DrawTerrain(terrain);
     }
 
     // ssao pass
@@ -115,8 +117,8 @@ auto SsaoRenderer::AllocateDescriptorHeap(
 
     _resourceManager->AllocDsvDescriptorHeap(normalDsvCount + gBufferDsvSrvCount);
 
-    auto const cbvCount = cameraCount + modelCount + materialCount + lightDescriptorCount + ssaoCbvCount;
-    auto const srvCount = textureCount + nullDescriptorCount + skyBoxCount + randomVectorTextureCount + gBufferRtvSrvCount + gBufferDsvSrvCount + ssaoRtvSrvCount;
+    auto const cbvCount = cameraCount + modelCount + materialCount + lightDescriptorCount + ssaoCbvCount + terrainCount;
+    auto const srvCount = textureCount + nullDescriptorCount + skyBoxCount + randomVectorTextureCount + gBufferRtvSrvCount + gBufferDsvSrvCount + ssaoRtvSrvCount + 2 * terrainCount;
     _resourceManager->AllocCbvSrvDescriptorHeap(cbvCount + srvCount);
     _resourceManager->AllocRtvDescriptorHeap(gBufferRtvSrvCount + ssaoRtvSrvCount);
 }
@@ -202,7 +204,7 @@ auto SsaoRenderer::CreateSsaoDefaultPso() -> void {
     psoDesc.RTVFormats[2] = DXGI_FORMAT_R8G8B8A8_UNORM;
     psoDesc.SampleDesc.Count = 1;
 
-    _ssaoDefaultPso = _resourceManager->CreatePso(&psoDesc);
+    _defaultPso = _resourceManager->CreatePso(&psoDesc);
 }
 
 auto SsaoRenderer::CreateSsaoPassPso() -> void {
@@ -280,34 +282,6 @@ auto SsaoRenderer::LoadScreenQuad() -> void {
 
     _screenQuadVbv = _resourceManager->UploadVertexData(vertexData.size() * sizeof(core::Vector2f), sizeof(core::Vector2f), vertexData.data());
     _screenQuadIbv = _resourceManager->UploadIndexData(indexData.size() * sizeof(unsigned int), indexData.data());
-}
-
-auto SsaoRenderer::RenderShape(core::Shape const * shape) -> void {
-    auto commandList = _resourceManager->GetCommandList();
-    // pso
-    if (_currentPso != _ssaoDefaultPso.Get()) {
-        _currentPso = _ssaoDefaultPso.Get();
-        commandList->SetPipelineState(_currentPso);
-    }
-    // transform
-    auto const& transformDescriptorInfo = _resourceManager->GetTransformDescriptorInfo(shape->GetModel()->_renderDataId);
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Transform, transformDescriptorInfo._gpuHandle);
-    // material
-    auto const& materialDescriptorInfo = _resourceManager->GetMaterialDescriptorInfo(shape->GetMaterial()->_renderDataId);
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Material, materialDescriptorInfo._gpuHandle);
-    // texture
-    for (auto texture : shape->GetTextures()) {
-        auto const& textureDescriptorInfo = _resourceManager->GetTextureDescriptorInfo(shape->GetTextures()[0]->_renderDataId);
-        auto parameterIndex = RootSignatureParameterIndex::GetTextureRootSignatureParameterIndex(texture->GetType());
-        commandList->SetGraphicsRootDescriptorTable(parameterIndex, textureDescriptorInfo._gpuHandle);
-    }
-    // vertex
-    auto const& meshRenderData = _resourceManager->GetMeshDataInfo(shape->GetMesh()->_renderDataId);
-    // todo: only call the following 2 IASet* functions when necessary
-    commandList->IASetVertexBuffers(0, 1, &meshRenderData.vbv);
-    commandList->IASetIndexBuffer(&meshRenderData.ibv);
-    commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    commandList->DrawIndexedInstanced(meshRenderData.indexCount, 1, meshRenderData.indexOffset, meshRenderData.baseVertex, 0);
 }
 
 }

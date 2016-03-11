@@ -134,9 +134,9 @@ private:
     std::vector<Vector3f> _tileCoord;
 
     TextureArray _diffuseMap;
-    std::string _diffuseMapFilename;
+    std::string _diffuseMapFilename = "media/terrain/diffuse.dds";;
     Texture _heightMap;
-    std::string _heightMapFilename;
+    std::string _heightMapFilename = "media/terrain/heightMap.dds";
     ShaderProgram _shaderProgram;
     openglUint _vao;
     openglUint _vio;

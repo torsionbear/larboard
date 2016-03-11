@@ -302,9 +302,11 @@ auto Renderer::CreateTerrainPso() -> void {
     psoDesc.DepthStencilState = depthStencilDesc;
     psoDesc.SampleMask = UINT_MAX;
     psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
-    psoDesc.NumRenderTargets = 1;
+    psoDesc.NumRenderTargets = 3;
     psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
     psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+    psoDesc.RTVFormats[1] = DXGI_FORMAT_R32G32B32A32_FLOAT;
+    psoDesc.RTVFormats[2] = DXGI_FORMAT_R8G8B8A8_UNORM;
     psoDesc.SampleDesc.Count = 1;
 
     _terrainPso = _resourceManager->CreatePso(&psoDesc);
@@ -340,9 +342,11 @@ auto Renderer::CreateTerrainWireframePso() -> void {
     psoDesc.DepthStencilState = depthStencilDesc;
     psoDesc.SampleMask = UINT_MAX;
     psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
-    psoDesc.NumRenderTargets = 1;
+    psoDesc.NumRenderTargets = 3;
     psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
     psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+    psoDesc.RTVFormats[1] = DXGI_FORMAT_R32G32B32A32_FLOAT;
+    psoDesc.RTVFormats[2] = DXGI_FORMAT_R8G8B8A8_UNORM;
     psoDesc.SampleDesc.Count = 1;
 
     _terrainWireframePso = _resourceManager->CreatePso(&psoDesc);

@@ -40,7 +40,6 @@ private:
     auto CreateSsaoPassPso() -> void;
     auto CreateLightingPassPso() -> void;
     auto LoadScreenQuad() -> void;
-    auto RenderShape(core::Shape const* shape) -> void;
 private:
     DescriptorInfo _gBufferDiffuse;
     DescriptorInfo _gBufferDiffuseSrv;
@@ -58,7 +57,6 @@ private:
     unsigned int const _sampleCount = 64u;
     SsaoData _ssaoData;
     DescriptorInfo _ssaoDataCbv;
-    ComPtr<ID3D12PipelineState> _ssaoDefaultPso;
     ComPtr<ID3D12PipelineState> _ssaoPassPso;
     ComPtr<ID3D12PipelineState> _lightingPassPso;
 

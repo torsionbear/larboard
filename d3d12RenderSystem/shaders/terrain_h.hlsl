@@ -35,7 +35,7 @@ float CalculateOuterTessLevel(float4 vertex0, float4 vertex1) {
     float edgeLength = length(vertex0 - vertex1);
     float distanceFactor = sightDistance / 60;
     float distance0 = length(2 * viewPosition - vertex0 - vertex1) / 2;
-    return max(edgeLength * 12 / distance0, 1.0);
+    return max(edgeLength * distanceFactor / distance0, 1.0);
 }
 
 TessLevel TessLevelCalculator(InputPatch<HsInput, 3> patch, uint patchId: SV_PrimitiveID) {

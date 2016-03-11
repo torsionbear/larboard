@@ -38,8 +38,10 @@ auto LoadScene_dx1(core::Scene * scene) -> void {
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.4f, 0.4f, 0.4f, 1.0f });
     scene->CreateSkyBox("media/skybox/cloudy_noon.dds");
 
-    scene->CreateTerrain({ "media/terrain/diffuse.dds" }, "media/terrain/heightMap.dds");
+    //scene->CreateTerrain({ "media/terrain/diffuse.dds" }, "media/terrain/heightMap.dds");
+    scene->CreateTerrain({ "media/terrain/grass2.png", "media/terrain/dirt2.png", "media/terrain/rock2.png" }, "media/terrain/heightMap.png");
     scene->GetTerrain()->SetSightDistance(scene->GetActiveCamera()->GetFarPlane());
+    scene->_terrain->Load(scene->GetActiveCamera()->GetFarPlane()); // still need to load terrain png texture for height calculation
     scene->GetTerrain()->SetTileSize(10);
     scene->GetTerrain()->SetHeightMapOrigin(core::Vector2i{ -30, -24 });
     scene->GetTerrain()->SetHeightMapSize(core::Vector2i{ 60, 60 });
@@ -63,8 +65,9 @@ auto LoadScene_dx3(core::Scene * scene) -> void {
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.4f, 0.4f, 0.4f, 1.0f });
     scene->CreateSkyBox("media/skybox/cloudy_noon.dds");
 
-    scene->CreateTerrain({ "media/terrain/diffuse.dds" }, "media/terrain/heightMap.dds");
+    scene->CreateTerrain({ "media/terrain/grass2.png", "media/terrain/dirt2.png", "media/terrain/rock2.png" }, "media/terrain/heightMap.png");
     scene->GetTerrain()->SetSightDistance(scene->GetActiveCamera()->GetFarPlane());
+    scene->_terrain->Load(scene->GetActiveCamera()->GetFarPlane()); // still need to load terrain png texture for height calculation
     scene->GetTerrain()->SetTileSize(10);
     scene->GetTerrain()->SetHeightMapOrigin(core::Vector2i{ -30, -24 });
     scene->GetTerrain()->SetHeightMapSize(core::Vector2i{ 60, 60 });

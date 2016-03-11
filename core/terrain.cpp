@@ -26,8 +26,8 @@ Terrain::Terrain(std::vector<string> && diffuseMapFiles, string heightMap)
     _shaderProgram.SetFragmentShader("shader/terrain_f.shader");
     _shaderProgram.SetTessellationControlShader("shader/terrain_tc.shader");
     _shaderProgram.SetTessellationEvaluationShader("shader/terrain_te.shader");
-    _diffuseMapFilename = _diffuseMap.GetFilenames()[0];
-    _heightMapFilename = _heightMap.GetFilename();
+    //_diffuseMapFilename = "diffuse.dds";
+    //_heightMapFilename = "heightMap.dds";
 }
 
 auto Terrain::Load(Float32 sightDistance) -> void {

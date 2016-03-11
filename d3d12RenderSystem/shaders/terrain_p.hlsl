@@ -7,7 +7,7 @@ struct PsInput {
 };
 
 struct PsOutput {
-    float4 diffuse : SV_TARGET; //SV_TARGET0;
+    float4 diffuse : SV_TARGET0; //SV_TARGET0;
     float4 normal : SV_TARGET1;
     float4 specular : SV_TARGET2;
 };

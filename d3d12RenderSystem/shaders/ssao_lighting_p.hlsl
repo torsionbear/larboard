@@ -144,7 +144,7 @@ PsOutput main(PsInput input) {
     }
     PsOutput ret;
     ret.color = float4(ambient + diffuse + specular, 1);
-    //ret.color = float4(diffuse, 1);
+    //ret.color = float4(normal,0);
     ret.depth = depth;
     return ret;
 }
