@@ -35,20 +35,21 @@ protected:
     auto CreateDefaultPso() -> void;
     auto CreateSkyBoxPso() -> void;
     auto CreateTerrainPso() -> void;
+    auto CreateTerrainWireframePso() -> void;
 protected:
     ResourceManager * _resourceManager;
     D3D12_VIEWPORT _viewport;
     D3D12_RECT _scissorRect;
 
     ComPtr<ID3D12PipelineState> _defaultPso;
-    ComPtr<ID3D12PipelineState> _defaultPsoWireframe;
     ComPtr<ID3D12PipelineState> _skyBoxPso;
-    ComPtr<ID3D12PipelineState> _skyBoxPsoWireframe;
     ComPtr<ID3D12PipelineState> _terrainPso;
-    ComPtr<ID3D12PipelineState> _terrainPsoWireframe;
+    ComPtr<ID3D12PipelineState> _terrainWireframePso;
     ID3D12PipelineState * _currentPso;
 
     DescriptorInfo _depthStencil;
+
+    bool _wireframeMode = false;
 };
 
 }

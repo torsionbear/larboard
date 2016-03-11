@@ -20,6 +20,7 @@ auto Renderer::Prepare() -> void {
     CreateDefaultPso();
     CreateSkyBoxPso();
     CreateTerrainPso();
+    CreateTerrainWireframePso();
 }
 
 auto Renderer::DrawBegin() -> void {
@@ -71,7 +72,7 @@ auto Renderer::DrawEnd() -> void {
 }
 
 auto Renderer::ToggleWireframe() -> void {
-
+    _wireframeMode = !_wireframeMode;
 }
 
 auto Renderer::ToggleBackFace() -> void {
@@ -160,8 +161,9 @@ auto Renderer::RenderSkyBox(core::SkyBox const* skyBox) -> void {
 auto Renderer::DrawTerrain(core::Terrain const * terrain) -> void {
     auto commandList = _resourceManager->GetCommandList();
     // pso
-    if (_currentPso != _terrainPso.Get()) {
-        _currentPso = _terrainPso.Get();
+    auto targetPso = _wireframeMode ? _terrainWireframePso : _terrainPso;
+    if (_currentPso != targetPso.Get()) {
+        _currentPso = targetPso.Get();
         commandList->SetPipelineState(_currentPso);
     }
     // diffuse map & height map
@@ -306,6 +308,44 @@ auto Renderer::CreateTerrainPso() -> void {
     psoDesc.SampleDesc.Count = 1;
 
     _terrainPso = _resourceManager->CreatePso(&psoDesc);
+}
+
+auto Renderer::CreateTerrainWireframePso() -> void {
+    // vertex attribute
+    auto const inputElementDescs = array<D3D12_INPUT_ELEMENT_DESC, 2> {
+        D3D12_INPUT_ELEMENT_DESC{ "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+            D3D12_INPUT_ELEMENT_DESC{ "TILECOORD", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
+    };
+    // rasterizer
+    CD3DX12_RASTERIZER_DESC rasterizerDesc(D3D12_DEFAULT);
+    rasterizerDesc.FrontCounterClockwise = TRUE;
+    rasterizerDesc.FillMode = D3D12_FILL_MODE_WIREFRAME;
+    // depth stencil
+    CD3DX12_DEPTH_STENCIL_DESC depthStencilDesc(D3D12_DEFAULT);
+    // shader
+    auto vs = _resourceManager->CompileShader("d3d12RenderSystem/shaders/terrain_v.hlsl", "vs_5_0");
+    auto hs = _resourceManager->CompileShader("d3d12RenderSystem/shaders/terrain_h.hlsl", "hs_5_0");
+    auto ds = _resourceManager->CompileShader("d3d12RenderSystem/shaders/terrain_d.hlsl", "ds_5_0");
+    auto ps = _resourceManager->CompileShader("d3d12RenderSystem/shaders/terrain_p.hlsl", "ps_5_0");
+
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+    psoDesc.InputLayout = { inputElementDescs.data(), inputElementDescs.size() };
+    psoDesc.pRootSignature = _resourceManager->GetRootSignature();
+    psoDesc.VS = CD3DX12_SHADER_BYTECODE(vs.Get());
+    psoDesc.HS = CD3DX12_SHADER_BYTECODE(hs.Get());
+    psoDesc.DS = CD3DX12_SHADER_BYTECODE(ds.Get());
+    psoDesc.PS = CD3DX12_SHADER_BYTECODE(ps.Get());
+    psoDesc.RasterizerState = rasterizerDesc;
+    psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+    psoDesc.DepthStencilState = depthStencilDesc;
+    psoDesc.SampleMask = UINT_MAX;
+    psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+    psoDesc.NumRenderTargets = 1;
+    psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+    psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+    psoDesc.SampleDesc.Count = 1;
+
+    _terrainWireframePso = _resourceManager->CreatePso(&psoDesc);
 }
 
 }
