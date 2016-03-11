@@ -35,13 +35,13 @@ auto SsaoRenderer::Draw(core::Camera const * camera, core::SkyBox const * skyBox
 
     UseCamera(camera);
     if (skyBox != nullptr) {
-        RenderSkyBox(skyBox);
+        DrawSkyBox(skyBox);
     }
 
     auto renderTargets = array< D3D12_CPU_DESCRIPTOR_HANDLE, 3>{_gBufferDiffuse._cpuHandle, _gBufferNormal._cpuHandle, _gBufferSpecular._cpuHandle};
     commandList->OMSetRenderTargets(renderTargets.size(), renderTargets.data(), FALSE, &_gBufferDepthStencil._cpuHandle);
     for (auto i = 0u; i < shapeCount; ++i) {
-        RenderShape(shapes[i]);
+        DrawShape(shapes[i]);
     }
     if (terrain != nullptr) {
         DrawTerrain(terrain);

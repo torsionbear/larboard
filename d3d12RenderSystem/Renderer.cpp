@@ -84,13 +84,13 @@ auto Renderer::Draw(core::Camera const* camera, core::SkyBox const* skyBox, core
     UseCamera(camera);
     UseLight();
     if (skyBox != nullptr) {
-        RenderSkyBox(skyBox);
+        DrawSkyBox(skyBox);
     }
     if (terrain != nullptr) {
         DrawTerrain(terrain);
     }
     for (auto i = 0u; i < shapeCount; ++i) {
-        RenderShape(shapes[i]);
+        DrawShape(shapes[i]);
     }
     DrawEnd();
 }
@@ -111,7 +111,7 @@ auto Renderer::AllocateDescriptorHeap(
     _resourceManager->AllocCbvSrvDescriptorHeap(cbvCount + srvCount);
 }
 
-auto Renderer::RenderShape(core::Shape const * shape) -> void {
+auto Renderer::DrawShape(core::Shape const * shape) -> void {
     auto commandList = _resourceManager->GetCommandList();
     // pso
     if (_currentPso != _defaultPso.Get()) {
@@ -139,7 +139,7 @@ auto Renderer::RenderShape(core::Shape const * shape) -> void {
     commandList->DrawIndexedInstanced(meshRenderData.indexCount, 1, meshRenderData.indexOffset, meshRenderData.baseVertex, 0);
 }
 
-auto Renderer::RenderSkyBox(core::SkyBox const* skyBox) -> void {
+auto Renderer::DrawSkyBox(core::SkyBox const* skyBox) -> void {
     auto commandList = _resourceManager->GetCommandList();
     // pso
     if (_currentPso != _skyBoxPso.Get()) {

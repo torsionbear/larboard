@@ -26,8 +26,8 @@ public:
         unsigned int skyBoxCount,
         unsigned int terrainCount,
         unsigned int nullDescriptorCount) -> void;
-    auto RenderShape(core::Shape const* shape) -> void;
-    auto RenderSkyBox(core::SkyBox const* skyBox) -> void;
+    auto DrawShape(core::Shape const* shape) -> void;
+    auto DrawSkyBox(core::SkyBox const* skyBox) -> void;
     auto DrawTerrain(core::Terrain const * terrain) -> void;
     auto UseCamera(core::Camera const* camera) -> void;
     auto UseLight() -> void;
