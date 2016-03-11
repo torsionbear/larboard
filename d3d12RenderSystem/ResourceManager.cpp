@@ -60,7 +60,7 @@ auto ResourceManager::PrepareResource() -> void {
 
 auto ResourceManager::LoadBegin() -> void {
     // create null descriptor
-    auto const nullDescriptorCount = 4u;
+    auto const nullDescriptorCount = 5u;
     for (auto i = 0u; i < nullDescriptorCount; ++i) {
         D3D12_SHADER_RESOURCE_VIEW_DESC nullSrvDesc = {};
         nullSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
@@ -91,27 +91,29 @@ auto ResourceManager::CreatePso(D3D12_GRAPHICS_PIPELINE_STATE_DESC const* psoDes
 auto ResourceManager::CreateRootSignature() -> ComPtr<ID3D12RootSignature> {
     auto ret = ComPtr<ID3D12RootSignature>{ nullptr };
 
-    auto ranges = array<CD3DX12_DESCRIPTOR_RANGE, 9>{};
+    auto ranges = array<CD3DX12_DESCRIPTOR_RANGE, 10>{};
     ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RegisterConvention::DiffuseMap);
     ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RegisterConvention::NormalMap);
     ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RegisterConvention::SpecularMap);
     ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RegisterConvention::EmissiveMap);
-    ranges[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RegisterConvention::Map4);
+    ranges[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RegisterConvention::SrvPs4);
     ranges[5].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Transform);
     ranges[6].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Material);
     ranges[7].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Camera);
     ranges[8].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Light);
+    ranges[9].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::CbvAll);
 
-    auto rootParameters = array<CD3DX12_ROOT_PARAMETER, 9>{};
+    auto rootParameters = array<CD3DX12_ROOT_PARAMETER, 10>{};
     rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
     rootParameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
     rootParameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_PIXEL);
     rootParameters[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_PIXEL);
-    rootParameters[4].InitAsDescriptorTable(1, &ranges[4], D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[4].InitAsDescriptorTable(1, &ranges[4], D3D12_SHADER_VISIBILITY_ALL);
     rootParameters[5].InitAsDescriptorTable(1, &ranges[5], D3D12_SHADER_VISIBILITY_VERTEX);
     rootParameters[6].InitAsDescriptorTable(1, &ranges[6], D3D12_SHADER_VISIBILITY_PIXEL);
     rootParameters[7].InitAsDescriptorTable(1, &ranges[7], D3D12_SHADER_VISIBILITY_ALL);
     rootParameters[8].InitAsDescriptorTable(1, &ranges[8], D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[9].InitAsDescriptorTable(1, &ranges[9], D3D12_SHADER_VISIBILITY_ALL);
 
     auto sampler = D3D12_STATIC_SAMPLER_DESC{};
     sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
@@ -126,11 +128,10 @@ auto ResourceManager::CreateRootSignature() -> ComPtr<ID3D12RootSignature> {
     sampler.MaxLOD = D3D12_FLOAT32_MAX;
     sampler.ShaderRegister = RegisterConvention::StaticSampler;
     sampler.RegisterSpace = 0;
-    sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+    sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
     CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
     rootSignatureDesc.Init(rootParameters.size(), rootParameters.data(), 1, &sampler, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-    //rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
     ComPtr<ID3DBlob> signature;
     ComPtr<ID3DBlob> error;
@@ -483,30 +484,45 @@ auto ResourceManager::CreateTexture2d(DXGI_FORMAT format, uint64 width, uint32 h
 
 }
 
-auto ResourceManager::UploadConstantBufferData(unsigned int size, void const* data) -> DescriptorInfo {
-    auto buffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(size), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
-    _uploadHeap.AllocateAndUploadDataBlock(_commandList.Get(), buffer, size, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT, data);
-    _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+auto ResourceManager::UploadConstantBufferData(unsigned int size, void const* data, ID3D12Resource * dest) -> DescriptorInfo {
+    if (dest == nullptr) {
+        dest = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(size), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
+    } else {
+        _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(dest, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST));
+    }
+    _uploadHeap.AllocateAndUploadDataBlock(_commandList.Get(), dest, size, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT, data);
+    _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(dest, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 
-    auto descriptorInfo = _cbvSrvHeap.GetDescriptorInfo(buffer);
-    D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = { buffer->GetGPUVirtualAddress(), size };
+    auto descriptorInfo = _cbvSrvHeap.GetDescriptorInfo(dest);
+    D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = { dest->GetGPUVirtualAddress(), size };
     _device->CreateConstantBufferView(&cbvDesc, descriptorInfo._cpuHandle);
     return descriptorInfo;
 }
 
-auto ResourceManager::UploadVertexData(unsigned int size, unsigned int stride, void const* data) -> D3D12_VERTEX_BUFFER_VIEW {
-    auto vertexBuffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(size), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
-    _uploadHeap.AllocateAndUploadDataBlock(_commandList.Get(), vertexBuffer, size, sizeof(float), data);
-    _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(vertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
-
-    return D3D12_VERTEX_BUFFER_VIEW{ vertexBuffer->GetGPUVirtualAddress(), size, stride };
+auto ResourceManager::UploadVertexData(unsigned int size, unsigned int stride, void const* data, ID3D12Resource ** dest) -> D3D12_VERTEX_BUFFER_VIEW {
+    auto resource = static_cast<ID3D12Resource *>(nullptr);
+    if (dest != nullptr && *dest != nullptr) {
+        _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(*dest, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST));
+        resource = *dest;
+    } else {
+        resource = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(size), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
+        if (dest != nullptr) {
+            *dest = resource;
+        }
+    }
+    if (data != nullptr) {
+        _uploadHeap.AllocateAndUploadDataBlock(_commandList.Get(), resource, size, sizeof(float), data);
+        _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+    }
+    return D3D12_VERTEX_BUFFER_VIEW{ resource->GetGPUVirtualAddress(), size, stride };
 }
 
 auto ResourceManager::UploadIndexData(unsigned int size, void const* data) -> D3D12_INDEX_BUFFER_VIEW {
     auto indexBuffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(size), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
-    _uploadHeap.AllocateAndUploadDataBlock(_commandList.Get(), indexBuffer, size, sizeof(float), data);
-    _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(indexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER));
-
+    if (data != nullptr) {
+        _uploadHeap.AllocateAndUploadDataBlock(_commandList.Get(), indexBuffer, size, sizeof(float), data);
+        _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(indexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER));
+    }
     return D3D12_INDEX_BUFFER_VIEW{ indexBuffer->GetGPUVirtualAddress(), size, DXGI_FORMAT_R32_UINT };
 }
 
@@ -550,6 +566,49 @@ auto ResourceManager::LoadSkyBox(core::SkyBox * skyBox) -> void {
     skyBox->SetRenderDataId(LoadDdsTexture(skyBox->GetFilename()));
 }
 
+auto ResourceManager::LoadTerrain(core::Terrain * terrain) -> void {
+    terrain->GetDiffuseMap()->_renderDataId = LoadDdsTexture(terrain->GetDiffuseMapFilename());
+    terrain->GetHeightMap()->_renderDataId = LoadDdsTexture(terrain->GetHeightMapFilename());
+    
+    auto const tileSize = terrain->GetTileSize();
+    auto vertexData = std::array<core::Vector2f, 4>{ core::Vector2f{ 0, 0 }, core::Vector2f{ tileSize, 0 }, core::Vector2f{ tileSize, tileSize }, core::Vector2f{ 0, tileSize } };
+    auto vertexBufferView = UploadVertexData(vertexData.size() * sizeof(core::Vector2f), sizeof(core::Vector2f), vertexData.data());
+    auto indexData = std::array<unsigned int, 6>{0, 1, 2, 0, 2, 3};
+    auto indexBufferView = UploadIndexData(indexData.size() * sizeof(unsigned int), indexData.data());
+
+    auto sightDistance = terrain->GetSightDistance();
+    auto tileCountUpperBound = static_cast<int>(ceil(sightDistance / tileSize) * 2);
+    tileCountUpperBound *= tileCountUpperBound;
+    auto specialTiles = terrain->GetSpecialTiles();
+    auto instanceData = vector<core::Vector3f>(specialTiles.size() + tileCountUpperBound, core::Vector3f{0, 0, 0});
+    auto instanceBufferView = UploadVertexData(instanceData.size() * sizeof(core::Vector3f), sizeof(core::Vector3f), instanceData.data(), &_terrainInstanceDataResource);
+    _terrainMeshInfo = MeshDataInfo {
+        vertexBufferView,
+        indexBufferView,
+        indexData.size(),
+        0u,
+        0,
+        instanceBufferView,
+        static_cast<unsigned int>(tileCountUpperBound), // should use terrain->GetTileCount() instead for draw call
+        specialTiles.size(), // reserve first specialTiles.size() Vector3f{0, 0, 0} for special Tiles
+    };
+    auto terrainData = TerrainData {
+        terrain->GetHeightMapOrigin(),
+        terrain->GetHeightMapSize(),
+        terrain->GetDiffuseMapOrigin(),
+        terrain->GetDiffuseMapSize(),
+        terrain->GetTileSize(),
+        terrain->GetSightDistance(),        
+    };
+    _terrainCbv = UploadConstantBufferData(sizeof(TerrainData), &terrainData);
+
+    //special tiles
+    LoadMeshes(specialTiles.data(), specialTiles.size(), sizeof(core::Vertex));
+
+    //======
+    //LoadTerrainSpecialTiles(terrain->GetSpecialTiles());
+}
+
 auto ResourceManager::UpdateCamera(core::Camera const * camera) -> void {
     auto const& descriptorInfo = _cameraDescriptorInfos[camera->_renderDataId];
     auto cameraData = CameraData{
@@ -559,6 +618,12 @@ auto ResourceManager::UpdateCamera(core::Camera const * camera) -> void {
         camera->GetPosition(),
     };
     memcpy(descriptorInfo._mappedDataPtr, &cameraData, sizeof(cameraData));
+}
+
+auto ResourceManager::UpdateTerrain(core::Terrain * terrain, core::Camera * camera) -> void {
+    // update terrain tile coord ubo
+    auto const& tileCoord = terrain->GetTileCoordinateWithSpecialTiles(camera);
+    UploadVertexData(tileCoord.size() * sizeof(core::Vector3f), sizeof(core::Vector3f), tileCoord.data(), &_terrainInstanceDataResource);
 }
 
 }

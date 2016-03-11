@@ -22,7 +22,7 @@ auto SsaoRenderer::Prepare() -> void {
     LoadScreenQuad();
 }
 
-auto SsaoRenderer::Draw(core::Camera const * camera, core::SkyBox const * skyBox, core::Shape const * const * shapes, unsigned int shapeCount) -> void {
+auto SsaoRenderer::Draw(core::Camera const * camera, core::SkyBox const * skyBox, core::Terrain const* terrain, core::Shape const * const * shapes, unsigned int shapeCount) -> void {
     DrawBegin();
 
     auto commandList = _resourceManager->GetCommandList();
@@ -62,7 +62,7 @@ auto SsaoRenderer::Draw(core::Camera const * camera, core::SkyBox const * skyBox
     commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::NormalMap, _gBufferNormalSrv._gpuHandle); // normal
     commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::SpecularMap, _gBufferSpecularSrv._gpuHandle); // specular
     commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::EmissiveMap, _gBufferDepthStencilSrv._gpuHandle); // depth texture
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Map4, _randomVectorTexture._gpuHandle); // random vector
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::SrvPs4, _randomVectorTexture._gpuHandle); // random vector
     commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Material, _ssaoDataCbv._gpuHandle); // ssao data
     commandList->OMSetRenderTargets(1, &_ambientOcclusion._cpuHandle, FALSE, nullptr);
     //auto rtv = _resourceManager->GetSwapChainRenderTargets().GetCurrentRtv();
@@ -82,7 +82,7 @@ auto SsaoRenderer::Draw(core::Camera const * camera, core::SkyBox const * skyBox
         CD3DX12_RESOURCE_BARRIER::Transition(_ambientOcclusion._resource, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE),
     };
     commandList->ResourceBarrier(lightingPassBarriers.size(), lightingPassBarriers.data());
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Map4, _ambientOcclusionSrv._gpuHandle); // ambient occlusion
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::SrvPs4, _ambientOcclusionSrv._gpuHandle); // ambient occlusion
     UseLight();
     
     auto rtv = _resourceManager->GetSwapChainRenderTargets().GetCurrentRtv();
@@ -102,6 +102,7 @@ auto SsaoRenderer::AllocateDescriptorHeap(
     unsigned int textureCount,
     unsigned int materialCount,
     unsigned int skyBoxCount,
+    unsigned int terrainCount,
     unsigned int nullDescriptorCount) -> void {
     auto const lightDescriptorCount = 1u;
     auto const normalDsvCount = 1u;

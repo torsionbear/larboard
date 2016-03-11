@@ -34,7 +34,7 @@ public:
         _cpuHandle = _heap->GetCPUDescriptorHandleForHeapStart();
     }
     auto GetDescriptorInfo(ID3D12Resource * resource) -> DescriptorInfo {
-        assert(_end <= _size);
+        assert(_end < _size);
         auto ret = DescriptorInfo{ nullptr, GetGpuHandle(_end), GetCpuHandle(_end), resource };
         ++_end;
         return ret;

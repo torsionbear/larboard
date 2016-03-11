@@ -1,5 +1,5 @@
 
-struct PSInput {
+struct PsInput {
     float4 position : SV_POSITION;
     float4 worldPosition : PS_WORLD_POSITION;
     float4 normal : PS_NORMAL;
@@ -87,7 +87,7 @@ float Attenuation(float4 attenuation, float distance) {
     return ret;
 }
 
-float4 main(PSInput input) : SV_TARGET
+float4 main(PsInput input) : SV_TARGET
 {
     //return input.texCoord;
     //return diffuse.Sample(staticSampler, input.texCoord);

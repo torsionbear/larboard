@@ -45,6 +45,9 @@ public:
     auto RegisterSkyBox(core::SkyBox * skyBox) -> void {
         _skyBox = skyBox;
     }
+    auto RegisterTerrain(core::Terrain * terrain) -> void {
+        _terrain = terrain;
+    }
     auto RegisterCamera(core::Camera * camera) -> void {
         _camera = camera;
     }
@@ -80,10 +83,16 @@ public:
             _textures.size(),
             _materials.size(),
             _skyBox == nullptr ? 0 : 1,
-            4u);
+            _terrain == nullptr ? 0 : 1,
+            5u);
         _resourceManager->LoadBegin();
 
-        _resourceManager->LoadSkyBox(_skyBox);
+        if (_skyBox != nullptr) {
+            _resourceManager->LoadSkyBox(_skyBox);
+        }
+        if (_terrain != nullptr) {
+            _resourceManager->LoadTerrain(_terrain);
+        }
         _resourceManager->LoadCamera(_camera, 1);
         _resourceManager->LoadMeshes(_meshes.data(), _meshes.size(), sizeof(core::Vertex));
         _resourceManager->LoadModels(_models.data(), _models.size());
@@ -98,11 +107,14 @@ public:
         _resourceManager->LoadEnd();
     }
     auto Draw() -> void {
-        _renderer->Draw(_camera, _skyBox, _shapes.data(), _shapes.size());
+        _renderer->Draw(_camera, _skyBox, _terrain, _shapes.data(), _shapes.size());
     }
     auto Update() -> void {
         _resourceManager->PrepareResource();
         _resourceManager->UpdateCamera(_camera);
+        if (_terrain != nullptr) {
+            _resourceManager->UpdateTerrain(_terrain, _camera);
+        }
     }
 private:
     auto EnableDebugLayer() -> void;
@@ -119,6 +131,7 @@ private:
 
     std::vector<core::Shape *> _shapes;
     core::SkyBox * _skyBox;
+    core::Terrain * _terrain;
     core::Camera * _camera;
 
     std::vector<core::Mesh *> _meshes;

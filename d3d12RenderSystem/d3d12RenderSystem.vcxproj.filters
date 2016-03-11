@@ -95,5 +95,9 @@
     <FxCompile Include="shaders\ssao_ssao_v.hlsl" />
     <FxCompile Include="shaders\ssao_lighting_p.hlsl" />
     <FxCompile Include="shaders\ssao_lighting_v.hlsl" />
+    <FxCompile Include="shaders\terrain_p.hlsl" />
+    <FxCompile Include="shaders\terrain_v.hlsl" />
+    <FxCompile Include="shaders\terrain_d.hlsl" />
+    <FxCompile Include="shaders\terrain_h.hlsl" />
   </ItemGroup>
 </Project>

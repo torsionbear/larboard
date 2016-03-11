@@ -26,6 +26,7 @@
 #include "core/SpotLight.h"
 #include "core/Material.h"
 #include "core/Skybox.h"
+#include "core/Terrain.h"
 #include "SwapChainRenderTargets.h"
 #include "FrameResource.h"
 #include "FencedCommandQueue.h"
@@ -42,11 +43,12 @@ struct RootSignatureParameterIndex {
         NormalMap,
         SpecularMap,
         EmissiveMap,
-        Map4,
+        SrvPs4,
         Transform,
         Material,
         Camera,
         Light,
+        CbvAll,
         RootSignatureParameterIndexCount = Light + 1u,
   };
   static auto GetTextureRootSignatureParameterIndex(core::TextureUsage::TextureType type) -> unsigned int {
@@ -71,13 +73,14 @@ struct RegisterConvention {
         Transform = 1u,
         Light = 2u,
         Material = 3u,
+        CbvAll = 4u,
     };
     enum {
         DiffuseMap = 0u,
         NormalMap = 1u,
         SpecularMap = 2u,
         EmissiveMap = 3u,
-        Map4,
+        SrvPs4,
     };
     enum {
         StaticSampler = 0u,
@@ -90,6 +93,9 @@ struct MeshDataInfo {
     unsigned int indexCount;
     unsigned int indexOffset;
     int baseVertex;
+    D3D12_VERTEX_BUFFER_VIEW instanceVbv;
+    unsigned int instanceCount;
+    unsigned int instanceOffset;
 };
 // constant buffer data members are 4*4 bytes packed, constant buffer itself must be D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT(256) bytes aligned.
 struct CameraData {
@@ -152,10 +158,16 @@ struct LightData {
     } spotLights[MaxSpotLightCount];
 };
 
-struct PersistentMappedBuffer{
-    uint8 * _mappedDataPtr;
-    D3D12_GPU_DESCRIPTOR_HANDLE _gpuHandle;
-    D3D12_CPU_DESCRIPTOR_HANDLE _cpuHandle;
+struct TerrainData {
+    core::Vector2i32 heightMapOrigin;
+    core::Vector2i32 heightMapSize;
+    core::Vector2i32 diffuseMapOrigin;
+    core::Vector2i32 diffuseMapSize;
+    Float32 tileSize;
+    Float32 sightDistance;
+    core::Vector2f _pad1;
+    core::Vector4f _pad2;
+    core::Matrix4x4f _pad3[3];
 };
 
 class ResourceManager {
@@ -183,15 +195,17 @@ public:
     auto LoadDdsTexture(core::Texture ** texture, unsigned int count) -> void;
     auto LoadDdsTexture(std::string const& filename) -> unsigned int;
     auto LoadSkyBox(core::SkyBox * skybox) -> void;
+    auto LoadTerrain(core::Terrain * terrain) -> void;
     auto UpdateCamera(core::Camera const* camera) -> void;
     auto CreateDepthStencil(unsigned int width, unsigned int height, DescriptorInfo * srv) -> DescriptorInfo;
     auto CreatePso(D3D12_GRAPHICS_PIPELINE_STATE_DESC const* psoDesc) -> ComPtr<ID3D12PipelineState>;
     auto CompileShader(std::string const& filename, std::string const& target)->ComPtr<ID3DBlob>;
     auto CreateRenderTarget(DXGI_FORMAT format, unsigned int width, unsigned int height, uint8 size, DescriptorInfo * srv) -> DescriptorInfo;
     auto CreateTexture2d(DXGI_FORMAT format, uint64 width, uint32 height, void const* data, uint32 size, uint8 stride)->DescriptorInfo;
-    auto UploadConstantBufferData(unsigned int size, void const* data) -> DescriptorInfo;
-    auto UploadVertexData(unsigned int size, unsigned int stride, void const* data) -> D3D12_VERTEX_BUFFER_VIEW;
+    auto UploadConstantBufferData(unsigned int size, void const* data, ID3D12Resource * dest = nullptr) -> DescriptorInfo;
+    auto UploadVertexData(unsigned int size, unsigned int stride, void const* data, ID3D12Resource ** dest = nullptr) -> D3D12_VERTEX_BUFFER_VIEW;
     auto UploadIndexData(unsigned int size, void const* data) -> D3D12_INDEX_BUFFER_VIEW;
+    auto UpdateTerrain(core::Terrain * terrain, core::Camera * camera) -> void;
     auto GetMeshDataInfo(unsigned int index) -> MeshDataInfo const& {
         return _meshDataInfos[index];
     }
@@ -243,8 +257,14 @@ public:
     auto GetNullDescriptorInfo(unsigned int index) -> DescriptorInfo const& {
         return _nullDescriptorInfo[index];
     }
-    auto GetSkyBoxMeshInfo() -> MeshDataInfo const& {
+    auto GetSkyBoxMeshInfo() const -> MeshDataInfo const& {
         return _skyBoxMeshInfo;
+    }
+    auto GetTerrainMeshInfo() const -> MeshDataInfo const& {
+        return _terrainMeshInfo;
+    }
+    auto GetTerrainCbv() const -> DescriptorInfo const& {
+        return _terrainCbv;
     }
 private:
     auto CreateRootSignature()->ComPtr<ID3D12RootSignature>;
@@ -269,6 +289,9 @@ private:
     std::vector<DescriptorInfo> _nullDescriptorInfo;
     std::vector<DescriptorInfo> _materialDescriptorInfos;
     MeshDataInfo _skyBoxMeshInfo;
+    MeshDataInfo _terrainMeshInfo;
+    DescriptorInfo _terrainCbv;
+    ID3D12Resource * _terrainInstanceDataResource = nullptr;
 
     std::vector<ComPtr<ID3D12Resource>> _uploadBuffers;
     std::vector<ComPtr<ID3D12Resource>> _defaultBuffers;

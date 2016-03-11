@@ -19,6 +19,7 @@ auto Renderer::Prepare() -> void {
     _depthStencil = _resourceManager->CreateDepthStencil(_viewport.Width, _viewport.Height, nullptr);
     CreateDefaultPso();
     CreateSkyBoxPso();
+    CreateTerrainPso();
 }
 
 auto Renderer::DrawBegin() -> void {
@@ -48,6 +49,7 @@ auto Renderer::DrawBegin() -> void {
     commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::NormalMap, _resourceManager->GetNullDescriptorInfo(1)._gpuHandle);
     commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::SpecularMap, _resourceManager->GetNullDescriptorInfo(2)._gpuHandle);
     commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::EmissiveMap, _resourceManager->GetNullDescriptorInfo(3)._gpuHandle);
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::SrvPs4, _resourceManager->GetNullDescriptorInfo(4)._gpuHandle);
 
     // Record commands.
     const float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -76,11 +78,16 @@ auto Renderer::ToggleBackFace() -> void {
 
 }
 
-auto Renderer::Draw(core::Camera const* camera, core::SkyBox const* skyBox, core::Shape const*const* shapes, unsigned int shapeCount) -> void {
+auto Renderer::Draw(core::Camera const* camera, core::SkyBox const* skyBox, core::Terrain const* terrain, core::Shape const*const* shapes, unsigned int shapeCount) -> void {
     DrawBegin();
     UseCamera(camera);
     UseLight();
-    RenderSkyBox(skyBox);
+    if (skyBox != nullptr) {
+        RenderSkyBox(skyBox);
+    }
+    if (terrain != nullptr) {
+        DrawTerrain(terrain);
+    }
     for (auto i = 0u; i < shapeCount; ++i) {
         RenderShape(shapes[i]);
     }
@@ -94,11 +101,12 @@ auto Renderer::AllocateDescriptorHeap(
     unsigned int textureCount,
     unsigned int materialCount,
     unsigned int skyBoxCount,
+    unsigned int terrainCount,
     unsigned int nullDescriptorCount) -> void {
     _resourceManager->AllocDsvDescriptorHeap(1);
     auto const lightDescriptorCount = 1u;
-    auto const cbvCount = cameraCount + modelCount + materialCount + lightDescriptorCount;
-    auto const srvCount = textureCount + nullDescriptorCount + skyBoxCount;
+    auto const cbvCount = cameraCount + modelCount + materialCount + lightDescriptorCount + terrainCount;
+    auto const srvCount = textureCount + nullDescriptorCount + skyBoxCount + 2 * terrainCount;
     _resourceManager->AllocCbvSrvDescriptorHeap(cbvCount + srvCount);
 }
 
@@ -147,6 +155,40 @@ auto Renderer::RenderSkyBox(core::SkyBox const* skyBox) -> void {
     commandList->IASetIndexBuffer(&skyBoxMeshInfo.ibv);
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     commandList->DrawIndexedInstanced(skyBoxMeshInfo.indexCount, 1, skyBoxMeshInfo.indexOffset, skyBoxMeshInfo.baseVertex, 0);
+}
+
+auto Renderer::DrawTerrain(core::Terrain const * terrain) -> void {
+    auto commandList = _resourceManager->GetCommandList();
+    // pso
+    if (_currentPso != _terrainPso.Get()) {
+        _currentPso = _terrainPso.Get();
+        commandList->SetPipelineState(_currentPso);
+    }
+    // diffuse map & height map
+    auto diffuseMapDescriptorInfo = _resourceManager->GetTextureDescriptorInfo(terrain->GetDiffuseMap()->_renderDataId);
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::DiffuseMap, diffuseMapDescriptorInfo._gpuHandle);
+    auto heightMapDescriptorInfo = _resourceManager->GetTextureDescriptorInfo(terrain->GetHeightMap()->_renderDataId);
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::SrvPs4, heightMapDescriptorInfo._gpuHandle);
+    // terrain cbv
+    auto const& cbvDescriptorInfo = _resourceManager->GetTerrainCbv();
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::CbvAll, cbvDescriptorInfo._gpuHandle);
+    // special tiles
+    auto specialTiles = terrain->GetSpecialTiles();
+    auto const& terrainMeshInfo = _resourceManager->GetTerrainMeshInfo();
+    for (auto & mesh : specialTiles) {
+        auto const& renderData = _resourceManager->GetMeshDataInfo(mesh->_renderDataId);
+        auto vbvs = std::array<D3D12_VERTEX_BUFFER_VIEW, 2>{renderData.vbv, terrainMeshInfo.instanceVbv};
+        commandList->IASetVertexBuffers(0, 2, vbvs.data());
+        commandList->IASetIndexBuffer(&renderData.ibv);
+        commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
+        commandList->DrawIndexedInstanced(renderData.indexCount, 1, renderData.indexOffset, renderData.baseVertex, 0);
+    }
+    // normal tiles draw call
+    auto vbvs = std::array<D3D12_VERTEX_BUFFER_VIEW, 2>{terrainMeshInfo.vbv, terrainMeshInfo.instanceVbv};
+    commandList->IASetVertexBuffers(0, 2, vbvs.data());
+    commandList->IASetIndexBuffer(&terrainMeshInfo.ibv);
+    commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
+    commandList->DrawIndexedInstanced(terrainMeshInfo.indexCount, terrain->GetTileCount() - specialTiles.size(), terrainMeshInfo.indexOffset, terrainMeshInfo.baseVertex, specialTiles.size());
 }
 
 
@@ -227,6 +269,43 @@ auto Renderer::CreateSkyBoxPso() -> void {
     psoDesc.SampleDesc.Count = 1;
 
     _skyBoxPso = _resourceManager->CreatePso(&psoDesc);
+}
+
+auto Renderer::CreateTerrainPso() -> void {
+    // vertex attribute
+    auto const inputElementDescs = array<D3D12_INPUT_ELEMENT_DESC, 2> {
+        D3D12_INPUT_ELEMENT_DESC{ "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+            D3D12_INPUT_ELEMENT_DESC{ "TILECOORD", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
+    };
+    // rasterizer
+    CD3DX12_RASTERIZER_DESC rasterizerDesc(D3D12_DEFAULT);
+    rasterizerDesc.FrontCounterClockwise = TRUE;
+    // depth stencil
+    CD3DX12_DEPTH_STENCIL_DESC depthStencilDesc(D3D12_DEFAULT);
+    // shader
+    auto vs = _resourceManager->CompileShader("d3d12RenderSystem/shaders/terrain_v.hlsl", "vs_5_0");
+    auto hs = _resourceManager->CompileShader("d3d12RenderSystem/shaders/terrain_h.hlsl", "hs_5_0");
+    auto ds = _resourceManager->CompileShader("d3d12RenderSystem/shaders/terrain_d.hlsl", "ds_5_0");
+    auto ps = _resourceManager->CompileShader("d3d12RenderSystem/shaders/terrain_p.hlsl", "ps_5_0");
+
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+    psoDesc.InputLayout = { inputElementDescs.data(), inputElementDescs.size() };
+    psoDesc.pRootSignature = _resourceManager->GetRootSignature();
+    psoDesc.VS = CD3DX12_SHADER_BYTECODE(vs.Get());
+    psoDesc.HS = CD3DX12_SHADER_BYTECODE(hs.Get());
+    psoDesc.DS = CD3DX12_SHADER_BYTECODE(ds.Get());
+    psoDesc.PS = CD3DX12_SHADER_BYTECODE(ps.Get());
+    psoDesc.RasterizerState = rasterizerDesc;
+    psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+    psoDesc.DepthStencilState = depthStencilDesc;
+    psoDesc.SampleMask = UINT_MAX;
+    psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+    psoDesc.NumRenderTargets = 1;
+    psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+    psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+    psoDesc.SampleDesc.Count = 1;
+
+    _terrainPso = _resourceManager->CreatePso(&psoDesc);
 }
 
 }

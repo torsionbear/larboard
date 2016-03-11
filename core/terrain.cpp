@@ -19,17 +19,19 @@ auto Terrain::ShaderData::Size() -> unsigned int {
     return size;
 }
 
-Terrain::Terrain(vector<string> && diffuseMapFiles, string heightMap)
+Terrain::Terrain(std::vector<string> && diffuseMapFiles, string heightMap)
     : _diffuseMap(move(diffuseMapFiles), TextureUsage::DiffuseTextureArray)
     , _heightMap(heightMap, TextureUsage::HeightMap) {
     _shaderProgram.SetVertexShader("shader/terrain_v.shader");
     _shaderProgram.SetFragmentShader("shader/terrain_f.shader");
     _shaderProgram.SetTessellationControlShader("shader/terrain_tc.shader");
     _shaderProgram.SetTessellationEvaluationShader("shader/terrain_te.shader");
+    _diffuseMapFilename = _diffuseMap.GetFilenames()[0];
+    _heightMapFilename = _heightMap.GetFilename();
 }
 
 auto Terrain::Load(Float32 sightDistance) -> void {
-    _shaderData.sightDistance = sightDistance;
+    _sightDistance = sightDistance;
     _diffuseMap.Load();
     _heightMap.Load();
 }
@@ -39,27 +41,27 @@ auto Terrain::AddSpecialTiles(std::vector<std::unique_ptr<Shape>> && shapes, vec
     _specialTileMeshes = move(meshes);
     for (auto & shape : _specialTileShapes) {
         auto center = shape->GetAabb().GetCenter();
-        _holeTiles.push_back(Vector2i{ static_cast<int>(floor(center(0) / _shaderData.tileSize)), static_cast<int>(floor(center(1) / _shaderData.tileSize)) });
+        _holeTiles.push_back(Vector2i{ static_cast<int>(floor(center(0) / _tileSize)), static_cast<int>(floor(center(1) / _tileSize)) });
     }
 }
 
 auto Terrain::GetHeight(Vector2f coord) const -> Float32 {
-    auto heightMapCoord = static_cast<Vector2f>(coord / _shaderData.tileSize - _shaderData.heightMapOrigin);
-    auto texel = _heightMap.GetBilinearFilteredTexel(heightMapCoord(0) / _shaderData.heightMapSize(0), heightMapCoord(1) / _shaderData.heightMapSize(1));
+    auto heightMapCoord = static_cast<Vector2f>(coord / _tileSize - _heightMapOrigin);
+    auto texel = _heightMap.GetBilinearFilteredTexel(heightMapCoord(0) / _heightMapSize(0), heightMapCoord(1) / _heightMapSize(1));
     return texel(0) * 30.0f - 0.6f; // todo: get rid of this dirty hard-coded expression
 }
 
-auto Terrain::GetTileCoordinate(Camera const* camera) -> std::vector<Vector3f> const& {
-    _tileCoord.clear();
+auto Terrain::CalculateTileCoordinate(Camera const* camera, vector<core::Vector3f> & tileCoords) -> void {
+    auto startIndex = tileCoords.size();
     auto coverage = GetViewFrustumCoverage(camera);
-    auto gridOrigin = Vector2i{ static_cast<int>(floor(coverage[0](0) / _shaderData.tileSize)), static_cast<int>(floor(coverage[0](1) / _shaderData.tileSize)) };
+    auto gridOrigin = Vector2i{ static_cast<int>(floor(coverage[0](0) / _tileSize)), static_cast<int>(floor(coverage[0](1) / _tileSize)) };
     auto gridSize = Vector2i{
-        static_cast<int>(floor(coverage[1](0) / _shaderData.tileSize)) + 1 - static_cast<int>(floor(coverage[0](0) / _shaderData.tileSize)),
-        static_cast<int>(floor(coverage[1](1) / _shaderData.tileSize)) + 1 - static_cast<int>(floor(coverage[0](1) / _shaderData.tileSize)) };
+        static_cast<int>(floor(coverage[1](0) / _tileSize)) + 1 - static_cast<int>(floor(coverage[0](0) / _tileSize)),
+        static_cast<int>(floor(coverage[1](1) / _tileSize)) + 1 - static_cast<int>(floor(coverage[0](1) / _tileSize)) };
     for (auto i = 0; i < gridSize(0); ++i) {
         for (auto j = 0; j < gridSize(1); ++j) {
-            auto coord = Vector3f{ (i + gridOrigin(0)) * _shaderData.tileSize, (j + gridOrigin(1)) * _shaderData.tileSize, 0 };
-            _tileCoord.push_back(coord);
+            auto coord = Vector3f{ (i + gridOrigin(0)) * _tileSize, (j + gridOrigin(1)) * _tileSize, 0 };
+            tileCoords.push_back(coord);
         }
     }
     for (auto const& hole : _holeTiles) {
@@ -69,8 +71,20 @@ auto Terrain::GetTileCoordinate(Camera const* camera) -> std::vector<Vector3f> c
             continue;
         }
         auto index = delta(0) * gridSize(1) + delta(1);
-        _tileCoord[index](2) = -10;
+        tileCoords[index + startIndex](2) = -10;
     }
+}
+
+auto Terrain::GetTileCoordinate(Camera const* camera) -> std::vector<Vector3f> const& {
+    _tileCoord.clear();
+    CalculateTileCoordinate(camera, _tileCoord);
+    return _tileCoord;
+}
+
+auto Terrain::GetTileCoordinateWithSpecialTiles(Camera const* camera) -> std::vector<Vector3f> const& {
+    _tileCoord.clear();
+    _tileCoord.insert(_tileCoord.begin(), _specialTileShapes.size(), core::Vector3f{ 0, 0, 0 });
+    CalculateTileCoordinate(camera, _tileCoord);
     return _tileCoord;
 }
 

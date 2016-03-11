@@ -22,7 +22,7 @@ public:
     }
 public:
     virtual auto Prepare() -> void override;
-    virtual auto Draw(core::Camera const* camera, core::SkyBox const* skyBox, core::Shape const*const* shapes, unsigned int shapeCount) -> void override;
+    virtual auto Draw(core::Camera const* camera, core::SkyBox const* skyBox, core::Terrain const* terrain, core::Shape const*const* shapes, unsigned int shapeCount) -> void override;
     virtual auto AllocateDescriptorHeap(
         unsigned int cameraCount,
         unsigned int meshCount,
@@ -30,6 +30,7 @@ public:
         unsigned int textureCount,
         unsigned int materialCount,
         unsigned int skyBoxCount,
+        unsigned int terrainCount,
         unsigned int nullDescriptorCount) -> void override;
 private:
     auto GenerateRandomTexture(unsigned int textureSize) -> void;

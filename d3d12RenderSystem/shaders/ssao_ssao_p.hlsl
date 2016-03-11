@@ -47,13 +47,13 @@ float4 CalculateViewSpacePosition(float depth, float3 viewDirection) {
 float main(PsInput input) : SV_TARGET
 {
     float occlusionRange = 2.0;
-    float screenSpaceDepth = depthMap.Sample(staticSampler, input.texCoord);
+    float screenSpaceDepth = depthMap.Sample(staticSampler, input.texCoord).r;
 
     float occlusion = 0;
 
     float4 viewSpacePosition = CalculateViewSpacePosition(screenSpaceDepth, input.viewDirection);
 
-    float3 normal = normalMap.Sample(staticSampler, input.texCoord);
+    float3 normal = normalMap.Sample(staticSampler, input.texCoord).xyz;
     float3 viewSpaceNormal = mul(viewTransform, normal).xyz;
     
     float4 randomVector = randomVectorMap.Sample(staticSampler, input.texCoord * float2(occlusionTextureSize) / float2(randomVectorTextureSize));

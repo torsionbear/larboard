@@ -33,6 +33,9 @@ public:
     auto GetData() -> std::vector<std::vector<Vector4f>> const& {
         return _data;
     }
+    auto GetFilenames() const -> std::vector<std::string> const& {
+        return _filenames;
+    }
 private:
     std::vector<std::string> _filenames;
     std::vector<std::vector<Vector4f>> _data;
@@ -40,6 +43,8 @@ private:
     unsigned int _height;
     openglUint _texture;
     TextureUsage::TextureType _type;
+public:
+    unsigned int _renderDataId;
 };
 
 }

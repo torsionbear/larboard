@@ -37,6 +37,19 @@ auto LoadScene_dx1(core::Scene * scene) -> void {
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square2/square2.x3d").Read(scene);
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.4f, 0.4f, 0.4f, 1.0f });
     scene->CreateSkyBox("media/skybox/cloudy_noon.dds");
+
+    scene->CreateTerrain({ "media/terrain/diffuse.dds" }, "media/terrain/heightMap.dds");
+    scene->GetTerrain()->SetSightDistance(scene->GetActiveCamera()->GetFarPlane());
+    scene->GetTerrain()->SetTileSize(10);
+    scene->GetTerrain()->SetHeightMapOrigin(core::Vector2i{ -30, -24 });
+    scene->GetTerrain()->SetHeightMapSize(core::Vector2i{ 60, 60 });
+    scene->GetTerrain()->SetDiffuseMapSize(core::Vector2i{ 5, 5 });
+
+    auto terrainSpecialTileScene = make_unique<core::Scene>();
+
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_01_terrainx3d.x3d").Read(terrainSpecialTileScene.get());
+    scene->GetTerrain()->AddSpecialTiles(terrainSpecialTileScene->GetStaticModelGroup().AcquireShapes(), terrainSpecialTileScene->GetStaticModelGroup().AcquireMeshes());
+
 }
 
 auto LoadScene_dx2(core::Scene * scene) -> void {
@@ -49,6 +62,18 @@ auto LoadScene_dx3(core::Scene * scene) -> void {
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_02/xsh_02_house.x3d").Read(scene);
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.4f, 0.4f, 0.4f, 1.0f });
     scene->CreateSkyBox("media/skybox/cloudy_noon.dds");
+
+    scene->CreateTerrain({ "media/terrain/diffuse.dds" }, "media/terrain/heightMap.dds");
+    scene->GetTerrain()->SetSightDistance(scene->GetActiveCamera()->GetFarPlane());
+    scene->GetTerrain()->SetTileSize(10);
+    scene->GetTerrain()->SetHeightMapOrigin(core::Vector2i{ -30, -24 });
+    scene->GetTerrain()->SetHeightMapSize(core::Vector2i{ 60, 60 });
+    scene->GetTerrain()->SetDiffuseMapSize(core::Vector2i{ 5, 5 });
+
+    auto terrainSpecialTileScene = make_unique<core::Scene>();
+
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_01_terrainx3d.x3d").Read(terrainSpecialTileScene.get());
+    scene->GetTerrain()->AddSpecialTiles(terrainSpecialTileScene->GetStaticModelGroup().AcquireShapes(), terrainSpecialTileScene->GetStaticModelGroup().AcquireMeshes());
 }
 
 auto LoadScene0(core::Scene * scene) -> void {
@@ -159,8 +184,12 @@ int main_dx() {
 
     auto inputHandler = InputHandler(renderer, scene.get(), &cameraController, width, height);
     renderSystem.GetRenderWindow().RegisterInputHandler(std::function<void(HWND, UINT, WPARAM, LPARAM)>(inputHandler));
-
-    renderSystem.RegisterSkyBox(scene->_skyBox.get());
+    if (scene->_skyBox != nullptr) {
+        renderSystem.RegisterSkyBox(scene->_skyBox.get());
+    }
+    if (scene->_terrain != nullptr) {
+        renderSystem.RegisterTerrain(scene->_terrain.get());
+    }
     renderSystem.RegisterCamera(scene->GetActiveCamera());
     for (auto & shape : scene->GetStaticModelGroup().GetShapes()) {
         renderSystem.RegisterShape(shape.get());

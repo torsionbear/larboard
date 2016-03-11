@@ -28,19 +28,34 @@ public:
 public:
     auto Load(Float32 sightDistance) -> void;
     auto SetTileSize(Float32 tileSize) -> void {
-        _shaderData.tileSize = tileSize;
+        _tileSize = tileSize;
+    }
+    auto GetTileSize() const -> Float32 {
+        return _tileSize;
     }
     auto SetHeightMapOrigin(Vector2i heightMapOrigin) -> void {
-        _shaderData.heightMapOrigin = heightMapOrigin;
+        _heightMapOrigin = heightMapOrigin;
+    }
+    auto GetHeightMapOrigin() const -> Vector2i {
+        return _heightMapOrigin;
     }
     auto SetHeightMapSize(Vector2i heightMapSize) -> void {
-        _shaderData.heightMapSize = heightMapSize;
+        _heightMapSize = heightMapSize;
+    }
+    auto GetHeightMapSize() const -> Vector2i {
+        return _heightMapSize;
     }
     auto SetDiffuseMapOrigin(Vector2i diffuseMapOrigin) -> void {
-        _shaderData.diffuseMapOrigin = diffuseMapOrigin;
+        _diffuseMapOrigin = diffuseMapOrigin;
+    }
+    auto GetDiffuseMapOrigin() const -> Vector2i {
+        return _diffuseMapOrigin;
     }
     auto SetDiffuseMapSize(Vector2i diffuseMapSize) -> void {
-        _shaderData.diffuseMapSize = diffuseMapSize;
+        _diffuseMapSize = diffuseMapSize;
+    }
+    auto GetDiffuseMapSize() const -> Vector2i {
+        return _diffuseMapSize;
     }
     auto GetShaderProgram() const -> ShaderProgram const* {
         return &_shaderProgram;
@@ -49,7 +64,14 @@ public:
         return &_shaderProgram;
     }
     auto GetShaderData() const -> ShaderData const& {
-        return _shaderData;
+        return ShaderData{
+            _heightMapOrigin,
+            _heightMapSize,
+            _diffuseMapOrigin,
+            _diffuseMapSize,
+            _tileSize,
+            _sightDistance,
+        };
     }
     auto GetVao() const -> openglUint {
         return _vao;
@@ -80,19 +102,31 @@ public:
     auto GetTileCount() const -> unsigned int {
         return _tileCoord.size();
     }
+    auto GetDiffuseMapFilename() const -> std::string {
+        return _diffuseMapFilename;
+    }
+    auto GetHeightMapFilename() const -> std::string {
+        return _heightMapFilename;
+    }
+    auto SetSightDistance(Float32 sightDistance) -> void {
+        _sightDistance = sightDistance;
+    }
+    auto GetSightDistance() const -> Float32 {
+        return _sightDistance;
+    }
     auto GetSpecialTiles() const->std::vector<Mesh *>;
     auto GetTileCoordinate(Camera const* camera)->std::vector<Vector3f> const&;
+    auto GetTileCoordinateWithSpecialTiles(Camera const* camera) -> std::vector<Vector3f> const&;
 private:
+    auto CalculateTileCoordinate(Camera const* camera, std::vector<core::Vector3f> & tileCoords) -> void;
     auto GetViewFrustumCoverage(Camera const* camera) const->std::array<Vector2f, 2>;
 private:
-    ShaderData _shaderData = {
-        Vector2i{ -5, -5 },
-        Vector2i{ 10, 10 },
-        Vector2i{ 0, 0 },
-        Vector2i{ 1, 1 },
-        10.0f,
-        200.0f,
-    };
+    Vector2i _heightMapOrigin = { -5, -5 };
+    Vector2i _heightMapSize = { 10, 10 };
+    Vector2i _diffuseMapOrigin = { 0, 0 };
+    Vector2i _diffuseMapSize = { 1, 1, };
+    Float32 _tileSize = 10.0f;
+    Float32 _sightDistance = 1000.0f;
 
     std::vector<Vector2i> _holeTiles;
     std::vector<std::unique_ptr<Shape>> _specialTileShapes;
@@ -100,7 +134,9 @@ private:
     std::vector<Vector3f> _tileCoord;
 
     TextureArray _diffuseMap;
+    std::string _diffuseMapFilename;
     Texture _heightMap;
+    std::string _heightMapFilename;
     ShaderProgram _shaderProgram;
     openglUint _vao;
     openglUint _vio;
