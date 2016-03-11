@@ -122,7 +122,8 @@ struct MaterialData {
     int32 hasSpecularMap;
     core::Float32 shininess;
     int32 hasNormalMap;
-    core::Vector2f _pad1;
+    core::Float32 transparency;
+    core::Float32 _pad1;
     core::Matrix4x4f _pad2[3];
 };
 
@@ -185,18 +186,20 @@ public:
     auto LoadMeshes(core::Mesh ** meshes, unsigned int count, unsigned int stride) -> void;
     auto LoadModels(core::Model ** models, unsigned int count) -> void;
     auto LoadCamera(core::Camera * camera, unsigned int count) -> void;
+    auto UpdateCamera(core::Camera const* camera) -> void;
     auto LoadLight(
         core::AmbientLight ** ambientLights, unsigned int ambientLightCount,
         core::DirectionalLight ** directionalLights, unsigned int directionalLightCount,
         core::PointLight ** pointLights, unsigned int pointLightCount,
         core::SpotLight ** spotLights, unsigned int spotLightCount) -> void;
+    auto LoadShadowCastingLight(core::DirectionalLight ** directionalLights, unsigned int directionalLightCount) -> void;
+    auto UpdateShadowCastingLight(core::DirectionalLight const* directionalLight) -> void;
     auto LoadMaterials(core::Material ** materials, unsigned int count) -> void;
     auto LoadTexture(core::Texture * texture) -> void;
     auto LoadDdsTexture(core::Texture ** texture, unsigned int count) -> void;
     auto LoadDdsTexture(std::string const& filename) -> unsigned int;
     auto LoadSkyBox(core::SkyBox * skybox) -> void;
     auto LoadTerrain(core::Terrain * terrain) -> void;
-    auto UpdateCamera(core::Camera const* camera) -> void;
     auto CreateDepthStencil(unsigned int width, unsigned int height, DescriptorInfo * srv) -> DescriptorInfo;
     auto CreatePso(D3D12_GRAPHICS_PIPELINE_STATE_DESC const* psoDesc) -> ComPtr<ID3D12PipelineState>;
     auto CompileShader(std::string const& filename, std::string const& target)->ComPtr<ID3DBlob>;

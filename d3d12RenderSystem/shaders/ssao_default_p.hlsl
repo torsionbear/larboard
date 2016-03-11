@@ -29,7 +29,8 @@ cbuffer Material : register(b3) {
     bool hasSpecularMap;
     float shininess;
     bool hasNormalMap;
-    float2 _pad1;
+    float transparency;
+    float _pad1;
     float4x4 _pad2[3];
 };
 

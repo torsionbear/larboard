@@ -17,6 +17,7 @@ public:
     virtual auto ToggleWireframe() -> void override;
     virtual auto ToggleBackFace() -> void override;
     virtual auto Draw(core::Camera const* camera, core::SkyBox const* skyBox, core::Terrain const* terrain, core::Shape const*const* shapes, unsigned int shapeCount) -> void;
+    auto DrawTranslucent(core::Shape const*const* shapes, unsigned int shapeCount) -> void;
     virtual auto AllocateDescriptorHeap(
         unsigned int cameraCount,
         unsigned int meshCount,
@@ -26,16 +27,17 @@ public:
         unsigned int skyBoxCount,
         unsigned int terrainCount,
         unsigned int nullDescriptorCount) -> void;
-    auto DrawShape(core::Shape const* shape) -> void;
     auto DrawSkyBox(core::SkyBox const* skyBox) -> void;
     auto DrawTerrain(core::Terrain const * terrain) -> void;
     auto UseCamera(core::Camera const* camera) -> void;
     auto UseLight() -> void;
 protected:
+    auto DrawShapeWithPso(core::Shape const* shape, ID3D12PipelineState * pso) -> void;
     auto CreateDefaultPso() -> void;
     auto CreateSkyBoxPso() -> void;
     auto CreateTerrainPso() -> void;
     auto CreateTerrainWireframePso() -> void;
+    auto CreateTranslucentPso() -> void;
 protected:
     ResourceManager * _resourceManager;
     D3D12_VIEWPORT _viewport;
@@ -45,6 +47,7 @@ protected:
     ComPtr<ID3D12PipelineState> _skyBoxPso;
     ComPtr<ID3D12PipelineState> _terrainPso;
     ComPtr<ID3D12PipelineState> _terrainWireframePso;
+    ComPtr<ID3D12PipelineState> _translucentPso;
     ID3D12PipelineState * _currentPso;
 
     DescriptorInfo _depthStencil;

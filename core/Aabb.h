@@ -20,12 +20,19 @@ public:
 public:
     auto Expand(Aabb const& other) -> void;
     auto Expand(Point4f vertex) -> void;
+    auto Intersect(Aabb const& other) -> void;
     auto GetCenter() const -> Point4f;
     auto GetMinVertex() const -> Point4f {
         return _minVertex;
     }
+    auto SetMinVertex(Point4f minVertex) -> void {
+        _minVertex = minVertex;
+    }
     auto GetMaxVertex() const -> Point4f {
         return _maxVertex;
+    }
+    auto SetMaxVertex(Point4f maxVertex) -> void {
+        _maxVertex = maxVertex;
     }
     auto IntersectRay(Ray ray) const -> Float32;
     auto GetRenderData() const -> RenderData const& {

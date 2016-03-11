@@ -23,8 +23,6 @@ auto SsaoRenderer::Prepare() -> void {
 }
 
 auto SsaoRenderer::Draw(core::Camera const * camera, core::SkyBox const * skyBox, core::Terrain const* terrain, core::Shape const * const * shapes, unsigned int shapeCount) -> void {
-    DrawBegin();
-
     auto commandList = _resourceManager->GetCommandList();
     const float clearColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
     commandList->ClearRenderTargetView(_gBufferDiffuse._cpuHandle, clearColor, 0, nullptr);
@@ -41,7 +39,7 @@ auto SsaoRenderer::Draw(core::Camera const * camera, core::SkyBox const * skyBox
     auto renderTargets = array< D3D12_CPU_DESCRIPTOR_HANDLE, 3>{_gBufferDiffuse._cpuHandle, _gBufferNormal._cpuHandle, _gBufferSpecular._cpuHandle};
     commandList->OMSetRenderTargets(renderTargets.size(), renderTargets.data(), FALSE, &_gBufferDepthStencil._cpuHandle);
     for (auto i = 0u; i < shapeCount; ++i) {
-        DrawShape(shapes[i]);
+        DrawShapeWithPso(shapes[i], _defaultPso.Get());
     }
     if (terrain != nullptr) {
         DrawTerrain(terrain);
@@ -93,8 +91,6 @@ auto SsaoRenderer::Draw(core::Camera const * camera, core::SkyBox const * skyBox
     commandList->IASetIndexBuffer(&_screenQuadIbv);
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
-    
-    DrawEnd();
 }
 
 auto SsaoRenderer::AllocateDescriptorHeap(
@@ -107,6 +103,7 @@ auto SsaoRenderer::AllocateDescriptorHeap(
     unsigned int terrainCount,
     unsigned int nullDescriptorCount) -> void {
     auto const lightDescriptorCount = 1u;
+    auto shadowCastingLightCount = 1u;
     auto const normalDsvCount = 1u;
 
     auto const gBufferRtvSrvCount = 3u;
@@ -117,8 +114,8 @@ auto SsaoRenderer::AllocateDescriptorHeap(
 
     _resourceManager->AllocDsvDescriptorHeap(normalDsvCount + gBufferDsvSrvCount);
 
-    auto const cbvCount = cameraCount + modelCount + materialCount + lightDescriptorCount + ssaoCbvCount + terrainCount;
-    auto const srvCount = textureCount + nullDescriptorCount + skyBoxCount + randomVectorTextureCount + gBufferRtvSrvCount + gBufferDsvSrvCount + ssaoRtvSrvCount + 2 * terrainCount;
+    auto const cbvCount = cameraCount + modelCount + materialCount + lightDescriptorCount + ssaoCbvCount + terrainCount + shadowCastingLightCount;
+    auto const srvCount = textureCount + nullDescriptorCount + skyBoxCount + randomVectorTextureCount + gBufferRtvSrvCount + gBufferDsvSrvCount + ssaoRtvSrvCount + 2 * terrainCount + shadowCastingLightCount;
     _resourceManager->AllocCbvSrvDescriptorHeap(cbvCount + srvCount);
     _resourceManager->AllocRtvDescriptorHeap(gBufferRtvSrvCount + ssaoRtvSrvCount);
 }

@@ -4,6 +4,8 @@
 
 #include "GlRuntimeHelper.h"
 
+using std::array;
+
 namespace core {
 
 auto Camera::ShaderData::Size() -> unsigned int {
@@ -89,6 +91,27 @@ auto Camera::GetShaderData() -> ShaderData {
         GetTransform(),
         GetPosition(),
     };
+}
+
+auto Camera::GetViewFrustumVertex() const-> array<Point4f, 8> {
+    auto near = GetNearPlane();
+    auto far = GetFarPlane();
+    auto halfWidth = GetHalfWidth();
+    auto halfHeight = GetHalfHeight();
+    auto farHalfWidth = halfWidth * far / near;
+    auto farHalfHeight = halfHeight * far / near;
+    auto transform = GetTransform();
+    auto viewFrustumVertex = array<Point4f, 8>{
+        transform * Point4f{ -halfWidth, -halfHeight, -near, 1 },
+            transform * Point4f{ -halfWidth, halfHeight, -near, 1 },
+            transform * Point4f{ halfWidth, -halfHeight, -near, 1 },
+            transform * Point4f{ halfWidth, halfHeight, -near, 1 },
+            transform * Point4f{ -farHalfWidth, -farHalfHeight, -far, 1 },
+            transform * Point4f{ -farHalfWidth, farHalfHeight, -far, 1 },
+            transform * Point4f{ farHalfWidth, -farHalfHeight, -far, 1 },
+            transform * Point4f{ farHalfWidth, farHalfHeight, -far, 1 },
+    };
+    return viewFrustumVertex;
 }
 
 }

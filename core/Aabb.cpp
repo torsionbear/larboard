@@ -29,6 +29,13 @@ auto Aabb::Expand(Point4f vertex) -> void {
     }
 }
 
+auto Aabb::Intersect(Aabb const & other) -> void {
+    for (auto i = 0; i < 3; ++i) {
+        _minVertex(i) = std::max(_minVertex(i), other._minVertex(i));
+        _maxVertex(i) = std::min(_minVertex(i), other._minVertex(i));
+    }
+}
+
 auto Aabb::GetCenter() const -> Point4f {
     return (_minVertex + _maxVertex) * 0.5;
 }

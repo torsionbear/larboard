@@ -172,7 +172,6 @@ int main_dx() {
     auto const width = 800;
     auto const height = 600;
 
-
     auto scene = make_unique<core::Scene>();
     LoadScene_dx3(scene.get());
     scene->GetStaticModelGroup().Load();
@@ -194,21 +193,7 @@ int main_dx() {
         renderSystem.RegisterTerrain(scene->_terrain.get());
     }
     renderSystem.RegisterCamera(scene->GetActiveCamera());
-    for (auto & shape : scene->GetStaticModelGroup().GetShapes()) {
-        renderSystem.RegisterShape(shape.get());
-    }
-    for (auto & mesh : scene->GetStaticModelGroup().GetMeshes()) {
-        renderSystem.RegisterMesh(mesh.get());
-    }
-    for (auto & model : scene->GetStaticModelGroup().GetModels()) {
-        renderSystem.RegisterModel(model.get());
-    }
-    for (auto & material : scene->GetStaticModelGroup()._materials) {
-        renderSystem.RegisterMaterial(material.get());
-    }
-    for (auto & texture : scene->GetStaticModelGroup()._textures) {
-        renderSystem.RegisterTexture(texture.get());
-    }
+    renderSystem.RegisterStaticModelGroup(scene->GetStaticModelGroup());
     for (auto & ambientLight : scene->_ambientLights) {
         renderSystem.RegisterAmbientLight(ambientLight.get());
     }
@@ -222,7 +207,20 @@ int main_dx() {
         renderSystem.RegisterSpotLight(spotLight.get());
     }
     renderSystem.Load();
+
+    renderWindow.SetCaption(L"newCaption");
+    auto fpsCount = 0u;
+    auto clock = std::chrono::system_clock();
+    auto timePoint = clock.now();
     while (renderWindow.Step()) {
+        if (++fpsCount == 100u) {
+            fpsCount = 0;
+            auto lastTimePoint = timePoint;
+            timePoint = clock.now();
+            auto timeSpan = std::chrono::duration_cast<std::chrono::milliseconds>(timePoint - lastTimePoint);
+            auto fps = 100000.0f / static_cast<float>(timeSpan.count());
+            renderWindow.SetCaption(L"FPS: " + std::to_wstring(fps));
+        }
         // update
         cameraController.Step();
         renderSystem.Update();

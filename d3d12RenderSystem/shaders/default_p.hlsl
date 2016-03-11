@@ -57,7 +57,8 @@ cbuffer Material : register(b3) {
     bool hasSpecularMap;
     float shininess;
     bool hasNormalMap;
-    float2 _pad1;
+    float transparency;
+    float _pad1;
     float4x4 _pad2[3];
 };
 
@@ -129,7 +130,7 @@ float4 main(PsInput input) : SV_TARGET
         diffuseResult += spotLight.color.rgb * diffuseColor * attenuation * angleFalloff * DiffuseCoefficient(normal, lightDirection);
         specularResult += spotLight.color.rgb * specularColor * attenuation * angleFalloff * SpecularCoefficient(normal, lightDirection, viewDirection, shininess);
     }
-    float4 ret = { ambientResult + diffuseResult + specularResult + emissiveColor, 1 };
+    float4 ret = { ambientResult + diffuseResult + specularResult + emissiveColor, 1 - transparency };
     return ret;
     
     

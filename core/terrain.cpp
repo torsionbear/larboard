@@ -98,23 +98,7 @@ auto Terrain::GetSpecialTiles() const -> std::vector<Mesh *> {
 
 auto Terrain::GetViewFrustumCoverage(Camera const * camera) const->std::array<Vector2f, 2>
 {
-    auto near = camera->GetNearPlane();
-    auto far = camera->GetFarPlane();
-    auto halfWidth = camera->GetHalfWidth();
-    auto halfHeight = camera->GetHalfHeight();
-    auto farHalfWidth = halfWidth * far / near;
-    auto farHalfHeight = halfHeight * far / near;
-    auto transform = camera->GetTransform();
-    auto viewFrustumVertex = array<Point4f, 8>{
-        transform * Point4f{ -halfWidth, -halfHeight, -near, 1 },
-            transform * Point4f{ -halfWidth, halfHeight, -near, 1 },
-            transform * Point4f{ halfWidth, -halfHeight, -near, 1 },
-            transform * Point4f{ halfWidth, halfHeight, -near, 1 },
-            transform * Point4f{ -farHalfWidth, -farHalfHeight, -far, 1 },
-            transform * Point4f{ -farHalfWidth, farHalfHeight, -far, 1 },
-            transform * Point4f{ farHalfWidth, -farHalfHeight, -far, 1 },
-            transform * Point4f{ farHalfWidth, farHalfHeight, -far, 1 },
-    };
+    auto viewFrustumVertex = camera->GetViewFrustumVertex();
     auto lowerLeft = Vector2f{ std::numeric_limits<Float32>::max(), std::numeric_limits<Float32>::max() };
     auto upperRight = Vector2f{ std::numeric_limits<Float32>::lowest(), std::numeric_limits<Float32>::lowest() };
     for (auto const& p : viewFrustumVertex) {

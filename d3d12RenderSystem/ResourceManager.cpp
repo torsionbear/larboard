@@ -370,6 +370,44 @@ auto ResourceManager::LoadLight(core::AmbientLight ** ambientLights, unsigned in
     _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 }
 
+auto ResourceManager::LoadShadowCastingLight(core::DirectionalLight ** directionalLights, unsigned int directionalLightCount) -> void {
+    auto count = directionalLightCount;
+    auto buffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(count * sizeof(CameraData)), D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_TYPE_UPLOAD);
+    // Map the constant buffers and cache their heap pointers.
+    uint8 * mappedPtr = nullptr;
+    CD3DX12_RANGE readRange(0, 0);		// no intend to read from this resource on the CPU.
+    ThrowIfFailed(buffer->Map(0, &readRange, reinterpret_cast<void**>(&mappedPtr)));
+
+    auto cameraData = vector<CameraData>{};
+    for (auto i = 0u; i < count; ++i) {
+        auto & directionalLight = directionalLights[i];
+        directionalLight->_renderDataIdCamera = _cameraDescriptorInfos.size();
+        auto descriptorInfo = _cbvSrvHeap.GetDescriptorInfo(buffer);
+        descriptorInfo._mappedDataPtr = mappedPtr + i * sizeof(CameraData);
+        auto cbvDesc = D3D12_CONSTANT_BUFFER_VIEW_DESC{ buffer->GetGPUVirtualAddress() + i * sizeof(CameraData), sizeof(CameraData) };
+        _device->CreateConstantBufferView(&cbvDesc, descriptorInfo._cpuHandle);
+        _cameraDescriptorInfos.push_back(descriptorInfo);
+        cameraData.push_back(CameraData{
+            directionalLight->GetRigidBodyMatrixInverse(),
+            directionalLight->GetProjectTransformDx(),
+            directionalLight->GetTransform(),
+            directionalLight->GetPosition(),
+        });
+    }
+    memcpy(mappedPtr, cameraData.data(), cameraData.size());
+}
+
+auto ResourceManager::UpdateShadowCastingLight(core::DirectionalLight const* directionalLight) -> void {
+    auto const& descriptorInfo = _cameraDescriptorInfos[directionalLight->_renderDataIdCamera];
+    auto cameraData = CameraData{
+        directionalLight->GetRigidBodyMatrixInverse(),
+        directionalLight->GetProjectTransformDx(),
+        directionalLight->GetTransform(),
+        directionalLight->GetPosition(),
+    };
+    memcpy(descriptorInfo._mappedDataPtr, &cameraData, sizeof(cameraData));
+}
+
 auto ResourceManager::LoadMaterials(core::Material ** materials, unsigned int count) -> void {
     if (materials == nullptr || count == 0) {
         return;
@@ -393,6 +431,7 @@ auto ResourceManager::LoadMaterials(core::Material ** materials, unsigned int co
             material->_hasSpecularMap,
             material->GetShininess(),
             material->_hasNormalMap,
+            material->GetTransparency(),
         });
     }
 

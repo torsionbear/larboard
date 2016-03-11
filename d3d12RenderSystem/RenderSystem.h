@@ -39,8 +39,27 @@ public:
         return _renderWindow;
     }
     auto Init(unsigned int width, unsigned int height) -> void;
-    auto RegisterShape(core::Shape * shape) -> void {
-        _shapes.push_back(shape);
+    auto RegisterStaticModelGroup(core::StaticModelGroup & staticModelGroup) -> void {
+        for (auto & shape : staticModelGroup.GetShapes()) {
+            if (shape->GetMaterial()->GetTransparency() > 0) {
+                _translucentShapes.push_back(shape.get());
+            } else {
+                _shapes.push_back(shape.get());
+            }
+        }
+        for (auto & mesh : staticModelGroup.GetMeshes()) {
+            _meshes.push_back(mesh.get());
+        }
+        for (auto & model : staticModelGroup.GetModels()) {
+            _models.push_back(model.get());
+        }
+        for (auto & material : staticModelGroup._materials) {
+            _materials.push_back(material.get());
+        }
+        for (auto & texture : staticModelGroup._textures) {
+            _textures.push_back(texture.get());
+        }
+        _shadowCasterAabb = staticModelGroup.GetBvh()->GetRoot()->GetAabb();
     }
     auto RegisterSkyBox(core::SkyBox * skyBox) -> void {
         _skyBox = skyBox;
@@ -50,18 +69,6 @@ public:
     }
     auto RegisterCamera(core::Camera * camera) -> void {
         _camera = camera;
-    }
-    auto RegisterMesh(core::Mesh * mesh) -> void {
-        _meshes.push_back(mesh);
-    }
-    auto RegisterModel(core::Model * model) -> void {
-        _models.push_back(model);
-    }
-    auto RegisterMaterial(core::Material * material) -> void {
-        _materials.push_back(material);
-    }
-    auto RegisterTexture(core::Texture * texture) -> void {
-        _textures.push_back(texture);
     }
     auto RegisterAmbientLight(core::AmbientLight * ambientLight) -> void {
         _ambientLights.push_back(ambientLight);
@@ -97,7 +104,8 @@ public:
         _resourceManager->LoadMeshes(_meshes.data(), _meshes.size(), sizeof(core::Vertex));
         _resourceManager->LoadModels(_models.data(), _models.size());
         _resourceManager->LoadMaterials(_materials.data(), _materials.size());
-        _resourceManager->LoadDdsTexture(_textures.data(), _textures.size());        
+        _resourceManager->LoadDdsTexture(_textures.data(), _textures.size());
+        _resourceManager->LoadShadowCastingLight(_directionalLights.data(), 1);
         _resourceManager->LoadLight(
             _ambientLights.data(), _ambientLights.size(),
             _directionalLights.data(), _directionalLights.size(),
@@ -107,11 +115,19 @@ public:
         _resourceManager->LoadEnd();
     }
     auto Draw() -> void {
+        _renderer->DrawBegin();
         _renderer->Draw(_camera, _skyBox, _terrain, _shapes.data(), _shapes.size());
+        _renderer->DrawTranslucent(_translucentShapes.data(), _translucentShapes.size());
+        _renderer->DrawEnd();
     }
     auto Update() -> void {
         _resourceManager->PrepareResource();
         _resourceManager->UpdateCamera(_camera);
+
+        auto shadowCastingLight = _directionalLights.front();
+        shadowCastingLight->ComputeShadowMappingVolume(_camera, _shadowCasterAabb);
+        _resourceManager->UpdateShadowCastingLight(shadowCastingLight);
+
         if (_terrain != nullptr) {
             _resourceManager->UpdateTerrain(_terrain, _camera);
         }
@@ -130,6 +146,7 @@ private:
 #endif
 
     std::vector<core::Shape *> _shapes;
+    std::vector<core::Shape *> _translucentShapes;
     core::SkyBox * _skyBox;
     core::Terrain * _terrain;
     core::Camera * _camera;
@@ -142,6 +159,7 @@ private:
     std::vector<core::DirectionalLight *> _directionalLights;
     std::vector<core::PointLight *> _pointLights;
     std::vector<core::SpotLight *> _spotLights;
+    core::Aabb _shadowCasterAabb;
 };
 
 }

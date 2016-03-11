@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+
 #include "Matrix.h"
 #include "Movable.h"
 #include "Ray.h"
@@ -46,6 +48,7 @@ public:
     auto SetUboOffset(int offset) -> void {
         _uboOffset = offset;
     }
+    auto GetViewFrustumVertex() const->std::array<Point4f, 8>;
 private:
     Matrix4x4f _projectTransform;
     Matrix4x4f _projectTransformDx;

@@ -29,19 +29,19 @@ public:
     auto SetTransparency(Float32 transparency) -> void {
         _transparency = transparency;
     }
-    auto GetDiffuse() -> Vector3f {
+    auto GetDiffuse() const -> Vector3f {
         return _diffuse;
     }
-    auto GetEmissive() -> Vector3f {
+    auto GetEmissive() const -> Vector3f {
         return _emissive;
     }
-    auto GetSpecular() -> Vector3f {
+    auto GetSpecular() const -> Vector3f {
         return _specular;
     }
-    auto GetShininess() -> Float32 {
+    auto GetShininess() const -> Float32 {
         return _shininess;
     }
-    auto GetTransparency() -> Float32 {
+    auto GetTransparency() const -> Float32 {
         return _transparency;
     }
     auto SetUbo(openglUint ubo) -> void {

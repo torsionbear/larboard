@@ -1,10 +1,14 @@
 #pragma once
 
-#include "Movable.h"
+#include <limits>
+
+#include "Camera.h"
+#include "OrthogonalViewpoint.h"
+#include "Aabb.h"
 
 namespace core {
 
-class DirectionalLight : public Movable {
+class DirectionalLight : public OrthogonalViewpoint {
 public:
     struct ShaderData {
         Vector4f color;
@@ -34,9 +38,12 @@ public:
             GetTransform() * _direction,
         };
     }
+    auto ComputeShadowMappingVolume(Camera* camera, Aabb shadowCasterAabb) -> void;
 private:
     Vector4f _color;
     Vector4f _direction;
+public:
+    unsigned int _renderDataIdCamera;
 };
 
 }
