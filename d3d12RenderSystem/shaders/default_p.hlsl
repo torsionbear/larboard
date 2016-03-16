@@ -11,7 +11,15 @@ cbuffer Camera : register(b0) {
     float4x4 projectTransform;
     float4x4 viewTransformInverse;
     float4 viewPosition;
-    float3x4 _pad;
+    float3x4 padCamera;
+};
+
+cbuffer ShadowCastingLight : register(b5) {
+    float4x4 lightViewTransform;
+    float4x4 lightProjectTransform;
+    float4x4 lightViewTransformInverse;
+    float4 lightViewPosition;
+    float3x4 _padShadowCastingLight;
 };
 
 struct AmbientLight {
@@ -62,10 +70,17 @@ cbuffer Material : register(b3) {
     float4x4 _pad2[3];
 };
 
-Texture2D diffuseMap : register(t0);
-Texture2D normalMap : register(t1);
-Texture2D specularMap : register(t2);
-Texture2D emissiveMap : register(t3);
+cbuffer TextureIndex : register(b6) {
+    int diffuseTextureIndex;
+    int normalTextureIndex;
+    int specularTextureIndex;
+    int emissiveTextureIndex;
+    int shadowMapIndex;
+    int textureIndex5;
+    int textureIndex6;
+};
+
+Texture2D<float4> textures[10] : register(t1);
 SamplerState staticSampler : register(s0);
 
 
@@ -93,23 +108,35 @@ float4 main(PsInput input) : SV_TARGET
     //return input.texCoord;
     //return diffuse.Sample(staticSampler, input.texCoord);
         
-    float3 diffuseColor = hasDiffuseMap ? diffuseMap.Sample(staticSampler, input.texCoord).rgb : diffuse;
-    float3 specularColor = hasSpecularMap ? specularMap.Sample(staticSampler, input.texCoord).rgb : specular;
-    float3 emissiveColor = hasEmissiveMap ? emissiveMap.Sample(staticSampler, input.texCoord).rgb : emissive;
+    float3 diffuseColor = hasDiffuseMap ? textures[diffuseTextureIndex].Sample(staticSampler, input.texCoord).rgb : diffuse;
+    float3 specularColor = hasSpecularMap ? textures[specularTextureIndex].Sample(staticSampler, input.texCoord).rgb : specular;
+    float3 emissiveColor = hasEmissiveMap ? textures[emissiveTextureIndex].Sample(staticSampler, input.texCoord).rgb : emissive;
 
     float occlusion = 0;
     float3 normal = input.normal.xyz;
     float3 worldPosition = input.worldPosition.xyz;
     float3 viewDirection = normalize(viewPosition.xyz - worldPosition);
 
+    // shadow
+    float bias = 0.001;
+    float4 lightSpacePosition = mul(lightViewTransform, float4(worldPosition, 1));
+    float4 lightSpaceNdcPosition = mul(lightProjectTransform, lightSpacePosition);
+    float2 texCoord = float2((lightSpaceNdcPosition.x + 1) / 2, 1 - (lightSpaceNdcPosition.y + 1) / 2);
+    float shadowMapDepth = textures[shadowMapIndex].Sample(staticSampler, texCoord).r;
+    bool inShadow = false;
+    if (shadowMapDepth < lightSpaceNdcPosition.z - bias) {
+        inShadow = true;
+    }
+
     float3 ambientResult = ambientLights[0].color.rgb * diffuseColor * (1 - occlusion);
     float3 diffuseResult = float3(0, 0, 0);
     float3 specularResult = float3(0, 0, 0);
-    
-    for (uint i = 0; i < directionalLightCount; i++) {
-        DirectionalLight directionLight = directionalLights[i];
-        diffuseResult += directionLight.color.rgb * diffuseColor * DiffuseCoefficient(normal, directionLight.direction.xyz);
-        specularResult += directionLight.color.rgb * specularColor * SpecularCoefficient(normal, directionLight.direction.xyz, viewDirection, shininess);
+    if (!inShadow) {
+        for (uint i = 0; i < directionalLightCount; i++) {
+            DirectionalLight directionLight = directionalLights[i];
+            diffuseResult += directionLight.color.rgb * diffuseColor * DiffuseCoefficient(normal, directionLight.direction.xyz);
+            specularResult += directionLight.color.rgb * specularColor * SpecularCoefficient(normal, directionLight.direction.xyz, viewDirection, shininess);
+        }
     }
     for (uint i2 = 0; i2 < pointLightCount; i2++) {
         PointLight pointLight = pointLights[i2];
@@ -131,6 +158,7 @@ float4 main(PsInput input) : SV_TARGET
         specularResult += spotLight.color.rgb * specularColor * attenuation * angleFalloff * SpecularCoefficient(normal, lightDirection, viewDirection, shininess);
     }
     float4 ret = { ambientResult + diffuseResult + specularResult + emissiveColor, 1 - transparency };
+    //float4 ret = inShadow ? float4(0, 0, 0, 1) : float4(1, 1, 1, 1);
     return ret;
     
     

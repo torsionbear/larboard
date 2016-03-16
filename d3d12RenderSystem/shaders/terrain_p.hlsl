@@ -20,8 +20,14 @@ cbuffer Camera : register(b0) {
     float3x4 _pad;
 };
 
-Texture2DArray diffuseMap : register(t0);
-Texture2D heightMap : register(t4);
+cbuffer TextureIndex : register(b6) {
+    int diffuseTextureIndex;
+    int normalTextureIndex;
+    int specularTextureIndex;
+    int emissiveTextureIndex;
+};
+
+Texture2DArray textures2dArray[10] : register(t1);
 
 SamplerState staticSampler : register(s0);
 
@@ -39,8 +45,8 @@ PsOutput main(PsInput input)
 
     PsOutput output;
     output.normal = float4(input.normal, 0);
-    float3 fragColor0 = diffuseMap.Sample(staticSampler, input.diffuseMapTexCoord - float3(0, 0, 0.5)).rgb;
-    float3 fragColor1 = diffuseMap.Sample(staticSampler, input.diffuseMapTexCoord + float3(0, 0, 0.5)).rgb;
+    float3 fragColor0 = textures2dArray[diffuseTextureIndex].Sample(staticSampler, input.diffuseMapTexCoord - float3(0, 0, 0.5)).rgb;
+    float3 fragColor1 = textures2dArray[diffuseTextureIndex].Sample(staticSampler, input.diffuseMapTexCoord + float3(0, 0, 0.5)).rgb;
     float interp = frac(input.diffuseMapTexCoord.z);
     output.diffuse = float4(lerp(fragColor0, fragColor1, interp), material.diffuseEmissive.a);
     output.specular = material.specularShininess;

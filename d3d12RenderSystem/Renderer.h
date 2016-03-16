@@ -16,7 +16,7 @@ public:
     virtual auto DrawEnd() -> void override;
     virtual auto ToggleWireframe() -> void override;
     virtual auto ToggleBackFace() -> void override;
-    virtual auto Draw(core::Camera const* camera, core::SkyBox const* skyBox, core::Terrain const* terrain, core::Shape const*const* shapes, unsigned int shapeCount) -> void;
+    virtual auto Draw(core::Viewpoint const* camera, core::SkyBox const* skyBox, core::Terrain const* terrain, core::Shape const*const* shapes, unsigned int shapeCount, core::Viewpoint const * shadowCastingLightViewpoint) -> void;
     auto DrawTranslucent(core::Shape const*const* shapes, unsigned int shapeCount) -> void;
     virtual auto AllocateDescriptorHeap(
         unsigned int cameraCount,
@@ -29,7 +29,8 @@ public:
         unsigned int nullDescriptorCount) -> void;
     auto DrawSkyBox(core::SkyBox const* skyBox) -> void;
     auto DrawTerrain(core::Terrain const * terrain) -> void;
-    auto UseCamera(core::Camera const* camera) -> void;
+    auto DrawShadowMap(core::Viewpoint const * viewpoint, core::Shape const*const* shapes, unsigned int shapeCount) -> void;
+    auto UseViewpoint(core::Viewpoint const* viewpoint) -> void;
     auto UseLight() -> void;
 protected:
     auto DrawShapeWithPso(core::Shape const* shape, ID3D12PipelineState * pso) -> void;
@@ -38,6 +39,7 @@ protected:
     auto CreateTerrainPso() -> void;
     auto CreateTerrainWireframePso() -> void;
     auto CreateTranslucentPso() -> void;
+    auto CreateShadowMapPso() -> void;
 protected:
     ResourceManager * _resourceManager;
     D3D12_VIEWPORT _viewport;
@@ -48,9 +50,13 @@ protected:
     ComPtr<ID3D12PipelineState> _terrainPso;
     ComPtr<ID3D12PipelineState> _terrainWireframePso;
     ComPtr<ID3D12PipelineState> _translucentPso;
+    ComPtr<ID3D12PipelineState> _shadowMapPso;
     ID3D12PipelineState * _currentPso;
 
     DescriptorInfo _depthStencil;
+    DescriptorInfo _shadowMapDepthStencil;
+    DescriptorInfo _shadowMapDepthStencilSrv;
+    core::Vector2i _shadowMapSize = core::Vector2i{2048, 2048};
 
     bool _wireframeMode = false;
 };

@@ -14,11 +14,16 @@ auto core::DirectionalLight::ComputeShadowMappingVolume(Camera * camera, Aabb sh
     }
     // directional light's shadowCullingVolume has no upper bound
     auto maxVertex = shadowCullingVolume.GetMaxVertex();
-    auto max = std::numeric_limits<Float32>::max();
-    maxVertex(2) = max;
+    maxVertex(2) = std::numeric_limits<Float32>::max();
     shadowCullingVolume.SetMaxVertex(maxVertex);
 
-    shadowCullingVolume.Intersect(shadowCasterAabb);
+    auto lightSpaceShadowCasterAabb = Aabb{};
+    auto shadowCasterAabbVertex = shadowCasterAabb.GetVertex();
+    for (auto & vertex : shadowCasterAabbVertex) {
+        auto p = static_cast<Point4f>(matrixInverse * vertex);
+        lightSpaceShadowCasterAabb.Expand(p);
+    }
+    shadowCullingVolume.Intersect(lightSpaceShadowCasterAabb);
     SetViewVolume(shadowCullingVolume);
 }
 

@@ -27,11 +27,17 @@ cbuffer SsaoData : register(b3) {
 };
 static int2 randomVectorTextureSize = int2(4, 4);
 
-Texture2D diffuseMap : register(t0);
-Texture2D normalMap : register(t1);
-Texture2D specularMap : register(t2);
-Texture2D depthMap : register(t3);
-Texture2D randomVectorMap : register(t4);
+cbuffer TextureIndex : register(b6) {
+    int diffuseTextureIndex;
+    int normalTextureIndex;
+    int specularTextureIndex;
+    int emissiveTextureIndex;
+    int shadowMapIndex;
+    int randomVectorIndex;
+    int DepthIndex;
+};
+
+Texture2D textures[10] : register(t1);
 SamplerState staticSampler : register(s0);
 
 float screenSpaceDepthToViewSpaceDepth(float screenSpaceDepth) {
@@ -47,16 +53,16 @@ float4 CalculateViewSpacePosition(float depth, float3 viewDirection) {
 float main(PsInput input) : SV_TARGET
 {
     float occlusionRange = 2.0;
-    float screenSpaceDepth = depthMap.Sample(staticSampler, input.texCoord).r;
+    float screenSpaceDepth = textures[DepthIndex].Sample(staticSampler, input.texCoord).r;
 
     float occlusion = 0;
 
     float4 viewSpacePosition = CalculateViewSpacePosition(screenSpaceDepth, input.viewDirection);
 
-    float3 normal = normalMap.Sample(staticSampler, input.texCoord).xyz;
+    float3 normal = textures[normalTextureIndex].Sample(staticSampler, input.texCoord).xyz;
     float3 viewSpaceNormal = mul(viewTransform, normal).xyz;
     
-    float4 randomVector = randomVectorMap.Sample(staticSampler, input.texCoord * float2(occlusionTextureSize) / float2(randomVectorTextureSize));
+    float4 randomVector = textures[randomVectorIndex].Sample(staticSampler, input.texCoord * float2(occlusionTextureSize) / float2(randomVectorTextureSize));
     float3 tangent = normalize(randomVector.xyz - viewSpaceNormal * dot(randomVector.xyz, viewSpaceNormal));
     float3 bitangent = cross(viewSpaceNormal, tangent);
     float3x3 tbn = transpose(float3x3(tangent, bitangent, viewSpaceNormal));
@@ -68,7 +74,7 @@ float main(PsInput input) : SV_TARGET
         ndcSample.xyz /= ndcSample.w;
         float2 sampleTextureCoord = ndcSample.xy * 0.5 + 0.5; // from [-1, 1] to [0, 1]
 		sampleTextureCoord.y = 1.0 - sampleTextureCoord.y;
-        float screenSpaceDepthAtSample = depthMap.Sample(staticSampler, sampleTextureCoord).r;
+        float screenSpaceDepthAtSample = textures[DepthIndex].Sample(staticSampler, sampleTextureCoord).r;
         float viewSpaceDepthAtSample = screenSpaceDepthToViewSpaceDepth(screenSpaceDepthAtSample);
         float depthDiff = viewSpaceDepthAtSample - viewSpaceSample.z;
         bool occluded = depthDiff > 0 && depthDiff < occlusionRange;

@@ -2,13 +2,14 @@
 
 #include <array>
 
+#include "Viewpoint.h"
 #include "Matrix.h"
 #include "Movable.h"
 #include "Ray.h"
 
 namespace core {
 
-class Camera : public Movable {
+class Camera : public Viewpoint {
 public:
     struct ShaderData {
     public:
@@ -20,12 +21,11 @@ public:
         static auto Size() -> unsigned int;
     };
 public:
-    Camera();
+    auto GetProjectTransform() const->Matrix4x4f const& override;
+    auto GetProjectTransformDx() const->Matrix4x4f const& override;
 public:
     auto SetPerspective(Point4f lowerLeft, Point4f upperRight, Float32 farPlane) -> void;
     auto SetPerspective(Float32 aspectRatio, Float32 fieldOfView, Float32 nearPlane, Float32 farPlane) -> void;
-    auto GetProjectTransform() const -> Matrix4x4f const&;
-    auto GetProjectTransformDx() const -> Matrix4x4f const&;
     auto GetRayTo(Vector2f windowCoordinate) const->Ray;
     auto GetFarPlane() const -> Float32 {
         return _farPlane;
@@ -56,8 +56,6 @@ private:
     Point4f _upperRight;
     Float32 _farPlane;
     openglInt _uboOffset;
-public:
-    unsigned int _renderDataId;
 };
 
 }

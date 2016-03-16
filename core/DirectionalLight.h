@@ -42,8 +42,6 @@ public:
 private:
     Vector4f _color;
     Vector4f _direction;
-public:
-    unsigned int _renderDataIdCamera;
 };
 
 }

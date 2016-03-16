@@ -39,51 +39,57 @@ using Microsoft::WRL::ComPtr;
 
 struct RootSignatureParameterIndex {
     enum {
-        DiffuseMap = 0u,
-        NormalMap,
-        SpecularMap,
-        EmissiveMap,
-        SrvPs4,
+        SrvAll1,
+        SrvPsArray,
         Transform,
         Material,
         Camera,
         Light,
         CbvAll,
-        RootSignatureParameterIndexCount = Light + 1u,
+        CbvPs2,
+        TextureIndex,
+        Count,
   };
-  static auto GetTextureRootSignatureParameterIndex(core::TextureUsage::TextureType type) -> unsigned int {
-      switch (type) {
-      case core::TextureUsage::DiffuseMap:
-          return DiffuseMap;
-      case core::TextureUsage::NormalMap:
-          return NormalMap;
-      case core::TextureUsage::SpecularMap:
-          return SpecularMap;
-      case core::TextureUsage::EmissiveMap:
-          return EmissiveMap;
-      }
-      assert(false);
-      return 0u;
-  }
 };
 
-struct RegisterConvention {
+struct SrvRegisterConvention {
+    enum {
+        SrvAll1,
+        SrvPsArray,
+        Count,
+    };
+};
+
+struct CbvRegisterConvention {
     enum {
         Camera = 0u,
-        Transform = 1u,
-        Light = 2u,
-        Material = 3u,
-        CbvAll = 4u,
+        Transform,
+        Light,
+        Material,
+        CbvAll,
+        Ps2,
+        TextureIndex,
+        Count,
     };
+};
+
+struct SamplerRegisterConvention {
     enum {
-        DiffuseMap = 0u,
-        NormalMap = 1u,
-        SpecularMap = 2u,
-        EmissiveMap = 3u,
-        SrvPs4,
+        sampler0,
+        sampler1,
     };
+};
+
+struct TextureIndex {
     enum {
-        StaticSampler = 0u,
+        slot0,
+        slot1,
+        slot2,
+        slot3,
+        slot4,
+        slot5,
+        slot6,
+        count,
     };
 };
 
@@ -186,14 +192,13 @@ public:
     auto LoadMeshes(core::Mesh ** meshes, unsigned int count, unsigned int stride) -> void;
     auto LoadModels(core::Model ** models, unsigned int count) -> void;
     auto LoadCamera(core::Camera * camera, unsigned int count) -> void;
-    auto UpdateCamera(core::Camera const* camera) -> void;
+    auto UpdateViewpoint(core::Viewpoint const * viewpoint) -> void;
     auto LoadLight(
         core::AmbientLight ** ambientLights, unsigned int ambientLightCount,
         core::DirectionalLight ** directionalLights, unsigned int directionalLightCount,
         core::PointLight ** pointLights, unsigned int pointLightCount,
         core::SpotLight ** spotLights, unsigned int spotLightCount) -> void;
     auto LoadShadowCastingLight(core::DirectionalLight ** directionalLights, unsigned int directionalLightCount) -> void;
-    auto UpdateShadowCastingLight(core::DirectionalLight const* directionalLight) -> void;
     auto LoadMaterials(core::Material ** materials, unsigned int count) -> void;
     auto LoadTexture(core::Texture * texture) -> void;
     auto LoadDdsTexture(core::Texture ** texture, unsigned int count) -> void;

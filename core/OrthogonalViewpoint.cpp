@@ -8,10 +8,16 @@ auto OrthogonalViewpoint::SetViewVolume(Aabb const& aabb) -> void {
     auto maxVertex = aabb.GetMaxVertex();
     auto left = minVertex(0);
     auto bottom = minVertex(1);
-    auto near = minVertex(2);
+    auto far = minVertex(2);
     auto right = maxVertex(0);
     auto top = maxVertex(1);
-    auto far = maxVertex(2);
+    auto near = maxVertex(2);
+    _projectTransform = Matrix4x4f{
+        2.0f / (right - left), 0, 0, -(right + left) / (right - left),
+        0, 2.0f / (top - bottom), 0, -(top + bottom) / (top - bottom),
+        0, 0, 2.0f / (far - near), -(far + near ) / (far - near),
+        0, 0, 0, 1
+    };
     _projectTransformDx = Matrix4x4f{
         2.0f / (right - left), 0, 0, -(right + left) / (right - left),
         0, 2.0f / (top - bottom), 0, -(top + bottom) / (top - bottom),

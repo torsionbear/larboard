@@ -16,10 +16,6 @@ auto Camera::ShaderData::Size() -> unsigned int {
     return size;
 }
 
-Camera::Camera()
-    : Movable(Vector4f{ 0.0f, 0.0f, -1.0f, 0.0f }, Vector4f{ 0.0f, 1.0f, 0.0f, 0.0f }) {	// Camera looks at -z by default
-}
-
 auto Camera::GetProjectTransform() const -> Matrix4x4f const& {
     return _projectTransform;
 }

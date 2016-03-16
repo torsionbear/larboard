@@ -17,6 +17,7 @@ public:
     };
 public:
     Aabb();
+    Aabb(std::initializer_list<Point4f> points);
 public:
     auto Expand(Aabb const& other) -> void;
     auto Expand(Point4f vertex) -> void;
@@ -33,6 +34,18 @@ public:
     }
     auto SetMaxVertex(Point4f maxVertex) -> void {
         _maxVertex = maxVertex;
+    }
+    auto GetVertex() const -> std::array<Point4f, 8> {
+        return std::array<Point4f, 8> {
+            _minVertex,
+            Point4f{ _maxVertex(0), _minVertex(1), _minVertex(2), 1},
+            Point4f{ _minVertex(0), _maxVertex(1), _minVertex(2), 1},
+            Point4f{ _minVertex(0), _minVertex(1), _maxVertex(2), 1},
+            Point4f{ _minVertex(0), _maxVertex(1), _maxVertex(2), 1},
+            Point4f{ _maxVertex(0), _minVertex(1), _maxVertex(2), 1},
+            Point4f{ _maxVertex(0), _maxVertex(1), _minVertex(2), 1},
+            _maxVertex,
+        };
     }
     auto IntersectRay(Ray ray) const -> Float32;
     auto GetRenderData() const -> RenderData const& {

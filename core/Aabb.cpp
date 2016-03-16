@@ -13,6 +13,13 @@ Aabb::Aabb()
     , _maxVertex{ numeric_limits<Float32>::lowest(), numeric_limits<Float32>::lowest(), numeric_limits<Float32>::lowest(), 1.0f } {
 }
 
+Aabb::Aabb(std::initializer_list<Point4f> points)
+    : Aabb() {
+    for (auto const& point : points) {
+        Expand(point);
+    }
+}
+
 auto Aabb::Expand(Aabb const & other) -> void {
     Expand(other.GetMinVertex());
     Expand(other.GetMaxVertex());
@@ -32,7 +39,7 @@ auto Aabb::Expand(Point4f vertex) -> void {
 auto Aabb::Intersect(Aabb const & other) -> void {
     for (auto i = 0; i < 3; ++i) {
         _minVertex(i) = std::max(_minVertex(i), other._minVertex(i));
-        _maxVertex(i) = std::min(_minVertex(i), other._minVertex(i));
+        _maxVertex(i) = std::min(_maxVertex(i), other._maxVertex(i));
     }
 }
 

@@ -59,21 +59,18 @@ auto ResourceManager::PrepareResource() -> void {
 }
 
 auto ResourceManager::LoadBegin() -> void {
-    // create null descriptor
-    auto const nullDescriptorCount = 5u;
-    for (auto i = 0u; i < nullDescriptorCount; ++i) {
-        D3D12_SHADER_RESOURCE_VIEW_DESC nullSrvDesc = {};
-        nullSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-        nullSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-        nullSrvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        nullSrvDesc.Texture2D.MipLevels = 1;
-        nullSrvDesc.Texture2D.MostDetailedMip = 0;
-        nullSrvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+    // create null descriptor for the 1st one in _cbvSrvHeap
+    D3D12_SHADER_RESOURCE_VIEW_DESC nullSrvDesc = {};
+    nullSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    nullSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    nullSrvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    nullSrvDesc.Texture2D.MipLevels = 1;
+    nullSrvDesc.Texture2D.MostDetailedMip = 0;
+    nullSrvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
-        auto descriptorInfo = _cbvSrvHeap.GetDescriptorInfo(nullptr);
-        _nullDescriptorInfo.push_back(descriptorInfo);
-        _device->CreateShaderResourceView(nullptr, &nullSrvDesc, descriptorInfo._cpuHandle);
-    }
+    auto descriptorInfo = _cbvSrvHeap.GetDescriptorInfo(nullptr);
+    _nullDescriptorInfo.push_back(descriptorInfo);
+    _device->CreateShaderResourceView(nullptr, &nullSrvDesc, descriptorInfo._cpuHandle);
 }
 
 auto ResourceManager::LoadEnd() -> void {
@@ -91,47 +88,49 @@ auto ResourceManager::CreatePso(D3D12_GRAPHICS_PIPELINE_STATE_DESC const* psoDes
 auto ResourceManager::CreateRootSignature() -> ComPtr<ID3D12RootSignature> {
     auto ret = ComPtr<ID3D12RootSignature>{ nullptr };
 
-    auto ranges = array<CD3DX12_DESCRIPTOR_RANGE, 10>{};
-    ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RegisterConvention::DiffuseMap);
-    ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RegisterConvention::NormalMap);
-    ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RegisterConvention::SpecularMap);
-    ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RegisterConvention::EmissiveMap);
-    ranges[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, RegisterConvention::SrvPs4);
-    ranges[5].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Transform);
-    ranges[6].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Material);
-    ranges[7].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Camera);
-    ranges[8].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::Light);
-    ranges[9].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, RegisterConvention::CbvAll);
+    auto ranges = array<CD3DX12_DESCRIPTOR_RANGE, 8>{};
+    ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, SrvRegisterConvention::SrvAll1);
+    ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, -1, SrvRegisterConvention::SrvPsArray);
+    ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, CbvRegisterConvention::Transform);
+    ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, CbvRegisterConvention::Material);
+    ranges[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, CbvRegisterConvention::Camera);
+    ranges[5].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, CbvRegisterConvention::Light);
+    ranges[6].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, CbvRegisterConvention::CbvAll);
+    ranges[7].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, CbvRegisterConvention::Ps2);
 
-    auto rootParameters = array<CD3DX12_ROOT_PARAMETER, 10>{};
-    rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
+    auto rootParameters = array<CD3DX12_ROOT_PARAMETER, 9>{};
+    rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_ALL);
     rootParameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
-    rootParameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_VERTEX);
     rootParameters[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_PIXEL);
     rootParameters[4].InitAsDescriptorTable(1, &ranges[4], D3D12_SHADER_VISIBILITY_ALL);
-    rootParameters[5].InitAsDescriptorTable(1, &ranges[5], D3D12_SHADER_VISIBILITY_VERTEX);
-    rootParameters[6].InitAsDescriptorTable(1, &ranges[6], D3D12_SHADER_VISIBILITY_PIXEL);
-    rootParameters[7].InitAsDescriptorTable(1, &ranges[7], D3D12_SHADER_VISIBILITY_ALL);
-    rootParameters[8].InitAsDescriptorTable(1, &ranges[8], D3D12_SHADER_VISIBILITY_PIXEL);
-    rootParameters[9].InitAsDescriptorTable(1, &ranges[9], D3D12_SHADER_VISIBILITY_ALL);
+    rootParameters[5].InitAsDescriptorTable(1, &ranges[5], D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[6].InitAsDescriptorTable(1, &ranges[6], D3D12_SHADER_VISIBILITY_ALL);
+    rootParameters[7].InitAsDescriptorTable(1, &ranges[7], D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[8].InitAsConstants(TextureIndex::count, CbvRegisterConvention::TextureIndex);
 
-    auto sampler = D3D12_STATIC_SAMPLER_DESC{};
-    sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-    sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-    sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-    sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-    sampler.MipLODBias = 0;
-    sampler.MaxAnisotropy = 0;
-    sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-    sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
-    sampler.MinLOD = 0.0f;
-    sampler.MaxLOD = D3D12_FLOAT32_MAX;
-    sampler.ShaderRegister = RegisterConvention::StaticSampler;
-    sampler.RegisterSpace = 0;
-    sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-
+    auto samplers = std::array<D3D12_STATIC_SAMPLER_DESC, 2>{};
+    samplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+    samplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    samplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    samplers[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    samplers[0].MipLODBias = 0;
+    samplers[0].MaxAnisotropy = 0;
+    samplers[0].ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+    samplers[0].BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+    samplers[0].MinLOD = 0.0f;
+    samplers[0].MaxLOD = D3D12_FLOAT32_MAX;
+    samplers[0].ShaderRegister = SamplerRegisterConvention::sampler0;
+    samplers[0].RegisterSpace = 0;
+    samplers[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+    samplers[1] = samplers[0];
+    samplers[1].AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+    samplers[1].AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+    samplers[1].AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+    samplers[1].BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
+    samplers[1].ShaderRegister = SamplerRegisterConvention::sampler1;
     CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-    rootSignatureDesc.Init(rootParameters.size(), rootParameters.data(), 1, &sampler, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+    rootSignatureDesc.Init(rootParameters.size(), rootParameters.data(), samplers.size(), samplers.data(), D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
     ComPtr<ID3DBlob> signature;
     ComPtr<ID3DBlob> error;
@@ -320,7 +319,7 @@ auto ResourceManager::LoadCamera(core::Camera * cameras, unsigned int count) -> 
     auto cameraData = vector<CameraData>{};
     for (auto i = 0u; i < count; ++i) {
         auto & camera = cameras[i];
-        camera._renderDataId = _cameraDescriptorInfos.size();
+        camera.SetRenderDataId(_cameraDescriptorInfos.size());
         auto descriptorInfo = _cbvSrvHeap.GetDescriptorInfo(buffer);
         descriptorInfo._mappedDataPtr = mappedPtr + i * sizeof(CameraData);
         D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = { buffer->GetGPUVirtualAddress() + i * sizeof(CameraData), sizeof(CameraData) };
@@ -371,17 +370,19 @@ auto ResourceManager::LoadLight(core::AmbientLight ** ambientLights, unsigned in
 }
 
 auto ResourceManager::LoadShadowCastingLight(core::DirectionalLight ** directionalLights, unsigned int directionalLightCount) -> void {
-    auto count = directionalLightCount;
-    auto buffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(count * sizeof(CameraData)), D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_TYPE_UPLOAD);
+    if (directionalLightCount == 0) {
+        return;
+    }
+    auto buffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(directionalLightCount * sizeof(CameraData)), D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_TYPE_UPLOAD);
     // Map the constant buffers and cache their heap pointers.
     uint8 * mappedPtr = nullptr;
     CD3DX12_RANGE readRange(0, 0);		// no intend to read from this resource on the CPU.
     ThrowIfFailed(buffer->Map(0, &readRange, reinterpret_cast<void**>(&mappedPtr)));
 
     auto cameraData = vector<CameraData>{};
-    for (auto i = 0u; i < count; ++i) {
+    for (auto i = 0u; i < directionalLightCount; ++i) {
         auto & directionalLight = directionalLights[i];
-        directionalLight->_renderDataIdCamera = _cameraDescriptorInfos.size();
+        directionalLight->SetRenderDataId(_cameraDescriptorInfos.size());
         auto descriptorInfo = _cbvSrvHeap.GetDescriptorInfo(buffer);
         descriptorInfo._mappedDataPtr = mappedPtr + i * sizeof(CameraData);
         auto cbvDesc = D3D12_CONSTANT_BUFFER_VIEW_DESC{ buffer->GetGPUVirtualAddress() + i * sizeof(CameraData), sizeof(CameraData) };
@@ -395,17 +396,6 @@ auto ResourceManager::LoadShadowCastingLight(core::DirectionalLight ** direction
         });
     }
     memcpy(mappedPtr, cameraData.data(), cameraData.size());
-}
-
-auto ResourceManager::UpdateShadowCastingLight(core::DirectionalLight const* directionalLight) -> void {
-    auto const& descriptorInfo = _cameraDescriptorInfos[directionalLight->_renderDataIdCamera];
-    auto cameraData = CameraData{
-        directionalLight->GetRigidBodyMatrixInverse(),
-        directionalLight->GetProjectTransformDx(),
-        directionalLight->GetTransform(),
-        directionalLight->GetPosition(),
-    };
-    memcpy(descriptorInfo._mappedDataPtr, &cameraData, sizeof(cameraData));
 }
 
 auto ResourceManager::LoadMaterials(core::Material ** materials, unsigned int count) -> void {
@@ -451,7 +441,6 @@ auto ResourceManager::LoadDdsTexture(core::Texture ** texture, unsigned int coun
 
 // quick & dirty implementation to load dds files
 auto ResourceManager::LoadDdsTexture(string const& filename) -> unsigned int {
-
     // 2. create texture (CreateDDSTextureFromFile() uses upload heap. Need to upload data to default heap later)
     //_uploadBuffers.emplace_back();
     //auto uploadBuffer = _uploadBuffers.back().Get();
@@ -461,8 +450,6 @@ auto ResourceManager::LoadDdsTexture(string const& filename) -> unsigned int {
 
     _uploadBuffers.emplace_back();
     _uploadBuffers.back().Attach(uploadBuffer);
-    //_uploadBuffers.emplace_back(uploadBuffer);
-    //uploadBuffer->Release();
 
     // 3. upload texture
     auto desc = uploadBuffer->GetDesc();
@@ -643,18 +630,15 @@ auto ResourceManager::LoadTerrain(core::Terrain * terrain) -> void {
 
     //special tiles
     LoadMeshes(specialTiles.data(), specialTiles.size(), sizeof(core::Vertex));
-
-    //======
-    //LoadTerrainSpecialTiles(terrain->GetSpecialTiles());
 }
 
-auto ResourceManager::UpdateCamera(core::Camera const * camera) -> void {
-    auto const& descriptorInfo = _cameraDescriptorInfos[camera->_renderDataId];
+auto ResourceManager::UpdateViewpoint(core::Viewpoint const * viewpoint) -> void {
+    auto const& descriptorInfo = _cameraDescriptorInfos[viewpoint->GetRenderDataId()];
     auto cameraData = CameraData{
-        camera->GetRigidBodyMatrixInverse(),
-        camera->GetProjectTransformDx(),
-        camera->GetTransform(),
-        camera->GetPosition(),
+        viewpoint->GetRigidBodyMatrixInverse(),
+        viewpoint->GetProjectTransformDx(),
+        viewpoint->GetTransform(),
+        viewpoint->GetPosition(),
     };
     memcpy(descriptorInfo._mappedDataPtr, &cameraData, sizeof(cameraData));
 }

@@ -34,8 +34,7 @@ cbuffer Terrain : register(b4) {
     float sightDistance;
 };
 
-Texture2DArray diffuseMap : register(t0);
-Texture2D heightMap : register(t4);
+Texture2D heightMap : register(t0);
 
 SamplerState staticSampler : register(s0);
 

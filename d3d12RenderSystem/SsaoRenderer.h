@@ -22,7 +22,7 @@ public:
     }
 public:
     virtual auto Prepare() -> void override;
-    virtual auto Draw(core::Camera const* camera, core::SkyBox const* skyBox, core::Terrain const* terrain, core::Shape const*const* shapes, unsigned int shapeCount) -> void override;
+    virtual auto Draw(core::Viewpoint const* camera, core::SkyBox const* skyBox, core::Terrain const* terrain, core::Shape const*const* shapes, unsigned int shapeCount, core::Viewpoint const * shadowCastingLightViewpoint) -> void override;
     virtual auto AllocateDescriptorHeap(
         unsigned int cameraCount,
         unsigned int meshCount,

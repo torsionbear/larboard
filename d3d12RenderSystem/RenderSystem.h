@@ -91,7 +91,7 @@ public:
             _materials.size(),
             _skyBox == nullptr ? 0 : 1,
             _terrain == nullptr ? 0 : 1,
-            5u);
+            SrvRegisterConvention::Count);
         _resourceManager->LoadBegin();
 
         if (_skyBox != nullptr) {
@@ -105,7 +105,7 @@ public:
         _resourceManager->LoadModels(_models.data(), _models.size());
         _resourceManager->LoadMaterials(_materials.data(), _materials.size());
         _resourceManager->LoadDdsTexture(_textures.data(), _textures.size());
-        _resourceManager->LoadShadowCastingLight(_directionalLights.data(), 1);
+        _resourceManager->LoadShadowCastingLight(_directionalLights.data(), _directionalLights.size());
         _resourceManager->LoadLight(
             _ambientLights.data(), _ambientLights.size(),
             _directionalLights.data(), _directionalLights.size(),
@@ -116,18 +116,22 @@ public:
     }
     auto Draw() -> void {
         _renderer->DrawBegin();
-        _renderer->Draw(_camera, _skyBox, _terrain, _shapes.data(), _shapes.size());
+        if (!_directionalLights.empty()) {
+            _renderer->DrawShadowMap(_directionalLights.front(), _shapes.data(), _shapes.size());
+        }
+        _renderer->Draw(_camera, _skyBox, _terrain, _shapes.data(), _shapes.size(), _directionalLights.front());
         _renderer->DrawTranslucent(_translucentShapes.data(), _translucentShapes.size());
         _renderer->DrawEnd();
     }
     auto Update() -> void {
         _resourceManager->PrepareResource();
-        _resourceManager->UpdateCamera(_camera);
+        _resourceManager->UpdateViewpoint(_camera);
 
-        auto shadowCastingLight = _directionalLights.front();
-        shadowCastingLight->ComputeShadowMappingVolume(_camera, _shadowCasterAabb);
-        _resourceManager->UpdateShadowCastingLight(shadowCastingLight);
-
+        if (!_directionalLights.empty()) {
+            auto shadowCastingLight = _directionalLights.front();
+            shadowCastingLight->ComputeShadowMappingVolume(_camera, _shadowCasterAabb);
+            _resourceManager->UpdateViewpoint(shadowCastingLight);
+        }
         if (_terrain != nullptr) {
             _resourceManager->UpdateTerrain(_terrain, _camera);
         }

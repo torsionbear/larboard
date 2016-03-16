@@ -34,10 +34,16 @@ cbuffer Material : register(b3) {
     float4x4 _pad2[3];
 };
 
-Texture2D diffuseMap : register(t0);
-Texture2D normalMap : register(t1);
-Texture2D specularMap : register(t2);
-Texture2D emissiveMap : register(t3);
+cbuffer TextureIndex : register(b6) {
+    int diffuseMapIndex;
+    int normalMapIndex;
+    int specularMapIndex;
+    int emissiveMapIndex;
+    int shadowMapIndex;
+    int occlusionIndex;
+    int DepthIndex;
+};
+Texture2D textures[10] : register(t1);
 SamplerState staticSampler : register(s0);
 
 
@@ -65,9 +71,9 @@ PsOutput main(PsInput input)
     //return input.texCoord;
     //return diffuse.Sample(staticSampler, input.texCoord);
         
-    float3 diffuseColor = hasDiffuseMap ? diffuseMap.Sample(staticSampler, input.texCoord).rgb : diffuse;
-    float3 specularColor = hasSpecularMap ? specularMap.Sample(staticSampler, input.texCoord).rgb : specular;
-    float3 emissiveColor = hasEmissiveMap ? emissiveMap.Sample(staticSampler, input.texCoord).rgb : emissive;
+    float3 diffuseColor = hasDiffuseMap ? textures[diffuseMapIndex].Sample(staticSampler, input.texCoord).rgb : diffuse;
+    float3 specularColor = hasSpecularMap ? textures[specularMapIndex].Sample(staticSampler, input.texCoord).rgb : specular;
+    float3 emissiveColor = hasEmissiveMap ? textures[emissiveMapIndex].Sample(staticSampler, input.texCoord).rgb : emissive;
 
     float occlusion = 0;
     float3 normal = input.normal.xyz;

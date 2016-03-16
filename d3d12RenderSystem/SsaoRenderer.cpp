@@ -22,22 +22,28 @@ auto SsaoRenderer::Prepare() -> void {
     LoadScreenQuad();
 }
 
-auto SsaoRenderer::Draw(core::Camera const * camera, core::SkyBox const * skyBox, core::Terrain const* terrain, core::Shape const * const * shapes, unsigned int shapeCount) -> void {
+auto SsaoRenderer::Draw(core::Viewpoint const* camera, core::SkyBox const* skyBox, core::Terrain const* terrain, core::Shape const*const* shapes, unsigned int shapeCount, core::Viewpoint const * shadowCastingLightViewpoint) -> void {
     auto commandList = _resourceManager->GetCommandList();
+    // render target
+    auto swapChainRtv = _resourceManager->GetSwapChainRenderTargets().GetCurrentRtv();
+    commandList->OMSetRenderTargets(1, &swapChainRtv, FALSE, &_depthStencil._cpuHandle);
+    commandList->RSSetViewports(1, &_viewport);
+    commandList->RSSetScissorRects(1, &_scissorRect);
+
+    UseViewpoint(camera);
+    if (skyBox != nullptr) {
+        DrawSkyBox(skyBox);
+    }
+
+    auto renderTargets = array< D3D12_CPU_DESCRIPTOR_HANDLE, 3>{_gBufferDiffuse._cpuHandle, _gBufferNormal._cpuHandle, _gBufferSpecular._cpuHandle};
     const float clearColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
     commandList->ClearRenderTargetView(_gBufferDiffuse._cpuHandle, clearColor, 0, nullptr);
     commandList->ClearRenderTargetView(_gBufferNormal._cpuHandle, clearColor, 0, nullptr);
     commandList->ClearRenderTargetView(_gBufferSpecular._cpuHandle, clearColor, 0, nullptr);
     commandList->ClearRenderTargetView(_ambientOcclusion._cpuHandle, clearColor, 0, nullptr);
     commandList->ClearDepthStencilView(_gBufferDepthStencil._cpuHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-
-    UseCamera(camera);
-    if (skyBox != nullptr) {
-        DrawSkyBox(skyBox);
-    }
-
-    auto renderTargets = array< D3D12_CPU_DESCRIPTOR_HANDLE, 3>{_gBufferDiffuse._cpuHandle, _gBufferNormal._cpuHandle, _gBufferSpecular._cpuHandle};
     commandList->OMSetRenderTargets(renderTargets.size(), renderTargets.data(), FALSE, &_gBufferDepthStencil._cpuHandle);
+
     for (auto i = 0u; i < shapeCount; ++i) {
         DrawShapeWithPso(shapes[i], _defaultPso.Get());
     }
@@ -58,15 +64,14 @@ auto SsaoRenderer::Draw(core::Camera const * camera, core::SkyBox const * skyBox
     };
     commandList->ResourceBarrier(ssaoPassBarriers.size(), ssaoPassBarriers.data());
 
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::DiffuseMap, _gBufferDiffuseSrv._gpuHandle); // diffuse
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::NormalMap, _gBufferNormalSrv._gpuHandle); // normal
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::SpecularMap, _gBufferSpecularSrv._gpuHandle); // specular
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::EmissiveMap, _gBufferDepthStencilSrv._gpuHandle); // depth texture
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::SrvPs4, _randomVectorTexture._gpuHandle); // random vector
+    commandList->SetGraphicsRoot32BitConstant(RootSignatureParameterIndex::TextureIndex, _gBufferDiffuseSrv._indexInDescriptorHeap, TextureIndex::slot0); // diffuse
+    commandList->SetGraphicsRoot32BitConstant(RootSignatureParameterIndex::TextureIndex, _gBufferNormalSrv._indexInDescriptorHeap, TextureIndex::slot1); // normal
+    commandList->SetGraphicsRoot32BitConstant(RootSignatureParameterIndex::TextureIndex, _gBufferSpecularSrv._indexInDescriptorHeap, TextureIndex::slot2); // specular
+    commandList->SetGraphicsRoot32BitConstant(RootSignatureParameterIndex::TextureIndex, _gBufferDepthStencilSrv._indexInDescriptorHeap, TextureIndex::slot6); // depth
+    commandList->SetGraphicsRoot32BitConstant(RootSignatureParameterIndex::TextureIndex, _randomVectorTexture._indexInDescriptorHeap, TextureIndex::slot5); // random vector
     commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Material, _ssaoDataCbv._gpuHandle); // ssao data
+
     commandList->OMSetRenderTargets(1, &_ambientOcclusion._cpuHandle, FALSE, nullptr);
-    //auto rtv = _resourceManager->GetSwapChainRenderTargets().GetCurrentRtv();
-    //commandList->OMSetRenderTargets(1, &rtv, FALSE, &_depthStencil._cpuHandle);
 
     commandList->IASetVertexBuffers(0, 1, &_screenQuadVbv);
     commandList->IASetIndexBuffer(&_screenQuadIbv);
@@ -78,15 +83,19 @@ auto SsaoRenderer::Draw(core::Camera const * camera, core::SkyBox const * skyBox
         _currentPso = _lightingPassPso.Get();
         commandList->SetPipelineState(_currentPso);
     }
+    // shadow casting light's cbv and shadow map's srv
+    auto const& shadowCastingLightDescriptorInfo = _resourceManager->GetCameraDescriptorInfo(shadowCastingLightViewpoint->GetRenderDataId());
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::CbvPs2, shadowCastingLightDescriptorInfo._gpuHandle);
+    commandList->SetGraphicsRoot32BitConstant(RootSignatureParameterIndex::TextureIndex, _shadowMapDepthStencilSrv._indexInDescriptorHeap, TextureIndex::slot4); // shadow map
+
     auto lightingPassBarriers = std::array<CD3DX12_RESOURCE_BARRIER, 1> {
         CD3DX12_RESOURCE_BARRIER::Transition(_ambientOcclusion._resource, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE),
     };
     commandList->ResourceBarrier(lightingPassBarriers.size(), lightingPassBarriers.data());
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::SrvPs4, _ambientOcclusionSrv._gpuHandle); // ambient occlusion
+    commandList->SetGraphicsRoot32BitConstant(RootSignatureParameterIndex::TextureIndex, _ambientOcclusionSrv._indexInDescriptorHeap, TextureIndex::slot5); // occlusion
     UseLight();
     
-    auto rtv = _resourceManager->GetSwapChainRenderTargets().GetCurrentRtv();
-    commandList->OMSetRenderTargets(1, &rtv, FALSE, &_depthStencil._cpuHandle);
+    commandList->OMSetRenderTargets(1, &swapChainRtv, FALSE, &_depthStencil._cpuHandle);
     commandList->IASetVertexBuffers(0, 1, &_screenQuadVbv);
     commandList->IASetIndexBuffer(&_screenQuadIbv);
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -104,7 +113,7 @@ auto SsaoRenderer::AllocateDescriptorHeap(
     unsigned int nullDescriptorCount) -> void {
     auto const lightDescriptorCount = 1u;
     auto shadowCastingLightCount = 1u;
-    auto const normalDsvCount = 1u;
+    auto const ordinaryDsvCount = 1u;
 
     auto const gBufferRtvSrvCount = 3u;
     auto const gBufferDsvSrvCount = 1u;
@@ -112,7 +121,7 @@ auto SsaoRenderer::AllocateDescriptorHeap(
     auto const ssaoCbvCount = 1u;
     auto const randomVectorTextureCount = 1u;
 
-    _resourceManager->AllocDsvDescriptorHeap(normalDsvCount + gBufferDsvSrvCount);
+    _resourceManager->AllocDsvDescriptorHeap(ordinaryDsvCount + gBufferDsvSrvCount + shadowCastingLightCount);
 
     auto const cbvCount = cameraCount + modelCount + materialCount + lightDescriptorCount + ssaoCbvCount + terrainCount + shadowCastingLightCount;
     auto const srvCount = textureCount + nullDescriptorCount + skyBoxCount + randomVectorTextureCount + gBufferRtvSrvCount + gBufferDsvSrvCount + ssaoRtvSrvCount + 2 * terrainCount + shadowCastingLightCount;
@@ -181,8 +190,8 @@ auto SsaoRenderer::CreateSsaoDefaultPso() -> void {
     // depth stencil
     CD3DX12_DEPTH_STENCIL_DESC depthStencilDesc(D3D12_DEFAULT);
     // shader
-    auto vs = _resourceManager->CompileShader("d3d12RenderSystem/shaders/ssao_default_v.hlsl", "vs_5_0");
-    auto ps = _resourceManager->CompileShader("d3d12RenderSystem/shaders/ssao_default_p.hlsl", "ps_5_0");
+    auto vs = _resourceManager->CompileShader("d3d12RenderSystem/shaders/ssao_default_v.hlsl", "vs_5_1");
+    auto ps = _resourceManager->CompileShader("d3d12RenderSystem/shaders/ssao_default_p.hlsl", "ps_5_1");
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
     psoDesc.InputLayout = { inputElementDescs.data(), inputElementDescs.size() };
@@ -214,8 +223,8 @@ auto SsaoRenderer::CreateSsaoPassPso() -> void {
     rasterizerDesc.FrontCounterClockwise = TRUE;
 
     // shader
-    auto vs = _resourceManager->CompileShader("d3d12RenderSystem/shaders/ssao_ssao_v.hlsl", "vs_5_0");
-    auto ps = _resourceManager->CompileShader("d3d12RenderSystem/shaders/ssao_ssao_p.hlsl", "ps_5_0");
+    auto vs = _resourceManager->CompileShader("d3d12RenderSystem/shaders/ssao_ssao_v.hlsl", "vs_5_1");
+    auto ps = _resourceManager->CompileShader("d3d12RenderSystem/shaders/ssao_ssao_p.hlsl", "ps_5_1");
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
     psoDesc.InputLayout = { inputElementDescs.data(), inputElementDescs.size() };
@@ -248,8 +257,8 @@ auto SsaoRenderer::CreateLightingPassPso() -> void {
     CD3DX12_DEPTH_STENCIL_DESC depthStencilDesc(D3D12_DEFAULT);
 
     // shader
-    auto vs = _resourceManager->CompileShader("d3d12RenderSystem/shaders/ssao_lighting_v.hlsl", "vs_5_0");
-    auto ps = _resourceManager->CompileShader("d3d12RenderSystem/shaders/ssao_lighting_p.hlsl", "ps_5_0");
+    auto vs = _resourceManager->CompileShader("d3d12RenderSystem/shaders/ssao_lighting_v.hlsl", "vs_5_1");
+    auto ps = _resourceManager->CompileShader("d3d12RenderSystem/shaders/ssao_lighting_p.hlsl", "ps_5_1");
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
     psoDesc.InputLayout = { inputElementDescs.data(), inputElementDescs.size() };

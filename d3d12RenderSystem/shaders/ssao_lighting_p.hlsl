@@ -57,12 +57,27 @@ cbuffer SsaoData : register(b3) {
 };
 static int2 randomVectorTextureSize = int2(4, 4);
 
-Texture2D diffuseMap : register(t0);
-Texture2D normalMap : register(t1);
-Texture2D specularMap : register(t2);
-Texture2D depthMap : register(t3);
-Texture2D occlusionMap : register(t4);
+cbuffer ShadowCastingLight : register(b5) {
+    float4x4 lightViewTransform;
+    float4x4 lightProjectTransform;
+    float4x4 lightViewTransformInverse;
+    float4 lightViewPosition;
+    float3x4 _padShadowCastingLight;
+};
+
+cbuffer TextureIndex : register(b6) {
+    int diffuseMapIndex;
+    int normalMapIndex;
+    int specularMapIndex;
+    int emissiveMapIndex;
+    int shadowMapIndex;
+    int occlusionIndex;
+    int DepthIndex;
+};
+
+Texture2D textures[10] : register(t1);
 SamplerState staticSampler : register(s0);
+SamplerState shadowMapSampler : register(s1);
 
 float screenSpaceDepthToViewSpaceDepth(float screenSpaceDepth) {
     float ndcDepth = screenSpaceDepth;// *2 - 1;
@@ -81,7 +96,7 @@ float GetOcclusion(float2 texCoord) {
     for (int i = 0; i < randomVectorTextureSize.x; ++i) {
         for (int j = 0; j < randomVectorTextureSize.y; ++j) {
             float2 offset = (float2(float(i), float(j)) - randomVectorTextureSize * 0.5) * texelSize;
-            occlusion += occlusionMap.Sample(staticSampler, texCoord + offset).r;
+            occlusion += textures[occlusionIndex].Sample(staticSampler, texCoord + offset).r;
         }
     }
     return occlusion / (randomVectorTextureSize.x * randomVectorTextureSize.y);
@@ -106,34 +121,47 @@ float Attenuation(float4 attenuation, float distance) {
 }
 
 PsOutput main(PsInput input) {
-    float depth = depthMap.Sample(staticSampler, input.texCoord).r;
-    float3 position = mul(viewTransformInverse, CalculateViewSpacePosition(depth, input.viewDirection)).xyz;
-    float3 viewDirection = normalize(viewPosition.xyz - position.xyz);
+    float depth = textures[DepthIndex].Sample(staticSampler, input.texCoord).r;
+    float3 worldPosition = mul(viewTransformInverse, CalculateViewSpacePosition(depth, input.viewDirection)).xyz;
+    float3 viewDirection = normalize(viewPosition.xyz - worldPosition.xyz);
 
     float occlusion = GetOcclusion(input.texCoord);
-    float4 diffuseEmissive = diffuseMap.Sample(staticSampler, input.texCoord);
-    float4 specularShininess = specularMap.Sample(staticSampler, input.texCoord);
-    float3 normal = normalMap.Sample(staticSampler, input.texCoord).rgb;
+    float4 diffuseEmissive = textures[diffuseMapIndex].Sample(staticSampler, input.texCoord);
+    float4 specularShininess = textures[specularMapIndex].Sample(staticSampler, input.texCoord);
+    float3 normal = textures[normalMapIndex].Sample(staticSampler, input.texCoord).rgb;
 
     float3 ambient = ambientLights[0].color.rgb * diffuseEmissive.rgb *(1 - occlusion) + diffuseEmissive.rgb * diffuseEmissive.a;
     float3 diffuse = float3(0, 0, 0);
     float3 specular = float3(0, 0, 0);
-    for (uint i = 0; i < directionalLightCount; i++) {
-        DirectionalLight directionalLight = directionalLights[i];
-        diffuse += directionalLight.color.rgb * diffuseEmissive.rgb * DiffuseCoefficient(normal, directionalLight.direction.xyz);
-        specular += directionalLight.color.rgb * specularShininess.rgb * SpecularCoefficient(normal, directionalLight.direction.xyz, viewDirection, specularShininess.a);
+
+    // shadow
+    float bias = 0.001;
+    float4 lightSpacePosition = mul(lightViewTransform, float4(worldPosition, 1));
+    float4 lightSpaceNdcPosition = mul(lightProjectTransform, lightSpacePosition);
+    float2 texCoord = float2((lightSpaceNdcPosition.x + 1) / 2, 1 - (lightSpaceNdcPosition.y + 1) / 2);
+    float shadowMapDepth = textures[shadowMapIndex].Sample(shadowMapSampler, texCoord).r;
+    bool inShadow = false;
+    if (lightSpaceNdcPosition.z < 1.0 && lightSpaceNdcPosition.z - bias > shadowMapDepth) {
+        inShadow = true;
+    }
+    if (!inShadow) {
+        for (uint i = 0; i < directionalLightCount; i++) {
+            DirectionalLight directionalLight = directionalLights[i];
+            diffuse += directionalLight.color.rgb * diffuseEmissive.rgb * DiffuseCoefficient(normal, directionalLight.direction.xyz);
+            specular += directionalLight.color.rgb * specularShininess.rgb * SpecularCoefficient(normal, directionalLight.direction.xyz, viewDirection, specularShininess.a);
+        }
     }
     for (uint i = 0; i < pointLightCount; i++) {
         PointLight pointLight = pointLights[i];
-        float attenuation = Attenuation(pointLight.attenuation, length(pointLight.position.xyz - position));
-        float3 lightDirection = normalize(position - pointLight.position.xyz);
+        float attenuation = Attenuation(pointLight.attenuation, length(pointLight.position.xyz - worldPosition));
+        float3 lightDirection = normalize(worldPosition - pointLight.position.xyz);
         diffuse += pointLight.color.rgb * diffuseEmissive.rgb * attenuation * DiffuseCoefficient(normal, lightDirection);
         specular += pointLight.color.rgb * specularShininess.rgb * attenuation * SpecularCoefficient(normal, lightDirection, viewDirection, specularShininess.a);
     }
     for (uint i = 0; i < spotLightCount; i++) {
         SpotLight spotLight = spotLights[i];
-        float attenuation = Attenuation(spotLight.attenuation, length(spotLight.position.xyz - position));
-        float3 lightDirection = normalize(position - spotLight.position.xyz);
+        float attenuation = Attenuation(spotLight.attenuation, length(spotLight.position.xyz - worldPosition));
+        float3 lightDirection = normalize(worldPosition - spotLight.position.xyz);
         float angle = acos(dot(lightDirection, spotLight.direction.xyz));
         float angleFalloff = 0;
         if (angle < spotLight.coneShape[1]) {
@@ -144,7 +172,7 @@ PsOutput main(PsInput input) {
     }
     PsOutput ret;
     ret.color = float4(ambient + diffuse + specular, 1);
-    //ret.color = float4(normal,0);
+    //ret.color = float4(occlusion, occlusion, occlusion, 0);
     ret.depth = depth;
     return ret;
 }
