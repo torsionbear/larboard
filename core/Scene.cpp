@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <stack>
 
+#include "Triangle.h"
+
 using std::string;
 using std::make_unique;
 using std::array;
@@ -76,6 +78,7 @@ auto Scene::CreateSkyBox(std::string const & filename) -> void {
 
 auto Scene::Picking(Ray & ray) -> bool {
     auto ret = false;
+    auto resultLength = ray.length;
     auto bvhRoot = _staticModelGroup->GetBvh()->GetRoot();
     auto nodeStack = std::stack<BvhNode *>{};
     nodeStack.push(bvhRoot);
@@ -95,15 +98,72 @@ auto Scene::Picking(Ray & ray) -> bool {
         if (currentNode->IsLeaf()) {
             auto shapes = currentNode->GetShapes();
             for (auto shape : shapes) {
-                auto length = shape->GetAabb().IntersectRay(ray);
-                if (length > 0) {
-                    ray.length = length;
-                    ret = true;
+                auto distanceToShapeAabb = shape->GetAabb().IntersectRay(ray);
+                if (distanceToShapeAabb < 0) {
+                    continue;
+                }
+                auto const& vertex = shape->GetMesh()->GetVertex();
+                auto const& index = shape->GetMesh()->GetIndex();
+                for (auto i = 0; i < index.size(); i += 3) {
+                    auto const& transform = shape->GetModel()->GetTransform();
+                    auto index0 = index[i];
+                    auto index1 = index[i + 1];
+                    auto index2 = index[i + 2];
+                    auto triangle = array<Point4f, 3>{
+                        transform * Point4f{ vertex[index0].coord(0),vertex[index0].coord(1),vertex[index0].coord(2), 1.0f },
+                            transform * Point4f{ vertex[index1].coord(0),vertex[index1].coord(1),vertex[index1].coord(2), 1.0f },
+                            transform * Point4f{ vertex[index2].coord(0),vertex[index2].coord(1),vertex[index2].coord(2), 1.0f },
+                    };
+                    auto distanceToTriangleAabb = Triangle::IntersectRay(ray, triangle);
+                    if (distanceToTriangleAabb  > 0) {
+                        resultLength = std::min(resultLength, distanceToTriangleAabb);
+                        ret = true;
+                    }
                 }
             }
         }
     }
+    ray.length = resultLength;
     return ret;
+}
+
+auto Scene::Intersect(Aabb & aabb) -> bool {
+    auto ret = false;
+    auto bvhRoot = _staticModelGroup->GetBvh()->GetRoot();
+    auto nodeStack = std::stack<BvhNode *>{};
+    nodeStack.push(bvhRoot);
+    while (!nodeStack.empty()) {
+        auto currentNode = nodeStack.top();
+        nodeStack.pop();
+        if (!aabb.IntersectAabb(currentNode->GetAabb())) {
+            continue;
+        }
+        if (currentNode->RightChild() != nullptr) {
+            nodeStack.push(currentNode->RightChild());
+        }
+        if (currentNode->LeftChild() != nullptr) {
+            nodeStack.push(currentNode->LeftChild());
+        }
+        if (currentNode->IsLeaf()) {
+            auto shapes = currentNode->GetShapes();
+            for (auto shape : shapes) {
+                auto const& vertex = shape->GetMesh()->GetVertex();
+                auto const& index = shape->GetMesh()->GetIndex();
+                for (auto i = 0; i < index.size(); i += 3) {
+                    auto const& transform = shape->GetModel()->GetTransform();
+                    auto intersected = aabb.IntersectTriangle(std::array<Point4f, 3>{
+                        transform * Point4f{ vertex[i].coord(0),vertex[i].coord(1),vertex[i].coord(2), 1.0f },
+                            transform * Point4f{ vertex[i + 1].coord(0),vertex[i + 1].coord(1),vertex[i + 1].coord(2), 1.0f },
+                            transform * Point4f{ vertex[i + 2].coord(0),vertex[i + 2].coord(1),vertex[i + 2].coord(2), 1.0f},
+                    });
+                    if (intersected) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    return false;
 }
 
 auto Scene::ToggleBvh() -> void {

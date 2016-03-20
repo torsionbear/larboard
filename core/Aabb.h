@@ -47,7 +47,12 @@ public:
             _maxVertex,
         };
     }
+    auto Translate(Vector4f translate) -> Aabb {
+        return Aabb{ _minVertex + translate, _maxVertex + translate };
+    }
     auto IntersectRay(Ray ray) const -> Float32;
+    auto IntersectTriangle(std::array<Point4f, 3> const& vertex) const -> bool;
+    auto IntersectAabb(Aabb const& other) -> bool;
     auto GetRenderData() const -> RenderData const& {
         return _renderData;
     }
@@ -60,6 +65,8 @@ public:
     auto SetShaderProgram(ShaderProgram * shaderProgram) -> void {
         _shaderProgram = shaderProgram;
     }
+private:
+    auto Project(Point4f axis, Point4f const* points, unsigned int count, Float32 & min, Float32 & max) const -> void;
 private:
     Point4f _minVertex;
     Point4f _maxVertex;

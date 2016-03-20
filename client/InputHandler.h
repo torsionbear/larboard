@@ -35,4 +35,5 @@ private:
     core::Vector2f _lastCoordinate;
     Status _status = none;
     core::Point4f pickPoint = core::Point4f{ 0, 0, 0, 1 };
+    core::Float32 _moveSpeed = 5.0f;
 };

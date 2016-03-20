@@ -146,6 +146,7 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="TextureArray.h" />
     <ClInclude Include="TextureUsage.h" />
+    <ClInclude Include="Triangle.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="Viewpoint.h" />
   </ItemGroup>

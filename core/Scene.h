@@ -46,6 +46,7 @@ public:
     auto CreateSkyBox(std::array<std::string, 6>&& filenames) -> void;
     auto CreateSkyBox(std::string const& filename) -> void;
     auto Picking(Ray & ray) -> bool;
+    auto Intersect(Aabb & aabb) -> bool;
 
     auto ToggleBvh() -> void;
 

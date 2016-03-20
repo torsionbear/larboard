@@ -110,28 +110,28 @@ auto InputHandler::operator()(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
         case 0x57:	// W key
         {
             if (_isFpsMode) {
-                _cameraController->IncreaseForwardSpeed(10.0f);
+                _cameraController->IncreaseForwardSpeed(_moveSpeed);
             }
             break;
         }
         case 0x41:	// A key
         {
             if (_isFpsMode) {
-                _cameraController->IncreaseRightSpeed(-10.0f);
+                _cameraController->IncreaseRightSpeed(-_moveSpeed);
             }
             break;
         }
         case 0x53:	// S key
         {
             if (_isFpsMode) {
-                _cameraController->IncreaseForwardSpeed(-10.0f);
+                _cameraController->IncreaseForwardSpeed(-_moveSpeed);
             }
             break;
         }
         case 0x44:	// D key
         {
             if (_isFpsMode) {
-                _cameraController->IncreaseRightSpeed(10.0f);
+                _cameraController->IncreaseRightSpeed(_moveSpeed);
             }
             break;
         }
@@ -151,28 +151,28 @@ auto InputHandler::operator()(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
         case 0x57:	// W key
         {
             if (_isFpsMode) {
-                _cameraController->IncreaseForwardSpeed(-10.0f);
+                _cameraController->IncreaseForwardSpeed(-_moveSpeed);
             }
             break;
         }
         case 0x41:	// A key
         {
             if (_isFpsMode) {
-                _cameraController->IncreaseRightSpeed(10.0f);
+                _cameraController->IncreaseRightSpeed(_moveSpeed);
             }
             break;
         }
         case 0x53:	// S key
         {
             if (_isFpsMode) {
-                _cameraController->IncreaseForwardSpeed(10.0f);
+                _cameraController->IncreaseForwardSpeed(_moveSpeed);
             }
             break;
         }
         case 0x44:	// D key
         {
             if (_isFpsMode) {
-                _cameraController->IncreaseRightSpeed(-10.0f);
+                _cameraController->IncreaseRightSpeed(-_moveSpeed);
             }
             break;
         }
