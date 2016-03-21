@@ -14,6 +14,7 @@ namespace core {
 class StaticModelGroup {
 public:
     auto Load() -> void;
+    auto BuildBvh() -> void;
     auto GetShapes()->std::vector<std::unique_ptr<Shape>>&;
     auto AcquireShapes()->std::vector<std::unique_ptr<Shape>>;
     auto AcquireMeshes()->std::vector<std::unique_ptr<Mesh>>;

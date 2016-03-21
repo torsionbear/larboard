@@ -36,20 +36,6 @@ auto LoadScene_dx1(core::Scene * scene) -> void {
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square2/square2.x3d").Read(scene);
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.4f, 0.4f, 0.4f, 1.0f });
     scene->CreateSkyBox("media/skybox/cloudy_noon.dds");
-
-    scene->CreateTerrain({ "media/terrain/grass2.png", "media/terrain/dirt2.png", "media/terrain/rock2.png" }, "media/terrain/heightMap.png");
-    scene->GetTerrain()->SetSightDistance(scene->GetActiveCamera()->GetFarPlane());
-    scene->_terrain->Load(scene->GetActiveCamera()->GetFarPlane()); // still need to load terrain png texture for height calculation
-    scene->GetTerrain()->SetTileSize(10);
-    scene->GetTerrain()->SetHeightMapOrigin(core::Vector2i{ -30, -24 });
-    scene->GetTerrain()->SetHeightMapSize(core::Vector2i{ 60, 60 });
-    scene->GetTerrain()->SetDiffuseMapSize(core::Vector2i{ 5, 5 });
-
-    auto terrainSpecialTileScene = make_unique<core::Scene>();
-
-    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_01_terrainx3d.x3d").Read(terrainSpecialTileScene.get());
-    scene->GetTerrain()->AddSpecialTiles(terrainSpecialTileScene->GetStaticModelGroup().AcquireShapes(), terrainSpecialTileScene->GetStaticModelGroup().AcquireMeshes());
-
 }
 
 auto LoadScene_dx2(core::Scene * scene) -> void {
@@ -171,7 +157,7 @@ int main_dx() {
 
     auto scene = make_unique<core::Scene>();
     LoadScene_dx3(scene.get());
-    scene->GetStaticModelGroup().Load();
+    scene->GetStaticModelGroup().BuildBvh();
 
     d3d12RenderSystem::RenderSystem renderSystem;
     renderSystem.Init(width, height);

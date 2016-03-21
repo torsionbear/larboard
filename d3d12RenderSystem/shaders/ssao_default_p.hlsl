@@ -46,6 +46,25 @@ cbuffer TextureIndex : register(b6) {
 Texture2D textures[10] : register(t1);
 SamplerState staticSampler : register(s0);
 
+float3x3 CalculateTangentSpaceTbn(float3 n, float3 viewDirection, float2 texCoord) {
+    float3 dp1 = ddx(viewDirection);
+    float3 dp2 = ddy(viewDirection);
+    float2 duv1 = ddx(texCoord);
+    float2 duv2 = -ddy(texCoord);
+    float3 dp2perp = cross(dp2, n);
+    float3 dp1perp = cross(n, dp1);
+    float3 t = dp2perp * duv1.x + dp1perp * duv2.x;
+    float3 b = dp2perp * duv1.y + dp1perp * duv2.y;
+    float invmax = rsqrt(max(dot(t, t), dot(b, b)));
+    return transpose(float3x3(t * invmax, b * invmax, n));
+}
+
+float3 CalculateNormal(float3 baseNormal, float3 viewDirection, float2 texCoord) {
+    float3 tangentSpaceNormal = textures[normalMapIndex].Sample(staticSampler, texCoord).rgb;
+    tangentSpaceNormal = tangentSpaceNormal * 255 / 127 - 128 / 127;
+    float3x3 tbn = CalculateTangentSpaceTbn(baseNormal, -viewDirection, texCoord);
+    return normalize(mul(tbn, tangentSpaceNormal));
+}
 
 float DiffuseCoefficient(float3 normal, float3 lightDirection) {
     return max(dot(normal, -lightDirection), 0.0);
@@ -76,13 +95,13 @@ PsOutput main(PsInput input)
     float3 emissiveColor = hasEmissiveMap ? textures[emissiveMapIndex].Sample(staticSampler, input.texCoord).rgb : emissive;
 
     float occlusion = 0;
-    float3 normal = input.normal.xyz;
     float3 worldPosition = input.worldPosition.xyz;
     float3 viewDirection = normalize(viewPosition.xyz - worldPosition);
+    float3 normal = hasNormalMap ? CalculateNormal(input.normal.xyz, viewDirection, input.texCoord) : input.normal.xyz;
 
     PsOutput ret;
     ret.diffuse = float4(diffuseColor, emissive.r);
-    ret.normal = input.normal;
+    ret.normal = float4(normal, 0);
     ret.specular = float4(specularColor, shininess);
     return ret;
     

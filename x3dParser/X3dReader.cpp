@@ -1,5 +1,7 @@
 #include "X3dReader.h"
 
+#include <boost/filesystem.hpp>
+
 using std::vector;
 using std::make_unique;
 using std::move;
@@ -133,7 +135,10 @@ auto X3dReader::ReadShapes(vector<Shape*> const& shapes, core::StaticModelGroup 
 		auto appearanceNode = shape->GetAppearance();
 		auto imageTextureNode = appearanceNode->GetImageTexture();
 		if (nullptr != imageTextureNode) {
-			newShape->AddTexture(ReadImageTexture(*imageTextureNode, staticModelGroup));
+            auto textures = ReadImageTexture(*imageTextureNode, staticModelGroup);
+            for (auto texture : textures) {
+                newShape->AddTexture(texture);
+            }
             if (staticModelGroup.GetShaderProgram("textured") == nullptr) {
                 staticModelGroup.CreateShaderProgram("textured", "shader/textured_v.shader", "shader/textured_f.shader");
             }
@@ -203,7 +208,8 @@ auto X3dReader::ReadMaterial(Material const & material, core::StaticModelGroup &
 	return ret;
 }
 
-auto X3dReader::ReadImageTexture(ImageTexture const& imageTexture, core::StaticModelGroup & staticModelGroup) -> Texture * {
+auto X3dReader::ReadImageTexture(ImageTexture const& imageTexture, core::StaticModelGroup & staticModelGroup) -> vector<Texture *> {
+    auto ret = vector<Texture *>{};
 	auto use = imageTexture.GetUse();
 	if (!use.empty()) {
         return _imageTextures[use];
@@ -212,21 +218,27 @@ auto X3dReader::ReadImageTexture(ImageTexture const& imageTexture, core::StaticM
 	// todo: support multiple urls. for now only use first url 
 	// which is relative path in x3d file generated from blender
     auto url = urls[0];
-    auto type = core::TextureUsage::TextureType::DiffuseMap;
-    auto suffixBegin = url.find_last_of('_');
-    if (suffixBegin != string::npos) {
-        auto suffixEnd = url.find_last_of('.');
-        auto suffix = url.substr(suffixBegin, suffixEnd - suffixBegin);
-        if (suffix == "_normalMap") {
-            type = core::TextureUsage::NormalMap;
-        } else if (suffix == "_specularMap") {
-            type = core::TextureUsage::SpecularMap;
-        } else if (suffix == "_emissiveMap") {
-            type = core::TextureUsage::EmissiveMap;
-        }
+    auto dotPos = url.find_last_of('.');
+    auto urlExt = url.substr(dotPos);
+    auto urlWithoutExt = url.substr(0, dotPos);
+    auto folder = _pathName.parent_path();
+
+    auto diffuseMapFilename = folder / (urlWithoutExt + urlExt);
+    if (boost::filesystem::exists(diffuseMapFilename)) {
+        ret.push_back(staticModelGroup.CreateTexture(diffuseMapFilename.generic_string(), core::TextureUsage::DiffuseMap));
     }
-	auto pathName = _pathName.parent_path().append(urls[0]);
-	auto ret = staticModelGroup.CreateTexture(pathName.generic_string(), type);
+    auto normalMapFilename = folder / (urlWithoutExt + "_normal" + urlExt);
+    if (boost::filesystem::exists(normalMapFilename)) {
+        ret.push_back(staticModelGroup.CreateTexture(normalMapFilename.generic_string(), core::TextureUsage::NormalMap));
+    }
+    auto specularMapFilename = folder / (urlWithoutExt + "_specular" + urlExt);
+    if (boost::filesystem::exists(specularMapFilename)) {
+        ret.push_back(staticModelGroup.CreateTexture(specularMapFilename.generic_string(), core::TextureUsage::SpecularMap));
+    }
+    auto emissiveMapFilename = folder / (urlWithoutExt + "_emissive" + urlExt);
+    if (boost::filesystem::exists(emissiveMapFilename)) {
+        ret.push_back(staticModelGroup.CreateTexture(emissiveMapFilename.generic_string(), core::TextureUsage::EmissiveMap));
+    }
     auto textureName = imageTexture.GetDef();
     if (!textureName.empty()) {
         _imageTextures[textureName] = ret;

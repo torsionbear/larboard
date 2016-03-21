@@ -40,7 +40,7 @@ private:
 	auto ReadX3d(X3d const& x3d) -> void;
 	auto ReadShapes(vector<Shape*> const& shapes, core::StaticModelGroup & staticModelGroup) -> core::Model *;
 	auto ReadMaterial(Material const& material, core::StaticModelGroup & staticModelGroup) -> core::Material *;
-	auto ReadImageTexture(ImageTexture const& imageTexture, core::StaticModelGroup & staticModelGroup) -> core::Texture *;
+	auto ReadImageTexture(ImageTexture const& imageTexture, core::StaticModelGroup & staticModelGroup) -> std::vector<core::Texture *>;
 	auto ReadViewpoint(Viewpoint const& viewpoint)->core::Camera *;
 	auto ReadPointLight(PointLight const& pointLight)->core::PointLight *;
 	auto ReadDirectionalLight(DirectionalLight const& directionalLight)->core::DirectionalLight *;
@@ -50,7 +50,7 @@ private:
 	boost::filesystem::path _pathName;
 	X3dParser _x3dParser;
     std::map<std::string, core::Material *> _materials;
-    std::map<std::string, core::Texture *> _imageTextures;
+    std::map<std::string, std::vector<core::Texture *>> _imageTextures;
 };
 
 }

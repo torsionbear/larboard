@@ -157,7 +157,7 @@ auto SsaoRenderer::GenerateSamples(unsigned int sampleCount, core::Vector2f samp
         auto sample = core::Vector3f{
             randomFloats(randomEngine) * 2.0f - 1.0f,
             randomFloats(randomEngine) * 2.0f - 1.0f,
-            randomFloats(randomEngine)
+            randomFloats(randomEngine)// * 2.0f - 1.0f,
         };
         sample = core::Normalize(sample);
         sample = sample * randomFloats(randomEngine);

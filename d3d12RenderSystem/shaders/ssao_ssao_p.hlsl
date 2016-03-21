@@ -81,6 +81,7 @@ float main(PsInput input) : SV_TARGET
         occlusion += occluded ? 1 : 0;
     }
     occlusion = occlusion / sampleCount;
+    //occlusion = occlusion < 0.5 ? 0.0 : (occlusion - 0.5) * 2;
     return occlusion;
     
 }

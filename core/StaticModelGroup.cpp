@@ -11,17 +11,21 @@ auto StaticModelGroup::Load() -> void {
         t->Load();
     }
     // build BVH
-    auto shapes = vector<Shape *>{};
-    for (auto const& s : _shapes) {
-        shapes.push_back(s.get());
-    }
-    _bvh = make_unique<Bvh>(move(shapes));
+    BuildBvh();
 
     auto shaderProgram = _bvh->GetShaderProgram();
     auto aabbs = _bvh->GetAabbs();
     for (auto aabb : aabbs) {
         aabb->SetShaderProgram(shaderProgram);
     }
+}
+
+auto StaticModelGroup::BuildBvh() -> void {
+    auto shapes = vector<Shape *>{};
+    for (auto const& s : _shapes) {
+        shapes.push_back(s.get());
+    }
+    _bvh = make_unique<Bvh>(move(shapes));
 }
 
 auto StaticModelGroup::GetShapes() -> std::vector<std::unique_ptr<Shape>>& {

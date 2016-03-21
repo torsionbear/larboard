@@ -233,9 +233,9 @@ auto Renderer::DrawShapeWithPso(core::Shape const* shape, ID3D12PipelineState * 
     commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Material, materialDescriptorInfo._gpuHandle);
     // texture
     auto textureIndex = std::array<int, 4>{0, 0, 0, 0};
-    for (auto i = 0u; i < shape->GetTextures().size(); ++i) {
-        auto const& textureDescriptorInfo = _resourceManager->GetTextureDescriptorInfo(shape->GetTextures()[i]->_renderDataId);
-        textureIndex[i] = textureDescriptorInfo._indexInDescriptorHeap;
+    for (auto texture : shape->GetTextures()) {
+        auto const& textureDescriptorInfo = _resourceManager->GetTextureDescriptorInfo(texture->_renderDataId);
+        textureIndex[texture->GetType()] = textureDescriptorInfo._indexInDescriptorHeap;
     }
     commandList->SetGraphicsRoot32BitConstants(RootSignatureParameterIndex::TextureIndex, textureIndex.size(), textureIndex.data(), 0);
     // vertex

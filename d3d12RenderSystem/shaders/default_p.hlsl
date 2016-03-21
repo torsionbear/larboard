@@ -71,10 +71,10 @@ cbuffer Material : register(b3) {
 };
 
 cbuffer TextureIndex : register(b6) {
-    int diffuseTextureIndex;
-    int normalTextureIndex;
-    int specularTextureIndex;
-    int emissiveTextureIndex;
+    int diffuseMapIndex;
+    int normalMapIndex;
+    int specularMapIndex;
+    int emissiveMapIndex;
     int shadowMapIndex;
     int textureIndex5;
     int textureIndex6;
@@ -83,6 +83,25 @@ cbuffer TextureIndex : register(b6) {
 Texture2D<float4> textures[10] : register(t1);
 SamplerState staticSampler : register(s0);
 
+float3x3 CalculateTangentSpaceTbn(float3 n, float3 viewDirection, float2 texCoord) {
+    float3 dp1 = ddx(viewDirection);
+    float3 dp2 = ddy(viewDirection);
+    float2 duv1 = ddx(texCoord);
+    float2 duv2 = -ddy(texCoord);
+    float3 dp2perp = cross(dp2, n);
+    float3 dp1perp = cross(n, dp1);
+    float3 t = dp2perp * duv1.x + dp1perp * duv2.x;
+    float3 b = dp2perp * duv1.y + dp1perp * duv2.y;
+    float invmax = rsqrt(max(dot(t, t), dot(b, b)));
+    return transpose(float3x3(t * invmax, b * invmax, n));
+}
+
+float3 CalculateNormal(float3 baseNormal, float3 viewDirection, float2 texCoord) {
+    float3 tangentSpaceNormal = textures[normalMapIndex].Sample(staticSampler, texCoord).rgb;
+    tangentSpaceNormal = tangentSpaceNormal * 255 / 127 - 128 / 127;
+    float3x3 tbn = CalculateTangentSpaceTbn(baseNormal, -viewDirection, texCoord);
+    return normalize(mul(tbn, tangentSpaceNormal));
+}
 
 float DiffuseCoefficient(float3 normal, float3 lightDirection) {
     return max(dot(normal, -lightDirection), 0.0);
@@ -108,14 +127,19 @@ float4 main(PsInput input) : SV_TARGET
     //return input.texCoord;
     //return diffuse.Sample(staticSampler, input.texCoord);
         
-    float3 diffuseColor = hasDiffuseMap ? textures[diffuseTextureIndex].Sample(staticSampler, input.texCoord).rgb : diffuse;
-    float3 specularColor = hasSpecularMap ? textures[specularTextureIndex].Sample(staticSampler, input.texCoord).rgb : specular;
-    float3 emissiveColor = hasEmissiveMap ? textures[emissiveTextureIndex].Sample(staticSampler, input.texCoord).rgb : emissive;
+    float3 diffuseColor = hasDiffuseMap ? textures[diffuseMapIndex].Sample(staticSampler, input.texCoord).rgb : diffuse;
+    float3 specularColor = hasSpecularMap ? textures[specularMapIndex].Sample(staticSampler, input.texCoord).rgb : specular;
+    float3 emissiveColor = hasEmissiveMap ? textures[emissiveMapIndex].Sample(staticSampler, input.texCoord).rgb : emissive;
 
     float occlusion = 0;
-    float3 normal = input.normal.xyz;
+
     float3 worldPosition = input.worldPosition.xyz;
     float3 viewDirection = normalize(viewPosition.xyz - worldPosition);
+
+    float3 normal = input.normal.xyz;
+    if (hasNormalMap) {
+        normal = CalculateNormal(normal, viewDirection, input.texCoord);
+    }
 
     // shadow
     float bias = 0.001;
@@ -158,7 +182,7 @@ float4 main(PsInput input) : SV_TARGET
         specularResult += spotLight.color.rgb * specularColor * attenuation * angleFalloff * SpecularCoefficient(normal, lightDirection, viewDirection, shininess);
     }
     float4 ret = { ambientResult + diffuseResult + specularResult + emissiveColor, 1 - transparency };
-    //float4 ret = inShadow ? float4(0, 0, 0, 1) : float4(1, 1, 1, 1);
+    //float4 ret = float4((normal + 1) * 0.5, 1);
     return ret;
     
     
