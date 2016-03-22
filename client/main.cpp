@@ -45,8 +45,10 @@ auto LoadScene_dx2(core::Scene * scene) -> void {
 }
 
 auto LoadScene_dx3(core::Scene * scene) -> void {
-    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_02/xsh_02_house.x3d").Read(scene);
-    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.6f, 0.6f, 0.6f, 1.0f });
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_03/xsh_03_house.x3d").Read(scene);
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_03/xsh_03_lights.x3d").Read(scene);
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_03/xsh_03_kitchen.x3d").Read(scene);
+    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.3f, 0.3f, 0.3f, 1.0f });
     scene->CreateSkyBox("media/skybox/cloudy_noon.dds");
 
     scene->CreateTerrain({ "media/terrain/grass2.png", "media/terrain/dirt2.png", "media/terrain/rock2.png" }, "media/terrain/heightMap.png");
