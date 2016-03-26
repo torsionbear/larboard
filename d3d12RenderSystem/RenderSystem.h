@@ -112,15 +112,20 @@ public:
             _pointLights.data(), _pointLights.size(),
             _spotLights.data(), _spotLights.size());
         _renderer->Prepare();
+        _renderer->CreateShadowMapBundle(_directionalLights.front(), _shapes.data(), _shapes.size());
+        _renderer->CreateSkyBoxBundle(_skyBox);
+        _renderer->CreateTerrainBundle(_terrain);
+        _renderer->CreateTranslucentBundle(_translucentShapes.data(), _translucentShapes.size());
+        _renderer->CreateShapeBundle(_shapes.data(), _shapes.size());
         _resourceManager->LoadEnd();
     }
     auto Draw() -> void {
         _renderer->DrawBegin();
         if (!_directionalLights.empty()) {
-            _renderer->DrawShadowMap(_directionalLights.front(), _shapes.data(), _shapes.size());
+            _renderer->DrawShadowMap();
         }
         _renderer->Draw(_camera, _skyBox, _terrain, _shapes.data(), _shapes.size(), _directionalLights.front());
-        _renderer->DrawTranslucent(_translucentShapes.data(), _translucentShapes.size());
+        _renderer->DrawTranslucent();
         _renderer->DrawEnd();
     }
     auto Update() -> void {

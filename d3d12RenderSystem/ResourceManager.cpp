@@ -649,4 +649,18 @@ auto ResourceManager::UpdateTerrain(core::Terrain * terrain, core::Camera * came
     UploadVertexData(tileCoord.size() * sizeof(core::Vector3f), sizeof(core::Vector3f), tileCoord.data(), &_terrainInstanceDataResource);
 }
 
+auto ResourceManager::CreateBundle(ID3D12PipelineState * pso, ID3D12RootSignature * rootSignature, ID3D12DescriptorHeap *const* descriptorHeaps, unsigned int descriptorHeapCount) -> ComPtr<ID3D12GraphicsCommandList> {
+    auto ret = ComPtr<ID3D12GraphicsCommandList>{ nullptr };
+    _commandAllocators.emplace_back(nullptr);
+    auto & commandAllocator = _commandAllocators.back();
+    ThrowIfFailed(_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_BUNDLE, IID_PPV_ARGS(&commandAllocator)));
+    ThrowIfFailed(_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_BUNDLE, commandAllocator.Get(), pso, IID_PPV_ARGS(&ret)));
+    // Bundle command lists must explcitly set the root signature before making any changes to root descriptor tables
+    ret->SetGraphicsRootSignature(rootSignature);
+    // Bundle command lists must explcitly set descriptor heap before setting its handle to root descriptor tables
+    ret->SetDescriptorHeaps(descriptorHeapCount, descriptorHeaps);
+
+    return ret;
+}
+
 }

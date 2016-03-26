@@ -17,7 +17,6 @@ public:
     virtual auto ToggleWireframe() -> void override;
     virtual auto ToggleBackFace() -> void override;
     virtual auto Draw(core::Viewpoint const* camera, core::SkyBox const* skyBox, core::Terrain const* terrain, core::Shape const*const* shapes, unsigned int shapeCount, core::Viewpoint const * shadowCastingLightViewpoint) -> void;
-    auto DrawTranslucent(core::Shape const*const* shapes, unsigned int shapeCount) -> void;
     virtual auto AllocateDescriptorHeap(
         unsigned int cameraCount,
         unsigned int meshCount,
@@ -27,19 +26,27 @@ public:
         unsigned int skyBoxCount,
         unsigned int terrainCount,
         unsigned int nullDescriptorCount) -> void;
-    auto DrawSkyBox(core::SkyBox const* skyBox) -> void;
-    auto DrawTerrain(core::Terrain const * terrain) -> void;
-    auto DrawShadowMap(core::Viewpoint const * viewpoint, core::Shape const*const* shapes, unsigned int shapeCount) -> void;
-    auto UseViewpoint(core::Viewpoint const* viewpoint) -> void;
+    auto DrawTranslucent() -> void;
+    auto DrawSkyBox(ID3D12GraphicsCommandList * commandList) -> void;
+    auto DrawTerrain(ID3D12GraphicsCommandList * commandList, core::Terrain const * terrain) -> void;
+    auto DrawShadowMap() -> void;
+    auto UseViewpoint(ID3D12GraphicsCommandList * commandList, core::Viewpoint const* viewpoint) -> void;
     auto UseLight() -> void;
+    auto CreateShadowMapBundle(core::Viewpoint const * viewpoint, core::Shape const*const* shapes, unsigned int shapeCount) -> void;
+    auto CreateSkyBoxBundle(core::SkyBox const* skyBox) -> void;
+    auto CreateTerrainBundle(core::Terrain const * terrain) -> void;
+    auto CreateTranslucentBundle(core::Shape const*const* shapes, unsigned int shapeCount) -> void;
+    auto CreateShapeBundle(core::Shape const*const* shapes, unsigned int shapeCount) -> void;
 protected:
-    auto DrawShapeWithPso(core::Shape const* shape, ID3D12PipelineState * pso) -> void;
+    auto DrawShapes(ID3D12GraphicsCommandList * commandList) -> void;
+    auto DrawShapeWithPso(ID3D12GraphicsCommandList * commandList, core::Shape const* shape, ID3D12PipelineState * pso) -> void;
     auto CreateDefaultPso() -> void;
     auto CreateSkyBoxPso() -> void;
     auto CreateTerrainPso() -> void;
     auto CreateTerrainWireframePso() -> void;
     auto CreateTranslucentPso() -> void;
     auto CreateShadowMapPso() -> void;
+    auto CreateTerrainBundle(core::Terrain const * terrain, ID3D12PipelineState * pso) -> ComPtr<ID3D12GraphicsCommandList>;
 protected:
     ResourceManager * _resourceManager;
     D3D12_VIEWPORT _viewport;
@@ -51,12 +58,17 @@ protected:
     ComPtr<ID3D12PipelineState> _terrainWireframePso;
     ComPtr<ID3D12PipelineState> _translucentPso;
     ComPtr<ID3D12PipelineState> _shadowMapPso;
-    ID3D12PipelineState * _currentPso;
 
     DescriptorInfo _depthStencil;
     DescriptorInfo _shadowMapDepthStencil;
     DescriptorInfo _shadowMapDepthStencilSrv;
     core::Vector2i _shadowMapSize = core::Vector2i{2048, 2048};
+    ComPtr<ID3D12GraphicsCommandList> _shadowMapBundle;
+    ComPtr<ID3D12GraphicsCommandList> _skyBoxBundle;
+    ComPtr<ID3D12GraphicsCommandList> _terrainBundle;
+    ComPtr<ID3D12GraphicsCommandList> _terrainWireframeBundle;
+    ComPtr<ID3D12GraphicsCommandList> _translucentBundle;
+    ComPtr<ID3D12GraphicsCommandList> _shapeBundle;
 
     bool _wireframeMode = false;
 };

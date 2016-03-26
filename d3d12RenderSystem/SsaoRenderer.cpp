@@ -30,9 +30,9 @@ auto SsaoRenderer::Draw(core::Viewpoint const* camera, core::SkyBox const* skyBo
     commandList->RSSetViewports(1, &_viewport);
     commandList->RSSetScissorRects(1, &_scissorRect);
 
-    UseViewpoint(camera);
+    UseViewpoint(commandList, camera);
     if (skyBox != nullptr) {
-        DrawSkyBox(skyBox);
+        DrawSkyBox(commandList);
     }
 
     auto renderTargets = array< D3D12_CPU_DESCRIPTOR_HANDLE, 3>{_gBufferDiffuse._cpuHandle, _gBufferNormal._cpuHandle, _gBufferSpecular._cpuHandle};
@@ -44,18 +44,14 @@ auto SsaoRenderer::Draw(core::Viewpoint const* camera, core::SkyBox const* skyBo
     commandList->ClearDepthStencilView(_gBufferDepthStencil._cpuHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
     commandList->OMSetRenderTargets(renderTargets.size(), renderTargets.data(), FALSE, &_gBufferDepthStencil._cpuHandle);
 
-    for (auto i = 0u; i < shapeCount; ++i) {
-        DrawShapeWithPso(shapes[i], _defaultPso.Get());
-    }
+    DrawShapes(commandList);
     if (terrain != nullptr) {
-        DrawTerrain(terrain);
+        DrawTerrain(commandList, terrain);
     }
 
     // ssao pass
-    if (_currentPso != _ssaoPassPso.Get()) {
-        _currentPso = _ssaoPassPso.Get();
-        commandList->SetPipelineState(_currentPso);
-    }
+    commandList->SetPipelineState(_ssaoPassPso.Get());
+
     auto ssaoPassBarriers = std::array<CD3DX12_RESOURCE_BARRIER, 4> {
         CD3DX12_RESOURCE_BARRIER::Transition(_gBufferDiffuse._resource, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE),
             CD3DX12_RESOURCE_BARRIER::Transition(_gBufferNormal._resource, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE),
@@ -79,10 +75,8 @@ auto SsaoRenderer::Draw(core::Viewpoint const* camera, core::SkyBox const* skyBo
     commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 
     // lighting pass
-    if (_currentPso != _lightingPassPso.Get()) {
-        _currentPso = _lightingPassPso.Get();
-        commandList->SetPipelineState(_currentPso);
-    }
+    commandList->SetPipelineState(_lightingPassPso.Get());
+
     // shadow casting light's cbv and shadow map's srv
     auto const& shadowCastingLightDescriptorInfo = _resourceManager->GetCameraDescriptorInfo(shadowCastingLightViewpoint->GetRenderDataId());
     commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::CbvPs2, shadowCastingLightDescriptorInfo._gpuHandle);

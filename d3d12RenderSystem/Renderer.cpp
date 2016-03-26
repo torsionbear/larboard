@@ -58,8 +58,7 @@ auto Renderer::DrawBegin() -> void {
     commandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
     commandList->ClearDepthStencilView(_depthStencil._cpuHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
-    _currentPso = _defaultPso.Get();
-    commandList->SetPipelineState(_currentPso);
+    commandList->SetPipelineState(_defaultPso.Get());
 }
 
 auto Renderer::DrawEnd() -> void {
@@ -92,23 +91,15 @@ auto Renderer::Draw(core::Viewpoint const* camera, core::SkyBox const* skyBox, c
     commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::CbvPs2, shadowCastingLightDescriptorInfo._gpuHandle);
     commandList->SetGraphicsRoot32BitConstant(RootSignatureParameterIndex::TextureIndex, _shadowMapDepthStencilSrv._indexInDescriptorHeap, TextureIndex::slot4);
 
-    UseViewpoint(camera);
+    UseViewpoint(commandList, camera);
     UseLight();
     if (skyBox != nullptr) {
-        DrawSkyBox(skyBox);
+        DrawSkyBox(commandList);
     }
     if (terrain != nullptr) {
-        DrawTerrain(terrain);
+        DrawTerrain(commandList, terrain);
     }
-    for (auto i = 0u; i < shapeCount; ++i) {
-        DrawShapeWithPso(shapes[i], _defaultPso.Get());
-    }
-}
-
-auto Renderer::DrawTranslucent(core::Shape const*const* shapes, unsigned int shapeCount) -> void {
-    for (auto i = 0u; i < shapeCount; ++i) {
-        DrawShapeWithPso(shapes[i], _translucentPso.Get());
-    }
+    DrawShapes(commandList);
 }
 
 auto Renderer::AllocateDescriptorHeap(
@@ -131,65 +122,27 @@ auto Renderer::AllocateDescriptorHeap(
     _resourceManager->AllocCbvSrvDescriptorHeap(cbvCount + srvCount);
 }
 
-auto Renderer::DrawSkyBox(core::SkyBox const* skyBox) -> void {
+auto Renderer::DrawTranslucent() -> void {
     auto commandList = _resourceManager->GetCommandList();
-    // pso
-    if (_currentPso != _skyBoxPso.Get()) {
-        _currentPso = _skyBoxPso.Get();
-        commandList->SetPipelineState(_currentPso);
-    }
-    // texture
-    auto const& textureDescriptorInfo = _resourceManager->GetTextureDescriptorInfo(skyBox->GetRenderDataId());
-    commandList->SetGraphicsRoot32BitConstant(RootSignatureParameterIndex::TextureIndex, textureDescriptorInfo._indexInDescriptorHeap, TextureIndex::slot0);
-    // vertex
-    auto const& skyBoxMeshInfo = _resourceManager->GetSkyBoxMeshInfo();
-    // todo: only call the following 2 IASet* functions when necessary
-    commandList->IASetVertexBuffers(0, 1, &skyBoxMeshInfo.vbv);
-    commandList->IASetIndexBuffer(&skyBoxMeshInfo.ibv);
-    commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    commandList->DrawIndexedInstanced(skyBoxMeshInfo.indexCount, 1, skyBoxMeshInfo.indexOffset, skyBoxMeshInfo.baseVertex, 0);
+    commandList->ExecuteBundle(_translucentBundle.Get());
 }
 
-auto Renderer::DrawTerrain(core::Terrain const * terrain) -> void {
-    auto commandList = _resourceManager->GetCommandList();
-    // pso
-    auto targetPso = _wireframeMode ? _terrainWireframePso : _terrainPso;
-    if (_currentPso != targetPso.Get()) {
-        _currentPso = targetPso.Get();
-        commandList->SetPipelineState(_currentPso);
-    }
-    // diffuse map & height map
-    auto const& diffuseMapDescriptorInfo = _resourceManager->GetTextureDescriptorInfo(terrain->GetDiffuseMap()->_renderDataId);
-    commandList->SetGraphicsRoot32BitConstant(RootSignatureParameterIndex::TextureIndex, diffuseMapDescriptorInfo._indexInDescriptorHeap, TextureIndex::slot0);
-    auto const& heightMapDescriptorInfo = _resourceManager->GetTextureDescriptorInfo(terrain->GetHeightMap()->_renderDataId);
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::SrvAll1, heightMapDescriptorInfo._gpuHandle);
-    // terrain cbv
-    auto const& cbvDescriptorInfo = _resourceManager->GetTerrainCbv();
-    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::CbvAll, cbvDescriptorInfo._gpuHandle);
-    // special tiles
-    auto specialTiles = terrain->GetSpecialTiles();
+auto Renderer::DrawSkyBox(ID3D12GraphicsCommandList * commandList) -> void {
+    commandList->ExecuteBundle(_skyBoxBundle.Get());
+}
+
+auto Renderer::DrawTerrain(ID3D12GraphicsCommandList * commandList, core::Terrain const * terrain) -> void {
+    auto targetBundle = _wireframeMode ? _terrainWireframeBundle.Get() : _terrainBundle.Get();
+    commandList->ExecuteBundle(targetBundle);
     auto const& terrainMeshInfo = _resourceManager->GetTerrainMeshInfo();
-    for (auto & mesh : specialTiles) {
-        auto const& renderData = _resourceManager->GetMeshDataInfo(mesh->_renderDataId);
-        auto vbvs = std::array<D3D12_VERTEX_BUFFER_VIEW, 2>{renderData.vbv, terrainMeshInfo.instanceVbv};
-        commandList->IASetVertexBuffers(0, 2, vbvs.data());
-        commandList->IASetIndexBuffer(&renderData.ibv);
-        commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
-        commandList->DrawIndexedInstanced(renderData.indexCount, 1, renderData.indexOffset, renderData.baseVertex, 0);
-    }
-    // normal tiles draw call
-    auto vbvs = std::array<D3D12_VERTEX_BUFFER_VIEW, 2>{terrainMeshInfo.vbv, terrainMeshInfo.instanceVbv};
-    commandList->IASetVertexBuffers(0, 2, vbvs.data());
-    commandList->IASetIndexBuffer(&terrainMeshInfo.ibv);
-    commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
+    auto specialTiles = terrain->GetSpecialTiles();
     commandList->DrawIndexedInstanced(terrainMeshInfo.indexCount, terrain->GetTileCount() - specialTiles.size(), terrainMeshInfo.indexOffset, terrainMeshInfo.baseVertex, specialTiles.size());
 }
 
-auto Renderer::DrawShadowMap(core::Viewpoint const * viewpoint, core::Shape const*const* shapes, unsigned int shapeCount) -> void {
+auto Renderer::DrawShadowMap() -> void {
     auto commandList = _resourceManager->GetCommandList();
     // render target
     commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(_shadowMapDepthStencil._resource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_DEPTH_WRITE));
-    const float clearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
     commandList->ClearDepthStencilView(_shadowMapDepthStencil._cpuHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
     commandList->OMSetRenderTargets(0, nullptr, FALSE, &_shadowMapDepthStencil._cpuHandle);
     // viewport & scissorRect
@@ -198,16 +151,11 @@ auto Renderer::DrawShadowMap(core::Viewpoint const * viewpoint, core::Shape cons
     commandList->RSSetViewports(1, &viewport);
     commandList->RSSetScissorRects(1, &scissorRect);
 
-    UseViewpoint(viewpoint);
-    for (auto i = 0u; i < shapeCount; ++i) {
-        DrawShapeWithPso(shapes[i], _shadowMapPso.Get());
-    }
+    commandList->ExecuteBundle(_shadowMapBundle.Get());
     commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(_shadowMapDepthStencil._resource, D3D12_RESOURCE_STATE_DEPTH_WRITE, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
-
 }
 
-auto Renderer::UseViewpoint(core::Viewpoint const * viewpoint) -> void {
-    auto commandList = _resourceManager->GetCommandList();
+auto Renderer::UseViewpoint(ID3D12GraphicsCommandList * commandList, core::Viewpoint const * viewpoint) -> void {
     auto const& cameraDescriptorInfo = _resourceManager->GetCameraDescriptorInfo(viewpoint->GetRenderDataId());
     commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Camera, cameraDescriptorInfo._gpuHandle);
 }
@@ -218,13 +166,13 @@ auto Renderer::UseLight() -> void {
     commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Light, lightDescriptorInfo._gpuHandle);
 }
 
-auto Renderer::DrawShapeWithPso(core::Shape const* shape, ID3D12PipelineState * pso) -> void {
-    auto commandList = _resourceManager->GetCommandList();
+auto Renderer::DrawShapes(ID3D12GraphicsCommandList * commandList) -> void {
+    commandList->ExecuteBundle(_shapeBundle.Get());
+}
+
+auto Renderer::DrawShapeWithPso(ID3D12GraphicsCommandList * commandList, core::Shape const* shape, ID3D12PipelineState * pso) -> void {
     // pso
-    if (_currentPso != pso) {
-        _currentPso = pso;
-        commandList->SetPipelineState(_currentPso);
-    }
+    commandList->SetPipelineState(pso);
     // transform
     auto const& transformDescriptorInfo = _resourceManager->GetTransformDescriptorInfo(shape->GetModel()->_renderDataId);
     commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Transform, transformDescriptorInfo._gpuHandle);
@@ -466,6 +414,104 @@ auto Renderer::CreateShadowMapPso() -> void {
     psoDesc.SampleDesc.Count = 1;
 
     _shadowMapPso = _resourceManager->CreatePso(&psoDesc);
+}
+
+auto Renderer::CreateShadowMapBundle(core::Viewpoint const * viewpoint, core::Shape const*const* shapes, unsigned int shapeCount) -> void {
+    auto heaps = array<ID3D12DescriptorHeap *, 1>{
+        _resourceManager->GetCbvSrvDescriptorHeap().GetHeap()
+    };
+    _shadowMapBundle = _resourceManager->CreateBundle(_shadowMapPso.Get(), _resourceManager->GetRootSignature(), heaps.data(), heaps.size());
+    UseViewpoint(_shadowMapBundle.Get(), viewpoint);
+    for (auto i = 0u; i < shapeCount; ++i) {
+        DrawShapeWithPso(_shadowMapBundle.Get(), shapes[i], _shadowMapPso.Get());
+    }
+    _shadowMapBundle->Close();
+}
+
+auto Renderer::CreateSkyBoxBundle(core::SkyBox const* skyBox) -> void {
+    auto heaps = array<ID3D12DescriptorHeap *, 1>{
+        _resourceManager->GetCbvSrvDescriptorHeap().GetHeap()
+    };
+    _skyBoxBundle = _resourceManager->CreateBundle(_skyBoxPso.Get(), _resourceManager->GetRootSignature(), heaps.data(), heaps.size());
+    // texture
+    auto const& textureDescriptorInfo = _resourceManager->GetTextureDescriptorInfo(skyBox->GetRenderDataId());
+    _skyBoxBundle->SetGraphicsRoot32BitConstant(RootSignatureParameterIndex::TextureIndex, textureDescriptorInfo._indexInDescriptorHeap, TextureIndex::slot0);
+    // vertex
+    auto const& skyBoxMeshInfo = _resourceManager->GetSkyBoxMeshInfo();
+    // todo: only call the following 2 IASet* functions when necessary
+    _skyBoxBundle->IASetVertexBuffers(0, 1, &skyBoxMeshInfo.vbv);
+    _skyBoxBundle->IASetIndexBuffer(&skyBoxMeshInfo.ibv);
+    _skyBoxBundle->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    _skyBoxBundle->DrawIndexedInstanced(skyBoxMeshInfo.indexCount, 1, skyBoxMeshInfo.indexOffset, skyBoxMeshInfo.baseVertex, 0);
+    _skyBoxBundle->Close();
+}
+
+auto Renderer::CreateTerrainBundle(core::Terrain const * terrain) -> void {
+    _terrainBundle = CreateTerrainBundle(terrain, _terrainPso.Get());
+    _terrainWireframeBundle = CreateTerrainBundle(terrain, _terrainWireframePso.Get());
+}
+
+auto Renderer::CreateTerrainBundle(core::Terrain const * terrain, ID3D12PipelineState * pso) -> ComPtr<ID3D12GraphicsCommandList> {
+    auto heaps = array<ID3D12DescriptorHeap *, 1>{
+        _resourceManager->GetCbvSrvDescriptorHeap().GetHeap()
+    };
+    auto ret = ComPtr<ID3D12GraphicsCommandList>{nullptr};
+    ret = _resourceManager->CreateBundle(pso, _resourceManager->GetRootSignature(), heaps.data(), heaps.size());
+
+    // diffuse map & height map
+    auto const& diffuseMapDescriptorInfo = _resourceManager->GetTextureDescriptorInfo(terrain->GetDiffuseMap()->_renderDataId);
+    ret->SetGraphicsRoot32BitConstant(RootSignatureParameterIndex::TextureIndex, diffuseMapDescriptorInfo._indexInDescriptorHeap, TextureIndex::slot0);
+    auto const& heightMapDescriptorInfo = _resourceManager->GetTextureDescriptorInfo(terrain->GetHeightMap()->_renderDataId);
+    ret->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::SrvAll1, heightMapDescriptorInfo._gpuHandle);
+    // terrain cbv
+    auto const& cbvDescriptorInfo = _resourceManager->GetTerrainCbv();
+    ret->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::CbvAll, cbvDescriptorInfo._gpuHandle);
+    // special tiles
+    auto specialTiles = terrain->GetSpecialTiles();
+    auto const& terrainMeshInfo = _resourceManager->GetTerrainMeshInfo();
+    for (auto & mesh : specialTiles) {
+        auto const& renderData = _resourceManager->GetMeshDataInfo(mesh->_renderDataId);
+        auto vbvs = std::array<D3D12_VERTEX_BUFFER_VIEW, 2>{renderData.vbv, terrainMeshInfo.instanceVbv};
+        ret->IASetVertexBuffers(0, 2, vbvs.data());
+        ret->IASetIndexBuffer(&renderData.ibv);
+        ret->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
+        ret->DrawIndexedInstanced(renderData.indexCount, 1, renderData.indexOffset, renderData.baseVertex, 0);
+    }
+    // normal tiles draw call
+    auto vbvs = std::array<D3D12_VERTEX_BUFFER_VIEW, 2>{terrainMeshInfo.vbv, terrainMeshInfo.instanceVbv};
+    ret->IASetVertexBuffers(0, 2, vbvs.data());
+    ret->IASetIndexBuffer(&terrainMeshInfo.ibv);
+    ret->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
+
+    // instance count is dynamic (varys according to camera) so cannot be pre-record in bundle. Do the draw call in direct command list instead.
+    //ret->DrawIndexedInstanced(terrainMeshInfo.indexCount, terrain->GetTileCount() - specialTiles.size(), terrainMeshInfo.indexOffset, terrainMeshInfo.baseVertex, specialTiles.size());
+
+    ret->Close();
+    return ret;
+}
+
+auto Renderer::CreateTranslucentBundle(core::Shape const * const * shapes, unsigned int shapeCount) -> void {
+    auto heaps = array<ID3D12DescriptorHeap *, 1>{
+        _resourceManager->GetCbvSrvDescriptorHeap().GetHeap()
+    };
+    _translucentBundle = _resourceManager->CreateBundle(_translucentPso.Get(), _resourceManager->GetRootSignature(), heaps.data(), heaps.size());
+
+    for (auto i = 0u; i < shapeCount; ++i) {
+        DrawShapeWithPso(_translucentBundle.Get(), shapes[i], _translucentPso.Get());
+    }
+    _translucentBundle->Close();
+}
+
+auto Renderer::CreateShapeBundle(core::Shape const * const * shapes, unsigned int shapeCount) -> void {
+    auto heaps = array<ID3D12DescriptorHeap *, 1>{
+        _resourceManager->GetCbvSrvDescriptorHeap().GetHeap()
+    };
+    _shapeBundle = _resourceManager->CreateBundle(_defaultPso.Get(), _resourceManager->GetRootSignature(), heaps.data(), heaps.size());
+
+    for (auto i = 0u; i < shapeCount; ++i) {
+        DrawShapeWithPso(_shapeBundle.Get(), shapes[i], _defaultPso.Get());
+    }
+    _shapeBundle->Close();
 }
 
 }

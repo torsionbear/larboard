@@ -214,6 +214,7 @@ public:
     auto UploadVertexData(unsigned int size, unsigned int stride, void const* data, ID3D12Resource ** dest = nullptr) -> D3D12_VERTEX_BUFFER_VIEW;
     auto UploadIndexData(unsigned int size, void const* data) -> D3D12_INDEX_BUFFER_VIEW;
     auto UpdateTerrain(core::Terrain * terrain, core::Camera * camera) -> void;
+    auto CreateBundle(ID3D12PipelineState * pso, ID3D12RootSignature * rootSignature, ID3D12DescriptorHeap *const* descriptorHeaps, unsigned int descriptorHeapCount) -> ComPtr<ID3D12GraphicsCommandList>;
     auto GetMeshDataInfo(unsigned int index) -> MeshDataInfo const& {
         return _meshDataInfos[index];
     }
@@ -310,6 +311,8 @@ private:
 
     ComPtr<ID3D12GraphicsCommandList> _commandList;
     ComPtr<ID3D12RootSignature> _rootSignature;
+
+    std::vector<ComPtr<ID3D12CommandAllocator>> _commandAllocators;
 };
 
 }
