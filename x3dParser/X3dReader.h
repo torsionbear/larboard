@@ -33,8 +33,8 @@ public:
 	// 2. use blender coordinate system, e.g. Y Forward, Z up.
 	auto Read(core::Scene * scene) -> void;
 private:
-	auto ReadIndexedFaceSet(IndexedFaceSet const& indexedFaceSet, core::StaticModelGroup & staticModelGroup)->core::Mesh *;
-	auto ReadIndexedTriangleSet(IndexedTriangleSet const& indexedTriangleSet, core::StaticModelGroup & staticModelGroup) -> core::Mesh *;
+	auto ReadIndexedFaceSet(IndexedFaceSet const& indexedFaceSet, core::StaticModelGroup & staticModelGroup) -> core::Mesh<core::Vertex> *;
+	auto ReadIndexedTriangleSet(IndexedTriangleSet const& indexedTriangleSet, core::StaticModelGroup & staticModelGroup) -> core::Mesh<core::Vertex> *;
     auto ReadTransform(Transform const& transform, core::StaticModelGroup & staticModelGroup) -> core::Movable *;
 	auto ReadScene(Scene const& scene) -> void;
 	auto ReadX3d(X3d const& x3d) -> void;

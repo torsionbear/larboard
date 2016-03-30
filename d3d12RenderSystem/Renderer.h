@@ -16,22 +16,32 @@ public:
     virtual auto DrawEnd() -> void override;
     virtual auto ToggleWireframe() -> void override;
     virtual auto ToggleBackFace() -> void override;
-    virtual auto Draw(core::Viewpoint const* camera, core::SkyBox const* skyBox, core::Terrain const* terrain, core::Shape const*const* shapes, unsigned int shapeCount, core::Viewpoint const * shadowCastingLightViewpoint) -> void;
+    virtual auto Draw(
+        core::Viewpoint const* camera,
+        core::SkyBox const* skyBox,
+        core::Terrain const* terrain,
+        core::Shape const*const* shapes, unsigned int shapeCount,
+        core::Viewpoint const * shadowCastingLightViewpoint,
+        core::AmbientLight * ambientLight,
+        core::DirectionalLight ** directionalLights, unsigned int directionalLightCount,
+        core::SpotLight ** spotLights, unsigned int spotLightCount) -> void;
     virtual auto AllocateDescriptorHeap(
         unsigned int cameraCount,
         unsigned int meshCount,
-        unsigned int modelCount,
+        unsigned int movableCount,
         unsigned int textureCount,
         unsigned int materialCount,
         unsigned int skyBoxCount,
         unsigned int terrainCount,
+        unsigned int directionalLightCount,
+        unsigned int spotLightCount,
         unsigned int nullDescriptorCount) -> void;
-    auto DrawTranslucent() -> void;
+    auto DrawTranslucent(core::Shape const*const* shapes, unsigned int shapeCount) -> void;
     auto DrawSkyBox(ID3D12GraphicsCommandList * commandList) -> void;
     auto DrawTerrain(ID3D12GraphicsCommandList * commandList, core::Terrain const * terrain) -> void;
     auto DrawShadowMap() -> void;
     auto UseViewpoint(ID3D12GraphicsCommandList * commandList, core::Viewpoint const* viewpoint) -> void;
-    auto UseLight() -> void;
+    auto UseLight(ID3D12GraphicsCommandList * commandList) -> void;
     auto CreateShadowMapBundle(core::Viewpoint const * viewpoint, core::Shape const*const* shapes, unsigned int shapeCount) -> void;
     auto CreateSkyBoxBundle(core::SkyBox const* skyBox) -> void;
     auto CreateTerrainBundle(core::Terrain const * terrain) -> void;

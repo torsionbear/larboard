@@ -35,7 +35,7 @@ auto LoadScene_dx0(core::Scene * scene) -> void {
 auto LoadScene_dx1(core::Scene * scene) -> void {
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/square2/square2.x3d").Read(scene);
     scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.4f, 0.4f, 0.4f, 1.0f });
-    scene->CreateSkyBox("media/skybox/cloudy_noon.dds");
+    scene->CreateSkyBox("media/skybox/mt.dds");
 }
 
 auto LoadScene_dx2(core::Scene * scene) -> void {
@@ -45,6 +45,28 @@ auto LoadScene_dx2(core::Scene * scene) -> void {
 }
 
 auto LoadScene_dx3(core::Scene * scene) -> void {
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_02/xsh_02_house.x3d").Read(scene);
+    scene->CreateAmbientLight()->SetColor(core::Vector4f{ 0.3f, 0.3f, 0.3f, 1.0f });
+    scene->CreateSkyBox("media/skybox/cloudy_noon.dds");
+
+    scene->CreateTerrain({ "media/terrain/grass2.png", "media/terrain/dirt2.png", "media/terrain/rock2.png" }, "media/terrain/heightMap.png");
+    scene->GetTerrain()->SetSightDistance(scene->GetActiveCamera()->GetFarPlane());
+    scene->_terrain->Load(scene->GetActiveCamera()->GetFarPlane()); // still need to load terrain png texture for height calculation
+    scene->GetTerrain()->SetTileSize(10);
+    scene->GetTerrain()->SetHeightMapOrigin(core::Vector2i{ -30, -24 });
+    scene->GetTerrain()->SetHeightMapSize(core::Vector2i{ 60, 60 });
+    scene->GetTerrain()->SetDiffuseMapSize(core::Vector2i{ 5, 5 });
+
+    auto terrainSpecialTileScene = make_unique<core::Scene>();
+
+    x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_01_terrainx3d.x3d").Read(terrainSpecialTileScene.get());
+    scene->GetTerrain()->AddSpecialTiles(terrainSpecialTileScene->GetStaticModelGroup().AcquireShapes(), terrainSpecialTileScene->GetStaticModelGroup().AcquireMeshes());
+
+    auto flashLight = scene->CreateSpotLight();
+    flashLight->AttachTo(*scene->GetActiveCamera());
+}
+
+auto LoadScene_dx4(core::Scene * scene) -> void {
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_03/xsh_03_house.x3d").Read(scene);
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_03/xsh_03_lights.x3d").Read(scene);
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_03/xsh_03_kitchen.x3d").Read(scene);
@@ -64,6 +86,8 @@ auto LoadScene_dx3(core::Scene * scene) -> void {
     x3dParser::X3dReader("D:/torsionbear/working/larboard/Modeling/xsh/xsh_01_terrainx3d.x3d").Read(terrainSpecialTileScene.get());
     scene->GetTerrain()->AddSpecialTiles(terrainSpecialTileScene->GetStaticModelGroup().AcquireShapes(), terrainSpecialTileScene->GetStaticModelGroup().AcquireMeshes());
 
+    auto flashLight = scene->CreateSpotLight();
+    flashLight->AttachTo(*scene->GetActiveCamera());
 }
 
 auto LoadScene0(core::Scene * scene) -> void {
@@ -119,7 +143,7 @@ int main_gl() {
     auto scene = make_unique<core::Scene>();
     auto cameraController = make_unique<core::CameraController>(scene.get());
 
-    LoadScene3(scene.get());
+    LoadScene1(scene.get());
     scene->Load();
 
     renderer->Prepare();
@@ -158,7 +182,7 @@ int main_gl() {
 int main_dx() {
 
     auto scene = make_unique<core::Scene>();
-    LoadScene_dx3(scene.get());
+    LoadScene_dx4(scene.get());
     scene->GetStaticModelGroup().BuildBvh();
 
     d3d12RenderSystem::RenderSystem renderSystem;

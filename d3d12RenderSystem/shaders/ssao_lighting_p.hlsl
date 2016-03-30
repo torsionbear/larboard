@@ -158,18 +158,18 @@ PsOutput main(PsInput input) {
         diffuse += pointLight.color.rgb * diffuseEmissive.rgb * attenuation * DiffuseCoefficient(normal, lightDirection);
         specular += pointLight.color.rgb * specularShininess.rgb * attenuation * SpecularCoefficient(normal, lightDirection, viewDirection, specularShininess.a);
     }
-    for (uint i = 0; i < spotLightCount; i++) {
-        SpotLight spotLight = spotLights[i];
-        float attenuation = Attenuation(spotLight.attenuation, length(spotLight.position.xyz - worldPosition));
-        float3 lightDirection = normalize(worldPosition - spotLight.position.xyz);
-        float angle = acos(dot(lightDirection, spotLight.direction.xyz));
-        float angleFalloff = 0;
-        if (angle < spotLight.coneShape[1]) {
-            angleFalloff = angle > spotLight.coneShape[0] ? (spotLight.coneShape[1] - angle) / (spotLight.coneShape[1] - spotLight.coneShape[0]) : 1.0;
-        }
-        diffuse += spotLight.color.rgb * diffuseEmissive.rgb * attenuation * angleFalloff * DiffuseCoefficient(normal, lightDirection);
-        specular += spotLight.color.rgb * specularShininess.rgb * attenuation * angleFalloff * SpecularCoefficient(normal, lightDirection, viewDirection, specularShininess.a);
-    }
+    //for (uint i = 0; i < spotLightCount; i++) {
+    //    SpotLight spotLight = spotLights[i];
+    //    float attenuation = Attenuation(spotLight.attenuation, length(spotLight.position.xyz - worldPosition));
+    //    float3 lightDirection = normalize(worldPosition - spotLight.position.xyz);
+    //    float angle = acos(dot(lightDirection, spotLight.direction.xyz));
+    //    float angleFalloff = 0;
+    //    if (angle < spotLight.coneShape[1]) {
+    //        angleFalloff = angle > spotLight.coneShape[0] ? (spotLight.coneShape[1] - angle) / (spotLight.coneShape[1] - spotLight.coneShape[0]) : 1.0;
+    //    }
+    //    diffuse += spotLight.color.rgb * diffuseEmissive.rgb * attenuation * angleFalloff * DiffuseCoefficient(normal, lightDirection);
+    //    specular += spotLight.color.rgb * specularShininess.rgb * attenuation * angleFalloff * SpecularCoefficient(normal, lightDirection, viewDirection, specularShininess.a);
+    //}
     PsOutput ret;
     ret.color = float4(ambient + diffuse + specular, 1);
     //ret.color = float4(normal, 0);

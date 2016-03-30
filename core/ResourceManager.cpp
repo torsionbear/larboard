@@ -62,7 +62,7 @@ auto ResourceManager::LoadBvh(Bvh * bvh) -> void {
     LoadAabbs(bvh->GetAabbs());
 }
 
-auto ResourceManager::LoadMeshes(vector<unique_ptr<Mesh>> const& meshes) -> void {
+auto ResourceManager::LoadMeshes(vector<unique_ptr<Mesh<Vertex>>> const& meshes) -> void {
     _vertexBuffers.emplace_back();
     auto & vertexBuffer = _vertexBuffers.back();
 
@@ -78,7 +78,7 @@ auto ResourceManager::LoadMeshes(vector<unique_ptr<Mesh>> const& meshes) -> void
     auto vertexData = vector<Vertex>();
     auto indexData = vector<unsigned int>();
     for (auto const& mesh : meshes) {
-        mesh->SetRenderData(Mesh::RenderData{
+        mesh->SetRenderData(Mesh<Vertex>::RenderData{
             vertexBuffer._vao,
             indexData.size() * sizeof(unsigned int),
             static_cast<GLint>(vertexData.size()),
@@ -367,7 +367,7 @@ auto ResourceManager::LoadTerrain(Terrain * terrain) -> void {
     assert(error == GL_NO_ERROR);
 }
 
-auto ResourceManager::LoadTerrainSpecialTiles(std::vector<Mesh*> terrainSpecialTiles) -> void {
+auto ResourceManager::LoadTerrainSpecialTiles(std::vector<Mesh<Vertex> *> terrainSpecialTiles) -> void {
     _vertexBuffers.emplace_back();
     auto & vertexBuffer = _vertexBuffers.back();
     glGenVertexArrays(1, &vertexBuffer._vao);
@@ -382,7 +382,7 @@ auto ResourceManager::LoadTerrainSpecialTiles(std::vector<Mesh*> terrainSpecialT
     auto vertexData = vector<Vector2f>();
     auto indexData = vector<unsigned int>();
     for (auto mesh : terrainSpecialTiles) {
-        mesh->SetRenderData(Mesh::RenderData{
+        mesh->SetRenderData(Mesh<Vertex>::RenderData{
             vertexBuffer._vao,
             indexData.size() * sizeof(unsigned int),
             static_cast<openglInt>(vertexData.size()),

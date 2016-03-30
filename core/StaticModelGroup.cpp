@@ -36,7 +36,7 @@ auto StaticModelGroup::AcquireShapes() -> std::vector<std::unique_ptr<Shape>> {
     return move(_shapes);
 }
 
-auto StaticModelGroup::AcquireMeshes() -> std::vector<std::unique_ptr<Mesh>> {
+auto StaticModelGroup::AcquireMeshes() -> std::vector<std::unique_ptr<Mesh<Vertex>>> {
     return move(_meshes);
 }
 

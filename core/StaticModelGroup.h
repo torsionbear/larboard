@@ -17,7 +17,7 @@ public:
     auto BuildBvh() -> void;
     auto GetShapes()->std::vector<std::unique_ptr<Shape>>&;
     auto AcquireShapes()->std::vector<std::unique_ptr<Shape>>;
-    auto AcquireMeshes()->std::vector<std::unique_ptr<Mesh>>;
+    auto AcquireMeshes()->std::vector<std::unique_ptr<Mesh<Vertex>>>;
 
     auto CreateMovable()->Movable *;
     auto CreateModel()->Model *;
@@ -35,8 +35,8 @@ public:
         return _textures.back().get();
     }
     template <typename... Args>
-    auto CreateMesh(Args&&... args) -> Mesh * {
-        _meshes.push_back(std::make_unique<Mesh>(std::forward<Args>(args)...));
+    auto CreateMesh(Args&&... args) -> Mesh<Vertex> * {
+        _meshes.push_back(std::make_unique<Mesh<Vertex>>(std::forward<Args>(args)...));
         return _meshes.back().get();
     }
     auto CreateShaderProgram(std::string name, std::string const& vertexShaderFile, std::string const& fragmentShaderFile)->ShaderProgram *;
@@ -44,7 +44,7 @@ public:
     auto GetBvh() -> Bvh * {
         return _bvh.get();
     }
-    auto GetMeshes() -> std::vector<std::unique_ptr<Mesh>> const& {
+    auto GetMeshes() -> std::vector<std::unique_ptr<Mesh<Vertex>>> const& {
         return _meshes;
     }
     auto GetModels() ->std::vector<std::unique_ptr<Model>> const& {
@@ -58,7 +58,7 @@ public:
     std::vector<std::unique_ptr<Shape>> _shapes;
     std::vector<std::unique_ptr<Texture>> _textures;
     std::vector<std::unique_ptr<Material>> _materials;
-    std::vector<std::unique_ptr<Mesh>> _meshes;
+    std::vector<std::unique_ptr<Mesh<Vertex>>> _meshes;
     std::unordered_map<std::string, std::unique_ptr < ShaderProgram >> _shaderProgram;
     std::unique_ptr<Bvh> _bvh = nullptr;
 

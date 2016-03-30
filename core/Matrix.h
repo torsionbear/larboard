@@ -45,7 +45,7 @@ public:
     Matrix() {
         for (auto i = 0u; i < ROW; ++i) {
             for (auto j = 0u; j < COL; ++j) {
-                _data[i * COL + j] = i == j ? 1.0f : 0.0f;
+                _data[i * COL + j] = i == j ? static_cast<T>(1.0f) : static_cast<T>(0.0f);
             }
         }
     }

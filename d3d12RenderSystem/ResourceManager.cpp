@@ -243,46 +243,8 @@ auto ResourceManager::CreateDepthStencil(unsigned int width, unsigned int height
     return descriptorInfo;
 }
 
-auto ResourceManager::LoadMeshes(core::Mesh ** meshes, unsigned int count, unsigned int stride) -> void {
-    if (meshes == nullptr || count == 0) {
-        return;
-    }
-    auto vertexBufferSize = 0u;
-    auto indexBufferSize = 0u;
-    for (auto i = 0u; i < count; ++i) {
-        vertexBufferSize += meshes[i]->GetVertex().size() * stride;
-        indexBufferSize += meshes[i]->GetIndex().size() * sizeof(unsigned int);
-    }
-    auto vertexBuffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
-    auto const vbv = D3D12_VERTEX_BUFFER_VIEW{ vertexBuffer->GetGPUVirtualAddress(), vertexBufferSize, stride };
-
-    auto indexBuffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(indexBufferSize), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
-    auto const ibv = D3D12_INDEX_BUFFER_VIEW{ indexBuffer->GetGPUVirtualAddress(), indexBufferSize, DXGI_FORMAT_R32_UINT };
-
-    auto vertexData = vector<core::Vertex>();
-    auto indexData = vector<unsigned int>();
-    for (auto i = 0u; i < count; ++i) {
-        auto mesh = meshes[i];
-        mesh->_renderDataId = _meshDataInfos.size();
-        _meshDataInfos.push_back(MeshDataInfo{
-            vbv,
-            ibv,
-            mesh->GetIndex().size(),
-            indexData.size(),
-            static_cast<int>(vertexData.size()),
-        });
-        vertexData.insert(vertexData.end(), mesh->GetVertex().cbegin(), mesh->GetVertex().cend());
-        indexData.insert(indexData.end(), mesh->GetIndex().cbegin(), mesh->GetIndex().cend());
-    }
-    _uploadHeap.AllocateAndUploadDataBlock(_commandList.Get(), vertexBuffer, vertexBufferSize, sizeof(float), vertexData.data());
-    _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(vertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
-
-    _uploadHeap.AllocateAndUploadDataBlock(_commandList.Get(), indexBuffer, indexBufferSize, sizeof(float), indexData.data());
-    _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(indexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER));
-}
-
-auto ResourceManager::LoadModels(core::Model ** models, unsigned int count) -> void {
-    if (models == nullptr || count == 0) {
+auto ResourceManager::LoadMovables(core::Movable ** movables, unsigned int count) -> void {
+    if (movables == nullptr || count == 0) {
         return;
     }
     // create resource
@@ -290,15 +252,15 @@ auto ResourceManager::LoadModels(core::Model ** models, unsigned int count) -> v
     // aggregate data, populate _transformDescriptorInfos and set model._renderDataId
     auto transformData = vector<TransformData>{};
     for (auto i = 0u; i < count; ++i) {
-        auto & model = models[i];
-        model->_renderDataId = _transformDescriptorInfos.size();
+        auto & movable = movables[i];
+        movable->SetRenderDataId(_transformDescriptorInfos.size());
         auto descriptorInfo = _cbvSrvHeap.GetDescriptorInfo(buffer);
         D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = { buffer->GetGPUVirtualAddress() + i * sizeof(TransformData), sizeof(TransformData) };
         _device->CreateConstantBufferView(&cbvDesc, descriptorInfo._cpuHandle);
         _transformDescriptorInfos.push_back(descriptorInfo);
         transformData.push_back(TransformData{
-            model->GetTransform(),
-            model->GetTransform(),
+            movable->GetTransform(),
+            movable->GetTransform(),
         });
     }
 
@@ -369,6 +331,70 @@ auto ResourceManager::LoadLight(core::AmbientLight ** ambientLights, unsigned in
     _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 }
 
+auto ResourceManager::LoadAmbientLight(core::AmbientLight * ambientLight) -> void {
+    // create resource
+    auto buffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(sizeof(AmbientLightData)), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
+    // populate
+    ambientLight->SetRenderDataId(_ambientLightDescriptorInfos.size());
+    auto descriptorInfo = _cbvSrvHeap.GetDescriptorInfo(buffer);
+    D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = { buffer->GetGPUVirtualAddress(), sizeof(AmbientLightData) };
+    _device->CreateConstantBufferView(&cbvDesc, descriptorInfo._cpuHandle);
+    _ambientLightDescriptorInfos.push_back(descriptorInfo);
+
+    auto spotLightData = AmbientLightData{
+        ambientLight->GetColor(),
+    };
+
+    _uploadHeap.AllocateAndUploadDataBlock(_commandList.Get(), buffer, sizeof(AmbientLightData), D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT, &spotLightData);
+    _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+}
+
+auto ResourceManager::LoadDirectionalLight(core::DirectionalLight ** directionalLights, unsigned int directionalLightCount) -> void {
+    // create resource
+    auto buffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(directionalLightCount * sizeof(DirectionalLightData)), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
+    // populate
+    auto directionalLightData = vector<DirectionalLightData>(directionalLightCount);
+    for (auto i = 0u; i < directionalLightCount; ++i) {
+        auto directionalLight = directionalLights[i];
+        directionalLight->SetRenderDataId(_directionalLightDescriptorInfos.size());
+        auto descriptorInfo = _cbvSrvHeap.GetDescriptorInfo(buffer);
+        D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = { buffer->GetGPUVirtualAddress() + i * sizeof(DirectionalLightData), sizeof(DirectionalLightData) };
+        _device->CreateConstantBufferView(&cbvDesc, descriptorInfo._cpuHandle);
+        _directionalLightDescriptorInfos.push_back(descriptorInfo);
+
+        directionalLightData[i] = DirectionalLightData{
+            directionalLight->GetColor(),
+        };
+    }
+
+    _uploadHeap.AllocateAndUploadDataBlock(_commandList.Get(), buffer, sizeof(DirectionalLightData) * directionalLightCount, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT, directionalLightData.data());
+    _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+}
+
+auto ResourceManager::LoadSpotLight(core::SpotLight ** spotLights, unsigned int spotLightCount) -> void {
+    // create resource
+    auto buffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(spotLightCount * sizeof(SpotLightData)), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
+    // populate
+    auto spotLightData = vector<SpotLightData>(spotLightCount);
+    for (auto i = 0u; i < spotLightCount; ++i) {
+        auto spotLight = spotLights[i];
+        spotLight->SetRenderDataId(_spotLightDescriptorInfos.size());
+        auto descriptorInfo = _cbvSrvHeap.GetDescriptorInfo(buffer);
+        D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = { buffer->GetGPUVirtualAddress() + i * sizeof(SpotLightData), sizeof(SpotLightData) };
+        _device->CreateConstantBufferView(&cbvDesc, descriptorInfo._cpuHandle);
+        _spotLightDescriptorInfos.push_back(descriptorInfo);
+
+        spotLightData[i] = SpotLightData{
+            spotLight->GetColor(),
+            spotLight->GetAttenuation(),
+            core::Vector4f{ spotLights[i]->GetBeamWidth(), spotLights[i]->GetCutOffAngle(), 0.0f, 0.0f },
+        };
+    }
+
+    _uploadHeap.AllocateAndUploadDataBlock(_commandList.Get(), buffer, sizeof(SpotLightData) * spotLightCount, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT, spotLightData.data());
+    _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+}
+
 auto ResourceManager::LoadShadowCastingLight(core::DirectionalLight ** directionalLights, unsigned int directionalLightCount) -> void {
     if (directionalLightCount == 0) {
         return;
@@ -382,7 +408,7 @@ auto ResourceManager::LoadShadowCastingLight(core::DirectionalLight ** direction
     auto cameraData = vector<CameraData>{};
     for (auto i = 0u; i < directionalLightCount; ++i) {
         auto & directionalLight = directionalLights[i];
-        directionalLight->SetRenderDataId(_cameraDescriptorInfos.size());
+        directionalLight->core::Viewpoint::SetRenderDataId(_cameraDescriptorInfos.size());
         auto descriptorInfo = _cbvSrvHeap.GetDescriptorInfo(buffer);
         descriptorInfo._mappedDataPtr = mappedPtr + i * sizeof(CameraData);
         auto cbvDesc = D3D12_CONSTANT_BUFFER_VIEW_DESC{ buffer->GetGPUVirtualAddress() + i * sizeof(CameraData), sizeof(CameraData) };
@@ -493,7 +519,7 @@ auto ResourceManager::CreateTexture2d(DXGI_FORMAT format, uint64 width, uint32 h
     auto const mipmapLevel = 1u; // dx12 does not support auto mipmap generation :(
     auto desc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height, 1u, mipmapLevel);
     auto buffer = CreateCommittedResource(&desc, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
-    D3D12_SUBRESOURCE_DATA textureData = { data, width * stride, size * stride };
+    D3D12_SUBRESOURCE_DATA textureData = { data, static_cast<LONG_PTR>(width * stride), static_cast<LONG_PTR>(size * stride) };
     _uploadHeap.UploadSubresources(_commandList.Get(), buffer, 0, 1, &textureData);
     _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 
@@ -629,7 +655,7 @@ auto ResourceManager::LoadTerrain(core::Terrain * terrain) -> void {
     _terrainCbv = UploadConstantBufferData(sizeof(TerrainData), &terrainData);
 
     //special tiles
-    LoadMeshes(specialTiles.data(), specialTiles.size(), sizeof(core::Vertex));
+    LoadMeshes<core::Vertex>(specialTiles.data(), specialTiles.size());
 }
 
 auto ResourceManager::UpdateViewpoint(core::Viewpoint const * viewpoint) -> void {

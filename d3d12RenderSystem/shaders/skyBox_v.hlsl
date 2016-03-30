@@ -1,5 +1,5 @@
 
-struct PSInput {
+struct PsInput {
     float4 position : SV_POSITION;
     float3 texCoord : PS_TEXCOORD;
 };
@@ -12,9 +12,9 @@ cbuffer Camera : register(b0) {
     float3x4 _pad;
 };
 
-PSInput main( float3 position : POSITION )
+PsInput main( float3 position : POSITION )
 {
-    PSInput result;
+    PsInput result;
     result.texCoord = position.xzy; // world coordinate: y front, x left, z up; dx cubemap coordinate: z front, x left, y up
     float4 newPosition = float4(position, 0);
     newPosition = mul(viewTransform, newPosition);

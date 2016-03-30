@@ -36,7 +36,7 @@ auto Terrain::Load(Float32 sightDistance) -> void {
     _heightMap.Load();
 }
 
-auto Terrain::AddSpecialTiles(std::vector<std::unique_ptr<Shape>> && shapes, vector<unique_ptr<Mesh>>&& meshes) -> void {
+auto Terrain::AddSpecialTiles(std::vector<std::unique_ptr<Shape>> && shapes, vector<unique_ptr<Mesh<Vertex>>>&& meshes) -> void {
     _specialTileShapes = move(shapes);
     _specialTileMeshes = move(meshes);
     for (auto & shape : _specialTileShapes) {
@@ -88,8 +88,8 @@ auto Terrain::GetTileCoordinateWithSpecialTiles(Camera const* camera) -> std::ve
     return _tileCoord;
 }
 
-auto Terrain::GetSpecialTiles() const -> std::vector<Mesh *> {
-    auto ret = std::vector<Mesh *>{};
+auto Terrain::GetSpecialTiles() const -> std::vector<Mesh<Vertex> *> {
+    auto ret = std::vector<Mesh<Vertex> *>{};
     for (auto const& mesh : _specialTileMeshes) {
         ret.push_back(mesh.get());
     }

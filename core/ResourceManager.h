@@ -49,7 +49,7 @@ public:
     auto LoadScene(Scene * scene) -> void;
     auto LoadStaticModelGroup(StaticModelGroup * staticModelGroup) -> void;
     auto LoadBvh(Bvh * bvh) -> void;
-    auto LoadMeshes(std::vector<std::unique_ptr<Mesh>> const& meshes) -> void;
+    auto LoadMeshes(std::vector<std::unique_ptr<Mesh<Vertex>>> const& meshes) -> void;
     auto LoadSkyBox(SkyBox * skyBox) -> void;
 
     auto LoadMaterials(std::vector<Material *> const& materials) -> void;
@@ -59,7 +59,7 @@ public:
     auto LoadTextureArray(TextureArray * textureArray) -> void;
     auto LoadAabbs(std::vector<Aabb *> aabbs) -> void;
     auto LoadTerrain(Terrain * terrain) -> void;
-    auto LoadTerrainSpecialTiles(std::vector<Mesh *> terrainSpecialTiles) -> void;
+    auto LoadTerrainSpecialTiles(std::vector<Mesh<Vertex> *> terrainSpecialTiles) -> void;
     auto UpdateTerrain(Terrain * terrain, Camera * camera) -> void;
     auto InitCameraData(unsigned int size) -> void;
     auto UpdateCameraData(std::vector<std::unique_ptr<Camera>> const& cameras) -> void;

@@ -18,7 +18,7 @@ public:
         if (abs(a) < std::numeric_limits<Float32>::min()) {
             return -1.0;
         }
-        auto f = 1.0 / a;
+        auto f = 1.0f / a;
         auto s = static_cast<Vector4f>(ray.origin - p0);
         auto u = f * DotProduct(s, q);
         if (u < 0) {

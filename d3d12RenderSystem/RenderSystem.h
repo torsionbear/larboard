@@ -51,7 +51,7 @@ public:
             _meshes.push_back(mesh.get());
         }
         for (auto & model : staticModelGroup.GetModels()) {
-            _models.push_back(model.get());
+            _movables.push_back(model.get());
         }
         for (auto & material : staticModelGroup._materials) {
             _materials.push_back(material.get());
@@ -75,46 +75,56 @@ public:
     }
     auto RegisterDirectionalLight(core::DirectionalLight * directionalLight) -> void {
         _directionalLights.push_back(directionalLight);
+        _movables.push_back(directionalLight);
     }
     auto RegisterPointLight(core::PointLight * pointLight) -> void {
         _pointLights.push_back(pointLight);
     }
     auto RegisterSpotLight(core::SpotLight * spotLight) -> void {
         _spotLights.push_back(spotLight);
+        _movables.push_back(spotLight);
+        _lightVolumes.push_back(spotLight->GetLightVolume());
     }
     auto Load() -> void {
         _renderer->AllocateDescriptorHeap(
             1,
             _meshes.size(),
-            _models.size(),
+            _movables.size(),
             _textures.size(),
             _materials.size(),
             _skyBox == nullptr ? 0 : 1,
             _terrain == nullptr ? 0 : 1,
+            _directionalLights.size(),
+            _spotLights.size(),
             SrvRegisterConvention::Count);
         _resourceManager->LoadBegin();
-
-        if (_skyBox != nullptr) {
-            _resourceManager->LoadSkyBox(_skyBox);
-        }
-        if (_terrain != nullptr) {
-            _resourceManager->LoadTerrain(_terrain);
-        }
         _resourceManager->LoadCamera(_camera, 1);
-        _resourceManager->LoadMeshes(_meshes.data(), _meshes.size(), sizeof(core::Vertex));
-        _resourceManager->LoadModels(_models.data(), _models.size());
+        _resourceManager->LoadMeshes<core::Vertex>(_meshes.data(), _meshes.size());
+        _resourceManager->LoadMovables(_movables.data(), _movables.size());
         _resourceManager->LoadMaterials(_materials.data(), _materials.size());
         _resourceManager->LoadDdsTexture(_textures.data(), _textures.size());
-        _resourceManager->LoadShadowCastingLight(_directionalLights.data(), _directionalLights.size());
         _resourceManager->LoadLight(
             _ambientLights.data(), _ambientLights.size(),
             _directionalLights.data(), _directionalLights.size(),
             _pointLights.data(), _pointLights.size(),
             _spotLights.data(), _spotLights.size());
+        _resourceManager->LoadAmbientLight(_ambientLights.front());
+        _resourceManager->LoadDirectionalLight(_directionalLights.data(), _directionalLights.size());
+        _resourceManager->LoadSpotLight(_spotLights.data(), _spotLights.size());
+        _resourceManager->LoadMeshes<core::VertexC3>(_lightVolumes.data(), _lightVolumes.size());
         _renderer->Prepare();
-        _renderer->CreateShadowMapBundle(_directionalLights.front(), _shapes.data(), _shapes.size());
-        _renderer->CreateSkyBoxBundle(_skyBox);
-        _renderer->CreateTerrainBundle(_terrain);
+        if (_skyBox != nullptr) {
+            _resourceManager->LoadSkyBox(_skyBox);
+            _renderer->CreateSkyBoxBundle(_skyBox);
+        }
+        if (_terrain != nullptr) {
+            _resourceManager->LoadTerrain(_terrain);
+            _renderer->CreateTerrainBundle(_terrain);
+        }
+        if (!_directionalLights.empty()) {
+            _resourceManager->LoadShadowCastingLight(_directionalLights.data(), _directionalLights.size());
+            _renderer->CreateShadowMapBundle(_directionalLights.front(), _shapes.data(), _shapes.size());
+        }
         _renderer->CreateTranslucentBundle(_translucentShapes.data(), _translucentShapes.size());
         _renderer->CreateShapeBundle(_shapes.data(), _shapes.size());
         _resourceManager->LoadEnd();
@@ -124,8 +134,17 @@ public:
         if (!_directionalLights.empty()) {
             _renderer->DrawShadowMap();
         }
-        _renderer->Draw(_camera, _skyBox, _terrain, _shapes.data(), _shapes.size(), _directionalLights.front());
-        _renderer->DrawTranslucent();
+        _renderer->Draw(
+            _camera,
+            _skyBox,
+            _terrain,
+            _shapes.data(),
+            _shapes.size(),
+            _directionalLights.front(),
+            _ambientLights.front(),
+            _directionalLights.data(), _directionalLights.size(),
+            _spotLights.data(), _spotLights.size());
+        _renderer->DrawTranslucent(_translucentShapes.data(), _translucentShapes.size());
         _renderer->DrawEnd();
     }
     auto Update() -> void {
@@ -160,8 +179,9 @@ private:
     core::Terrain * _terrain;
     core::Camera * _camera;
 
-    std::vector<core::Mesh *> _meshes;
-    std::vector<core::Model *> _models;
+    std::vector<core::Mesh<core::Vertex> *> _meshes;
+    std::vector<core::Mesh<core::VertexC3> *> _lightVolumes;
+    std::vector<core::Movable *> _movables;
     std::vector<core::Material *> _materials;
     std::vector<core::Texture *> _textures;
     std::vector<core::AmbientLight *> _ambientLights;

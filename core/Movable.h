@@ -87,6 +87,12 @@ public:
         _uboOffset = offset;
     }
     auto GetShaderData() const->ShaderData;
+    auto GetRenderDataId() const -> unsigned int {
+        return _renderDataId;
+    }
+    auto SetRenderDataId(unsigned int id) -> void {
+        _renderDataId = id;
+    }
 
 protected:
     std::unique_ptr<SceneNode> _sceneNode = std::make_unique<SceneNode>();
@@ -96,7 +102,7 @@ protected:
 
     openglUint _ubo;
     openglInt _uboOffset;
-public:
+
     unsigned int _renderDataId;
 };
 

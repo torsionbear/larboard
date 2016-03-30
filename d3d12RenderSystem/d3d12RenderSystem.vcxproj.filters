@@ -99,5 +99,11 @@
     <FxCompile Include="shaders\terrain_v.hlsl" />
     <FxCompile Include="shaders\terrain_d.hlsl" />
     <FxCompile Include="shaders\terrain_h.hlsl" />
+    <FxCompile Include="shaders\ssao_spotLight_p.hlsl" />
+    <FxCompile Include="shaders\ssao_spotLight_v.hlsl" />
+    <FxCompile Include="shaders\ssao_ambientLight_p.hlsl" />
+    <FxCompile Include="shaders\ssao_ambientLight_v.hlsl" />
+    <FxCompile Include="shaders\ssao_directionalLight_p.hlsl" />
+    <FxCompile Include="shaders\ssao_directionalLight_v.hlsl" />
   </ItemGroup>
 </Project>

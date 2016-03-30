@@ -1,7 +1,12 @@
 
-struct PSInput {
+struct PsInput {
     float4 position : SV_POSITION;
     float3 texCoord : PS_TEXCOORD;
+};
+
+struct PsOutput {
+    float4 color : SV_TARGET;
+    float depth : SV_DEPTH;
 };
 
 cbuffer TextureIndex : register(b6) {
@@ -18,7 +23,10 @@ TextureCube textures[10] : register(t1);
 SamplerState staticSampler : register(s0);
 
 
-float4 main(PSInput input) : SV_TARGET
+PsOutput main(PsInput input)
 {
-    return textures[diffuseMapIndex].Sample(staticSampler, input.texCoord);
+    PsOutput result;
+    result.color = textures[diffuseMapIndex].Sample(staticSampler, input.texCoord);
+    result.depth = 1.0;
+    return result;
 }

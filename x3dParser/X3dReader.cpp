@@ -40,7 +40,7 @@ auto X3dReader::Read(core::Scene * scene) -> void {
 	ReadX3d(*static_cast<X3d*>(nodes[0].get()));
 }
 
-auto X3dReader::ReadIndexedFaceSet(IndexedFaceSet const& indexedFaceSet, core::StaticModelGroup & staticModelGroup) ->  Mesh * {
+auto X3dReader::ReadIndexedFaceSet(IndexedFaceSet const& indexedFaceSet, core::StaticModelGroup & staticModelGroup) ->  Mesh<Vertex> * {
     if(!indexedFaceSet.GetNormalPerVertex()) {
         throw "normalPerVertex is false";
     }
@@ -60,7 +60,7 @@ auto X3dReader::ReadIndexedFaceSet(IndexedFaceSet const& indexedFaceSet, core::S
 	return staticModelGroup.CreateMesh(move(vertexData));;
 }
 
-auto X3dReader::ReadIndexedTriangleSet(IndexedTriangleSet const& indexedTriangleSet, core::StaticModelGroup & staticModelGroup) ->  Mesh * {
+auto X3dReader::ReadIndexedTriangleSet(IndexedTriangleSet const& indexedTriangleSet, core::StaticModelGroup & staticModelGroup) ->  Mesh<Vertex> * {
 	if (!indexedTriangleSet.GetNormalPerVertex()) {
 		throw "normalPerVertex is false";
 	}

@@ -165,6 +165,26 @@ struct LightData {
     } spotLights[MaxSpotLightCount];
 };
 
+struct AmbientLightData {
+    core::Vector4f color;
+    core::Vector4f _pad0[3];
+    core::Matrix4x4f _pad1[3];
+};
+
+struct DirectionalLightData {
+    core::Vector4f color;
+    core::Vector4f _pad0[3];
+    core::Matrix4x4f _pad1[3];
+};
+
+struct SpotLightData {
+    core::Vector4f color;
+    core::Vector4f attenuation;
+    core::Vector4f coneShape; // beamWidth, cutOffAngle, unused, unused
+    core::Vector4f _pad0;
+    core::Matrix4x4f _pad1[3];
+};
+
 struct TerrainData {
     core::Vector2i32 heightMapOrigin;
     core::Vector2i32 heightMapSize;
@@ -189,8 +209,9 @@ public:
     auto PrepareResource() -> void;
     auto LoadBegin() -> void;
     auto LoadEnd() -> void;
-    auto LoadMeshes(core::Mesh ** meshes, unsigned int count, unsigned int stride) -> void;
-    auto LoadModels(core::Model ** models, unsigned int count) -> void;
+    template<typename T>
+    auto LoadMeshes(core::Mesh<T> ** meshes, unsigned int count) -> void;
+    auto LoadMovables(core::Movable ** movables, unsigned int count) -> void;
     auto LoadCamera(core::Camera * camera, unsigned int count) -> void;
     auto UpdateViewpoint(core::Viewpoint const * viewpoint) -> void;
     auto LoadLight(
@@ -198,6 +219,9 @@ public:
         core::DirectionalLight ** directionalLights, unsigned int directionalLightCount,
         core::PointLight ** pointLights, unsigned int pointLightCount,
         core::SpotLight ** spotLights, unsigned int spotLightCount) -> void;
+    auto LoadAmbientLight(core::AmbientLight * ambientLights) -> void;
+    auto LoadDirectionalLight(core::DirectionalLight ** directionalLights, unsigned int directionalLightCount) -> void;
+    auto LoadSpotLight(core::SpotLight ** spotLights, unsigned int spotLightCount) -> void;
     auto LoadShadowCastingLight(core::DirectionalLight ** directionalLights, unsigned int directionalLightCount) -> void;
     auto LoadMaterials(core::Material ** materials, unsigned int count) -> void;
     auto LoadTexture(core::Texture * texture) -> void;
@@ -275,6 +299,15 @@ public:
     auto GetTerrainCbv() const -> DescriptorInfo const& {
         return _terrainCbv;
     }
+    auto GetAmbientLightDescriptorInfo(unsigned int index) -> DescriptorInfo const& {
+        return _ambientLightDescriptorInfos[index];
+    }
+    auto GetDirectionalLightDescriptorInfo(unsigned int index) -> DescriptorInfo const& {
+        return _directionalLightDescriptorInfos[index];
+    }
+    auto GetSpotLightDescriptorInfo(unsigned int index) -> DescriptorInfo const& {
+        return _spotLightDescriptorInfos[index];
+    }
 private:
     auto CreateRootSignature()->ComPtr<ID3D12RootSignature>;
     auto CreateCommandList(ID3D12PipelineState * pso, ID3D12CommandAllocator * allocator)->ComPtr<ID3D12GraphicsCommandList>;
@@ -295,6 +328,9 @@ private:
     std::vector<DescriptorInfo> _transformDescriptorInfos;
     std::vector<DescriptorInfo> _textureDescriptorInfos;
     DescriptorInfo _lightDescriptorInfo;
+    std::vector<DescriptorInfo> _ambientLightDescriptorInfos;
+    std::vector<DescriptorInfo> _directionalLightDescriptorInfos;
+    std::vector<DescriptorInfo> _spotLightDescriptorInfos;
     std::vector<DescriptorInfo> _nullDescriptorInfo;
     std::vector<DescriptorInfo> _materialDescriptorInfos;
     MeshDataInfo _skyBoxMeshInfo;
@@ -314,5 +350,44 @@ private:
 
     std::vector<ComPtr<ID3D12CommandAllocator>> _commandAllocators;
 };
+
+template<typename T>
+auto ResourceManager::LoadMeshes(core::Mesh<T> ** meshes, unsigned int count) -> void {
+    if (meshes == nullptr || count == 0) {
+        return;
+    }
+    auto vertexBufferSize = 0u;
+    auto indexBufferSize = 0u;
+    for (auto i = 0u; i < count; ++i) {
+        vertexBufferSize += meshes[i]->GetVertex().size() * sizeof(T);
+        indexBufferSize += meshes[i]->GetIndex().size() * sizeof(unsigned int);
+    }
+    auto vertexBuffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
+    auto const vbv = D3D12_VERTEX_BUFFER_VIEW{ vertexBuffer->GetGPUVirtualAddress(), vertexBufferSize, sizeof(T) };
+
+    auto indexBuffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(indexBufferSize), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
+    auto const ibv = D3D12_INDEX_BUFFER_VIEW{ indexBuffer->GetGPUVirtualAddress(), indexBufferSize, DXGI_FORMAT_R32_UINT };
+
+    auto vertexData = vector<T>();
+    auto indexData = vector<unsigned int>();
+    for (auto i = 0u; i < count; ++i) {
+        auto mesh = meshes[i];
+        mesh->SetRenderDataId(_meshDataInfos.size());
+        _meshDataInfos.push_back(MeshDataInfo{
+            vbv,
+            ibv,
+            mesh->GetIndex().size(),
+            indexData.size(),
+            static_cast<int>(vertexData.size()),
+        });
+        vertexData.insert(vertexData.end(), mesh->GetVertex().cbegin(), mesh->GetVertex().cend());
+        indexData.insert(indexData.end(), mesh->GetIndex().cbegin(), mesh->GetIndex().cend());
+    }
+    _uploadHeap.AllocateAndUploadDataBlock(_commandList.Get(), vertexBuffer, vertexBufferSize, sizeof(float), vertexData.data());
+    _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(vertexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+
+    _uploadHeap.AllocateAndUploadDataBlock(_commandList.Get(), indexBuffer, indexBufferSize, sizeof(float), indexData.data());
+    _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(indexBuffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_INDEX_BUFFER));
+}
 
 }

@@ -85,7 +85,7 @@ public:
     auto SetVio(openglUint vio) {
         _vio = vio;
     }
-    auto AddSpecialTiles(std::vector<std::unique_ptr<Shape>> && shapes, std::vector<std::unique_ptr<Mesh>> && meshes) -> void;
+    auto AddSpecialTiles(std::vector<std::unique_ptr<Shape>> && shapes, std::vector<std::unique_ptr<Mesh<Vertex>>> && meshes) -> void;
     auto GetHeight(Vector2f coord) const->Float32;
     auto GetDiffuseMap() const -> TextureArray const* {
         return &_diffuseMap;
@@ -114,7 +114,7 @@ public:
     auto GetSightDistance() const -> Float32 {
         return _sightDistance;
     }
-    auto GetSpecialTiles() const->std::vector<Mesh *>;
+    auto GetSpecialTiles() const->std::vector<Mesh<Vertex> *>;
     auto GetTileCoordinate(Camera const* camera)->std::vector<Vector3f> const&;
     auto GetTileCoordinateWithSpecialTiles(Camera const* camera) -> std::vector<Vector3f> const&;
 private:
@@ -130,7 +130,7 @@ private:
 
     std::vector<Vector2i> _holeTiles;
     std::vector<std::unique_ptr<Shape>> _specialTileShapes;
-    std::vector<std::unique_ptr<Mesh>> _specialTileMeshes;
+    std::vector<std::unique_ptr<Mesh<Vertex>>> _specialTileMeshes;
     std::vector<Vector3f> _tileCoord;
 
     TextureArray _diffuseMap;

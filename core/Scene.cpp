@@ -104,7 +104,7 @@ auto Scene::Picking(Ray & ray) -> bool {
                 }
                 auto const& vertex = shape->GetMesh()->GetVertex();
                 auto const& index = shape->GetMesh()->GetIndex();
-                for (auto i = 0; i < index.size(); i += 3) {
+                for (auto i = 0u; i < index.size(); i += 3) {
                     auto const& transform = shape->GetModel()->GetTransform();
                     auto index0 = index[i];
                     auto index1 = index[i + 1];
@@ -149,7 +149,7 @@ auto Scene::Intersect(Aabb & aabb) -> bool {
             for (auto shape : shapes) {
                 auto const& vertex = shape->GetMesh()->GetVertex();
                 auto const& index = shape->GetMesh()->GetIndex();
-                for (auto i = 0; i < index.size(); i += 3) {
+                for (auto i = 0u; i < index.size(); i += 3) {
                     auto const& transform = shape->GetModel()->GetTransform();
                     auto intersected = aabb.IntersectTriangle(std::array<Point4f, 3>{
                         transform * Point4f{ vertex[i].coord(0),vertex[i].coord(1),vertex[i].coord(2), 1.0f },

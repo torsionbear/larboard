@@ -60,7 +60,7 @@ float main(PsInput input) : SV_TARGET
     float4 viewSpacePosition = CalculateViewSpacePosition(screenSpaceDepth, input.viewDirection);
 
     float3 normal = textures[normalTextureIndex].Sample(staticSampler, input.texCoord).xyz;
-    float3 viewSpaceNormal = mul(viewTransform, normal).xyz;
+    float3 viewSpaceNormal = mul(viewTransform, float4(normal, 0)).xyz;
     
     float4 randomVector = textures[randomVectorIndex].Sample(staticSampler, input.texCoord * float2(occlusionTextureSize) / float2(randomVectorTextureSize));
     float3 tangent = normalize(randomVector.xyz - viewSpaceNormal * dot(randomVector.xyz, viewSpaceNormal));

@@ -10,4 +10,8 @@ struct Vertex {
     Vector2f texCoord;
 };
 
+struct VertexC3 {
+    Vector3f coord;
+};
+
 }

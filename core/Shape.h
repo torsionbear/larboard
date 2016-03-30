@@ -23,7 +23,7 @@ public:
     auto SetMaterial(Material * material) -> void {
         _material = material;
     }
-    auto SetMesh(Mesh * mesh) -> void {
+    auto SetMesh(Mesh<Vertex> * mesh) -> void {
         _mesh = mesh;
     }
     auto SetShaderProgram(ShaderProgram * shaderProgram) -> void {
@@ -32,7 +32,7 @@ public:
     auto GetMaterial() const -> Material const* {
         return _material;
     }
-    auto GetMesh() const -> Mesh const* {
+    auto GetMesh() const -> Mesh<Vertex> const* {
         return _mesh;
     }
     auto GetShaderProgram() const -> ShaderProgram const * {
@@ -61,7 +61,7 @@ public:
 private:
     Material * _material;
     Model * _model;
-    Mesh * _mesh;
+    Mesh<Vertex> * _mesh;
     std::vector<Texture *> _textures;
     ShaderProgram * _shaderProgram;
     std::unique_ptr<Aabb> _aabb = nullptr;

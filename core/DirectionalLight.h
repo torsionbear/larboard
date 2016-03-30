@@ -38,10 +38,17 @@ public:
             GetTransform() * _direction,
         };
     }
+    auto GetRenderDataId() const -> unsigned int {
+        return _renderDataId;
+    }
+    auto SetRenderDataId(unsigned int id) -> void {
+        _renderDataId = id;
+    }
     auto ComputeShadowMappingVolume(Camera* camera, Aabb shadowCasterAabb) -> void;
 private:
     Vector4f _color;
     Vector4f _direction;
+    unsigned int _renderDataId;
 };
 
 }

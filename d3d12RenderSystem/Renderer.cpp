@@ -16,7 +16,7 @@ Renderer::Renderer(ResourceManager * resourceManager, unsigned int width, unsign
 }
 
 auto Renderer::Prepare() -> void {
-    _depthStencil = _resourceManager->CreateDepthStencil(_viewport.Width, _viewport.Height, nullptr);
+    _depthStencil = _resourceManager->CreateDepthStencil(static_cast<unsigned int>(_viewport.Width), static_cast<unsigned int>(_viewport.Height), nullptr);
     _shadowMapDepthStencil = _resourceManager->CreateDepthStencil(_shadowMapSize(0), _shadowMapSize(1), &_shadowMapDepthStencilSrv);
     CreateDefaultPso();
     CreateTranslucentPso();
@@ -79,7 +79,15 @@ auto Renderer::ToggleBackFace() -> void {
 
 }
 
-auto Renderer::Draw(core::Viewpoint const* camera, core::SkyBox const* skyBox, core::Terrain const* terrain, core::Shape const*const* shapes, unsigned int shapeCount, core::Viewpoint const * shadowCastingLightViewpoint) -> void {
+auto Renderer::Draw(
+    core::Viewpoint const* camera,
+    core::SkyBox const* skyBox,
+    core::Terrain const* terrain,
+    core::Shape const*const* shapes, unsigned int shapeCount,
+    core::Viewpoint const * shadowCastingLightViewpoint,
+    core::AmbientLight * ambientLight,
+    core::DirectionalLight ** directionalLights, unsigned int directionalLightCount,
+    core::SpotLight ** spotLights, unsigned int spotLightCount) -> void {
     auto commandList = _resourceManager->GetCommandList();
     // render target
     auto rtv = _resourceManager->GetSwapChainRenderTargets().GetCurrentRtv();
@@ -92,7 +100,7 @@ auto Renderer::Draw(core::Viewpoint const* camera, core::SkyBox const* skyBox, c
     commandList->SetGraphicsRoot32BitConstant(RootSignatureParameterIndex::TextureIndex, _shadowMapDepthStencilSrv._indexInDescriptorHeap, TextureIndex::slot4);
 
     UseViewpoint(commandList, camera);
-    UseLight();
+    UseLight(commandList);
     if (skyBox != nullptr) {
         DrawSkyBox(commandList);
     }
@@ -105,24 +113,27 @@ auto Renderer::Draw(core::Viewpoint const* camera, core::SkyBox const* skyBox, c
 auto Renderer::AllocateDescriptorHeap(
     unsigned int cameraCount,
     unsigned int meshCount,
-    unsigned int modelCount,
+    unsigned int movableCount,
     unsigned int textureCount,
     unsigned int materialCount,
     unsigned int skyBoxCount,
     unsigned int terrainCount,
+    unsigned int directionalLightCount,
+    unsigned int spotLightCount,
     unsigned int nullDescriptorCount) -> void {
     auto const ordinaryDsvCount = 1u;
 
     auto lightDescriptorCount = 1u;
     auto shadowCastingLightCount = 1u;
     _resourceManager->AllocDsvDescriptorHeap(ordinaryDsvCount + shadowCastingLightCount);
+    auto ambientLightCount = 1u;
 
-    auto cbvCount = cameraCount + modelCount + materialCount + lightDescriptorCount + terrainCount + shadowCastingLightCount;
+    auto cbvCount = cameraCount + movableCount + materialCount + lightDescriptorCount + ambientLightCount + directionalLightCount + spotLightCount + terrainCount + shadowCastingLightCount;
     auto srvCount = textureCount + nullDescriptorCount + skyBoxCount + 2 * terrainCount + shadowCastingLightCount;
     _resourceManager->AllocCbvSrvDescriptorHeap(cbvCount + srvCount);
 }
 
-auto Renderer::DrawTranslucent() -> void {
+auto Renderer::DrawTranslucent(core::Shape const*const* shapes, unsigned int shapeCount) -> void {
     auto commandList = _resourceManager->GetCommandList();
     commandList->ExecuteBundle(_translucentBundle.Get());
 }
@@ -160,8 +171,7 @@ auto Renderer::UseViewpoint(ID3D12GraphicsCommandList * commandList, core::Viewp
     commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Camera, cameraDescriptorInfo._gpuHandle);
 }
 
-auto Renderer::UseLight() -> void {
-    auto commandList = _resourceManager->GetCommandList();
+auto Renderer::UseLight(ID3D12GraphicsCommandList * commandList) -> void {
     auto const& lightDescriptorInfo = _resourceManager->GetLightDescriptorInfo();
     commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Light, lightDescriptorInfo._gpuHandle);
 }
@@ -174,7 +184,7 @@ auto Renderer::DrawShapeWithPso(ID3D12GraphicsCommandList * commandList, core::S
     // pso
     commandList->SetPipelineState(pso);
     // transform
-    auto const& transformDescriptorInfo = _resourceManager->GetTransformDescriptorInfo(shape->GetModel()->_renderDataId);
+    auto const& transformDescriptorInfo = _resourceManager->GetTransformDescriptorInfo(shape->GetModel()->GetRenderDataId());
     commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Transform, transformDescriptorInfo._gpuHandle);
     // material
     auto const& materialDescriptorInfo = _resourceManager->GetMaterialDescriptorInfo(shape->GetMaterial()->_renderDataId);
@@ -187,7 +197,7 @@ auto Renderer::DrawShapeWithPso(ID3D12GraphicsCommandList * commandList, core::S
     }
     commandList->SetGraphicsRoot32BitConstants(RootSignatureParameterIndex::TextureIndex, textureIndex.size(), textureIndex.data(), 0);
     // vertex
-    auto const& meshRenderData = _resourceManager->GetMeshDataInfo(shape->GetMesh()->_renderDataId);
+    auto const& meshRenderData = _resourceManager->GetMeshDataInfo(shape->GetMesh()->GetRenderDataId());
     // todo: only call the following 2 IASet* functions when necessary
     commandList->IASetVertexBuffers(0, 1, &meshRenderData.vbv);
     commandList->IASetIndexBuffer(&meshRenderData.ibv);
@@ -240,6 +250,7 @@ auto Renderer::CreateSkyBoxPso() -> void {
     // depth stencil
     CD3DX12_DEPTH_STENCIL_DESC depthStencilDesc(D3D12_DEFAULT);
     depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;  // turn off depth write
+    depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
     // shader
     auto vs = _resourceManager->CompileShader("d3d12RenderSystem/shaders/skyBox_v.hlsl", "vs_5_1");
     auto ps = _resourceManager->CompileShader("d3d12RenderSystem/shaders/skyBox_p.hlsl", "ps_5_1");
@@ -470,7 +481,7 @@ auto Renderer::CreateTerrainBundle(core::Terrain const * terrain, ID3D12Pipeline
     auto specialTiles = terrain->GetSpecialTiles();
     auto const& terrainMeshInfo = _resourceManager->GetTerrainMeshInfo();
     for (auto & mesh : specialTiles) {
-        auto const& renderData = _resourceManager->GetMeshDataInfo(mesh->_renderDataId);
+        auto const& renderData = _resourceManager->GetMeshDataInfo(mesh->GetRenderDataId());
         auto vbvs = std::array<D3D12_VERTEX_BUFFER_VIEW, 2>{renderData.vbv, terrainMeshInfo.instanceVbv};
         ret->IASetVertexBuffers(0, 2, vbvs.data());
         ret->IASetIndexBuffer(&renderData.ibv);
@@ -496,6 +507,7 @@ auto Renderer::CreateTranslucentBundle(core::Shape const * const * shapes, unsig
     };
     _translucentBundle = _resourceManager->CreateBundle(_translucentPso.Get(), _resourceManager->GetRootSignature(), heaps.data(), heaps.size());
 
+    UseLight(_translucentBundle.Get());
     for (auto i = 0u; i < shapeCount; ++i) {
         DrawShapeWithPso(_translucentBundle.Get(), shapes[i], _translucentPso.Get());
     }
