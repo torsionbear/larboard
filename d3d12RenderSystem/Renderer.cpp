@@ -130,7 +130,7 @@ auto Renderer::AllocateDescriptorHeap(
     _resourceManager->AllocDsvDescriptorHeap(ordinaryDsvCount + shadowCastingLightCount);
     auto ambientLightCount = 1u;
 
-    auto cbvCount = cameraCount + movableCount + materialCount + lightDescriptorCount + ambientLightCount + directionalLightCount + spotLightCount + terrainCount + shadowCastingLightCount;
+    auto cbvCount = cameraCount + movableCount + materialCount + lightDescriptorCount + ambientLightCount + directionalLightCount + pointLightCount + spotLightCount + terrainCount + shadowCastingLightCount;
     auto srvCount = textureCount + nullDescriptorCount + skyBoxCount + 2 * terrainCount + shadowCastingLightCount;
     _resourceManager->AllocCbvSrvDescriptorHeap(cbvCount + srvCount);
 }

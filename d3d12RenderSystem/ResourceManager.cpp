@@ -364,6 +364,7 @@ auto ResourceManager::LoadDirectionalLight(core::DirectionalLight ** directional
 
         directionalLightData[i] = DirectionalLightData{
             directionalLight->GetColor(),
+            i == 0u, // todo: for now only first directional light casts shadow
         };
     }
 

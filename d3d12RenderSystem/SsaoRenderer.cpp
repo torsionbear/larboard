@@ -519,6 +519,12 @@ auto SsaoRenderer::DrawDirectionalLights(ID3D12GraphicsCommandList * commandList
     commandList->IASetVertexBuffers(0, 1, &_screenQuadVbv);
     commandList->IASetIndexBuffer(&_screenQuadIbv);
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    // shadow casting light's cbv and shadow map's srv
+    auto const& shadowCastingLightDescriptorInfo = _resourceManager->GetCameraDescriptorInfo(directionalLights[0]->core::Viewpoint::GetRenderDataId());
+    commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::CbvPs2, shadowCastingLightDescriptorInfo._gpuHandle);
+    commandList->SetGraphicsRoot32BitConstant(RootSignatureParameterIndex::TextureIndex, _shadowMapDepthStencilSrv._indexInDescriptorHeap, TextureIndex::slot4); // shadow map
+
     for (auto i = 0u; i < directionalLightCount; ++i) {
         auto directionalLight = directionalLights[i];
         // transform

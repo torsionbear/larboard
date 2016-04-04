@@ -173,8 +173,10 @@ struct AmbientLightData {
 
 struct DirectionalLightData {
     core::Vector4f color;
-    core::Vector4f _pad0[3];
-    core::Matrix4x4f _pad1[3];
+    int32 isShadowCastingLight;
+    core::Vector3f _pad0;
+    core::Vector4f _pad1[2];
+    core::Matrix4x4f _pad2[3];
 };
 
 struct PointLightData {

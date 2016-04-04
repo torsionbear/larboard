@@ -21,6 +21,7 @@ cbuffer Camera : register(b0) {
 
 cbuffer DirectionalLight : register(b2) {
     float4 directionalLightColor;
+    bool isShadowCastingLight;
 };
 
 cbuffer ShadowCastingLight : register(b5) {
@@ -67,9 +68,24 @@ float SpecularCoefficient(float3 normal, float3 lightDirection, float3 viewDirec
 }
 
 PsOutput main(PsInput input) {
+    PsOutput ret;
+
     float depth = textures[DepthIndex].Sample(staticSampler, input.texCoord).r;
     float3 worldPosition = mul(viewTransformInverse, CalculateViewSpacePosition(depth, input.viewDirection)).xyz;
     float3 viewDirection = normalize(viewPosition.xyz - worldPosition.xyz);
+
+    // shadow
+    if (isShadowCastingLight) {
+        float bias = 0.001;
+        float4 lightSpacePosition = mul(lightViewTransform, float4(worldPosition, 1));
+        float4 lightSpaceNdcPosition = mul(lightProjectTransform, lightSpacePosition);
+        float2 texCoord = float2((lightSpaceNdcPosition.x + 1) / 2, 1 - (lightSpaceNdcPosition.y + 1) / 2);
+        float shadowMapDepth = textures[shadowMapIndex].Sample(shadowMapSampler, texCoord).r;
+        if (lightSpaceNdcPosition.z < 1.0 && lightSpaceNdcPosition.z - bias > shadowMapDepth) {
+            ret.color = float4(0, 0, 0, 1);
+            return ret;
+        }
+    }
 
     float4 diffuseEmissive = textures[diffuseMapIndex].Sample(staticSampler, input.texCoord);
     float4 specularShininess = textures[specularMapIndex].Sample(staticSampler, input.texCoord);
@@ -78,7 +94,6 @@ PsOutput main(PsInput input) {
     float3 diffuse = directionalLightColor.rgb * diffuseEmissive.rgb * DiffuseCoefficient(normal, input.directionalLightDirection.xyz);
     float3 specular = directionalLightColor.rgb * specularShininess.rgb * SpecularCoefficient(normal, input.directionalLightDirection.xyz, viewDirection, specularShininess.a);
 
-    PsOutput ret;
     ret.color = float4(diffuse + specular, 1);
 
     return ret;
