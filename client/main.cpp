@@ -87,6 +87,7 @@ auto LoadScene_dx4(core::Scene * scene) -> void {
     scene->GetTerrain()->AddSpecialTiles(terrainSpecialTileScene->GetStaticModelGroup().AcquireShapes(), terrainSpecialTileScene->GetStaticModelGroup().AcquireMeshes());
 
     auto flashLight = scene->CreateSpotLight();
+    flashLight->SetColor(core::Vector4f{ 1.0f, 0.0f, 0.0f, 1.0f });
     flashLight->AttachTo(*scene->GetActiveCamera());
 }
 

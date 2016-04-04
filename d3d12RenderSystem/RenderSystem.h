@@ -155,6 +155,11 @@ public:
         _resourceManager->PrepareResource();
         _resourceManager->UpdateViewpoint(_camera);
 
+        // update movables
+        // todo: only update dynamic movables
+        auto resource = _resourceManager->GetTransformDescriptorInfo(_movables.front()->GetRenderDataId())._resource;
+        _resourceManager->LoadMovables(_movables.data(), _movables.size(), resource);
+
         if (!_directionalLights.empty()) {
             auto shadowCastingLight = _directionalLights.front();
             shadowCastingLight->ComputeShadowMappingVolume(_camera, _shadowCasterAabb);

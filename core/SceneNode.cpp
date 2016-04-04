@@ -16,6 +16,9 @@ auto SceneNode::MoveAlong(Vector4f const& forwardDirection, Float32 length) -> v
         0, 0, 1, forwardDirection(2) * length,
         0, 0, 0, 1
     };
+    for (auto c : _children) {
+        c->MoveAlong(forwardDirection, length);
+    }
 }
 
 auto SceneNode::Translate(Float32 x, Float32 y, Float32 z) -> void {

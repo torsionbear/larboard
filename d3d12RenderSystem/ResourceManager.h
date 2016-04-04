@@ -220,7 +220,7 @@ public:
     auto LoadEnd() -> void;
     template<typename T>
     auto LoadMeshes(core::Mesh<T> ** meshes, unsigned int count) -> void;
-    auto LoadMovables(core::Movable ** movables, unsigned int count) -> void;
+    auto LoadMovables(core::Movable ** movables, unsigned int count, ID3D12Resource * buffer = nullptr) -> void;
     auto LoadCamera(core::Camera * camera, unsigned int count) -> void;
     auto UpdateViewpoint(core::Viewpoint const * viewpoint) -> void;
     auto LoadLight(

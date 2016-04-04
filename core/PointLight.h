@@ -55,8 +55,8 @@ public:
         _renderDataId = id;
     }
 private:
-    Vector4f _color;
-    Vector4f _attenuation;
+    Vector4f _color = Vector4f{ 1.0f, 1.0f, 1.0f, 1.0f };
+    Vector4f _attenuation = Vector4f{ 1.0f, 0.0f, 0.4f, 25.0f };
 
     unsigned int _renderDataId;
 };

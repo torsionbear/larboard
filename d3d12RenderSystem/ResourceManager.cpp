@@ -243,25 +243,37 @@ auto ResourceManager::CreateDepthStencil(unsigned int width, unsigned int height
     return descriptorInfo;
 }
 
-auto ResourceManager::LoadMovables(core::Movable ** movables, unsigned int count) -> void {
+auto ResourceManager::LoadMovables(core::Movable ** movables, unsigned int count, ID3D12Resource * buffer) -> void {
     if (movables == nullptr || count == 0) {
         return;
     }
-    // create resource
-    auto buffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(count * sizeof(TransformData)), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
-    // aggregate data, populate _transformDescriptorInfos and set model._renderDataId
     auto transformData = vector<TransformData>{};
-    for (auto i = 0u; i < count; ++i) {
-        auto & movable = movables[i];
-        movable->SetRenderDataId(_transformDescriptorInfos.size());
-        auto descriptorInfo = _cbvSrvHeap.GetDescriptorInfo(buffer);
-        D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = { buffer->GetGPUVirtualAddress() + i * sizeof(TransformData), sizeof(TransformData) };
-        _device->CreateConstantBufferView(&cbvDesc, descriptorInfo._cpuHandle);
-        _transformDescriptorInfos.push_back(descriptorInfo);
-        transformData.push_back(TransformData{
-            movable->GetTransform(),
-            movable->GetTransform(),
-        });
+    if (buffer == nullptr) {
+        // create resource
+        buffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(count * sizeof(TransformData)), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
+        // aggregate data, populate _transformDescriptorInfos and set model._renderDataId
+        for (auto i = 0u; i < count; ++i) {
+            auto & movable = movables[i];
+            movable->SetRenderDataId(_transformDescriptorInfos.size());
+            auto descriptorInfo = _cbvSrvHeap.GetDescriptorInfo(buffer);
+            D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = { buffer->GetGPUVirtualAddress() + i * sizeof(TransformData), sizeof(TransformData) };
+            _device->CreateConstantBufferView(&cbvDesc, descriptorInfo._cpuHandle);
+            _transformDescriptorInfos.push_back(descriptorInfo);
+            transformData.push_back(TransformData{
+                movable->GetTransform(),
+                movable->GetTransform(),
+            });
+        }
+    } else {
+        _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST));
+        // aggregate data
+        for (auto i = 0u; i < count; ++i) {
+            auto & movable = movables[i];
+            transformData.push_back(TransformData{
+                movable->GetTransform(),
+                movable->GetTransform(),
+            });
+        }
     }
 
     _uploadHeap.AllocateAndUploadDataBlock(_commandList.Get(), buffer, sizeof(TransformData) * count, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT, transformData.data());

@@ -93,6 +93,7 @@ auto Movable::GetUpwardDirection() -> Vector4f {
 auto Movable::AttachTo(Movable & node) -> void {
     _sceneNode->_parent = node._sceneNode.get();
     node._sceneNode->_children.push_front(_sceneNode.get());
+    _sceneNode->_transform = node.GetTransform() * GetTransform();
 }
 auto Movable::DetachFrom() -> void {
     _sceneNode->_parent->_children.remove(_sceneNode.get());
