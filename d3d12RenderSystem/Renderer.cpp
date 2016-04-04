@@ -87,6 +87,7 @@ auto Renderer::Draw(
     core::Viewpoint const * shadowCastingLightViewpoint,
     core::AmbientLight * ambientLight,
     core::DirectionalLight ** directionalLights, unsigned int directionalLightCount,
+    core::PointLight ** pointLights, unsigned int pointLightCount,
     core::SpotLight ** spotLights, unsigned int spotLightCount) -> void {
     auto commandList = _resourceManager->GetCommandList();
     // render target
@@ -119,6 +120,7 @@ auto Renderer::AllocateDescriptorHeap(
     unsigned int skyBoxCount,
     unsigned int terrainCount,
     unsigned int directionalLightCount,
+    unsigned int pointLightCount,
     unsigned int spotLightCount,
     unsigned int nullDescriptorCount) -> void {
     auto const ordinaryDsvCount = 1u;

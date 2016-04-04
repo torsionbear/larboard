@@ -177,6 +177,13 @@ struct DirectionalLightData {
     core::Matrix4x4f _pad1[3];
 };
 
+struct PointLightData {
+    core::Vector4f color;
+    core::Vector4f attenuation;
+    core::Vector4f _pad0[2];
+    core::Matrix4x4f _pad1[3];
+};
+
 struct SpotLightData {
     core::Vector4f color;
     core::Vector4f attenuation;
@@ -221,6 +228,7 @@ public:
         core::SpotLight ** spotLights, unsigned int spotLightCount) -> void;
     auto LoadAmbientLight(core::AmbientLight * ambientLights) -> void;
     auto LoadDirectionalLight(core::DirectionalLight ** directionalLights, unsigned int directionalLightCount) -> void;
+    auto LoadPointLight(core::PointLight ** pointLights, unsigned int pointLightCount) -> void;
     auto LoadSpotLight(core::SpotLight ** spotLights, unsigned int spotLightCount) -> void;
     auto LoadShadowCastingLight(core::DirectionalLight ** directionalLights, unsigned int directionalLightCount) -> void;
     auto LoadMaterials(core::Material ** materials, unsigned int count) -> void;
@@ -305,6 +313,9 @@ public:
     auto GetDirectionalLightDescriptorInfo(unsigned int index) -> DescriptorInfo const& {
         return _directionalLightDescriptorInfos[index];
     }
+    auto GetPointLightDescriptorInfo(unsigned int index) -> DescriptorInfo const& {
+        return _pointLightDescriptorInfos[index];
+    }
     auto GetSpotLightDescriptorInfo(unsigned int index) -> DescriptorInfo const& {
         return _spotLightDescriptorInfos[index];
     }
@@ -330,6 +341,7 @@ private:
     DescriptorInfo _lightDescriptorInfo;
     std::vector<DescriptorInfo> _ambientLightDescriptorInfos;
     std::vector<DescriptorInfo> _directionalLightDescriptorInfos;
+    std::vector<DescriptorInfo> _pointLightDescriptorInfos;
     std::vector<DescriptorInfo> _spotLightDescriptorInfos;
     std::vector<DescriptorInfo> _nullDescriptorInfo;
     std::vector<DescriptorInfo> _materialDescriptorInfos;

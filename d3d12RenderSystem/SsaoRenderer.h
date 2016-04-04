@@ -31,6 +31,7 @@ public:
         core::Viewpoint const * shadowCastingLightViewpoint,
         core::AmbientLight * ambientLight,
         core::DirectionalLight ** directionalLights, unsigned int directionalLightCount,
+        core::PointLight ** pointLights, unsigned int pointLightCount,
         core::SpotLight ** spotLights, unsigned int spotLightCount) -> void override;
     virtual auto AllocateDescriptorHeap(
         unsigned int cameraCount,
@@ -41,6 +42,7 @@ public:
         unsigned int skyBoxCount,
         unsigned int terrainCount,
         unsigned int directionalLightCount,
+        unsigned int pointLightCount,
         unsigned int spotLightCount,
         unsigned int nullDescriptorCount) -> void override;
 private:
@@ -52,10 +54,13 @@ private:
     auto CreateLightingPassPso() -> void;
     auto CreateAmbientLightPso() -> void;
     auto CreateDirectionalLightPso() -> void;
+    auto CreatePointLightPso() -> void;
     auto CreateSpotLightPso() -> void;
     auto LoadScreenQuad() -> void;
+    auto LoadPointLightVolume() -> void;
     auto DrawAmbientLight(ID3D12GraphicsCommandList * commandList, core::AmbientLight * ambientLight, DescriptorInfo ambientOcclusionSrv) -> void;
     auto DrawDirectionalLights(ID3D12GraphicsCommandList * commandList, core::DirectionalLight ** directionalLights, unsigned int directionalLightCount) -> void;
+    auto DrawPointLights(ID3D12GraphicsCommandList * commandList, core::PointLight ** pointLights, unsigned int pointLightCount) -> void;
     auto DrawSpotLights(ID3D12GraphicsCommandList * commandList, core::SpotLight ** spotLights, unsigned int spotLightCount) -> void;
 private:
     DescriptorInfo _gBufferDiffuse;
@@ -78,6 +83,7 @@ private:
     ComPtr<ID3D12PipelineState> _lightingPassPso;
     ComPtr<ID3D12PipelineState> _ambientLightPso;
     ComPtr<ID3D12PipelineState> _directionalLightPso;
+    ComPtr<ID3D12PipelineState> _pointLightPso;
     ComPtr<ID3D12PipelineState> _spotLightPso;
 
     D3D12_VERTEX_BUFFER_VIEW _screenQuadVbv;

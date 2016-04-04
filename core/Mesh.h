@@ -20,6 +20,10 @@ public:
         openglUint _indexOffset;
         openglInt _baseVertex;
     };
+    static auto MakeMesh(Float32 * vertexData, unsigned int vertexDataCount, unsigned int * index, unsigned int indexCount) -> void {
+        auto ret = Mesh{};
+        ret._index = std::vector<unsigned int>()
+    }
 public:
     friend void swap(Mesh& first, Mesh& second) {
         using std::swap;
@@ -32,6 +36,12 @@ public:
     Mesh(std::vector<T> && vertexData, std::vector<unsigned int> && index)
         : _vertexes(move(vertexData))
         , _index(move(index)) {
+    }
+    Mesh(std::vector<Float32> const& vertexData, std::vector<unsigned int> && index)
+        : _index(move(index)) {
+        auto vertexCount = vertexData.size() * sizeof(Float32) / sizeof(T);
+        _vertexes = std::vector<T>(vertexCount);
+        memcpy(_vertexes.data(), vertexData.data(), vertexData.size() * sizeof(Float32));
     }
     Mesh(std::vector<T> && vertexData)
         : _vertexes(move(vertexData)) {
@@ -49,10 +59,10 @@ public:
         swap(*this, rhs);
         return *this;
     }
-    //Mesh& operator=(Mesh && rhs) {
-    //    swap(*this, rhs);
-    //    return *this;
-    //}
+    Mesh& operator=(Mesh && rhs) {
+        swap(*this, rhs);
+        return *this;
+    }
 public:
     auto GetVertex() const -> std::vector<T> const& {
         return _vertexes;

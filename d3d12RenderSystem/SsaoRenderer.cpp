@@ -21,10 +21,12 @@ auto SsaoRenderer::Prepare() -> void {
     CreateLightingPassPso();
     CreateAmbientLightPso();
     CreateDirectionalLightPso();
+    CreatePointLightPso();
     CreateSpotLightPso();
     GenerateRandomTexture(_randomTextureSize);
     PopulateSsaoData();
     LoadScreenQuad();
+    LoadPointLightVolume();
 }
 
 auto SsaoRenderer::Draw(
@@ -36,6 +38,7 @@ auto SsaoRenderer::Draw(
     core::Viewpoint const * shadowCastingLightViewpoint,
     core::AmbientLight * ambientLight,
     core::DirectionalLight ** directionalLights, unsigned int directionalLightCount,
+    core::PointLight ** pointLights, unsigned int pointLightCount,
     core::SpotLight ** spotLights, unsigned int spotLightCount) -> void {
     auto commandList = _resourceManager->GetCommandList();
 
@@ -115,6 +118,7 @@ auto SsaoRenderer::Draw(
     commandList->ResourceBarrier(lightingPassBarriers.size(), lightingPassBarriers.data());
     DrawAmbientLight(commandList, ambientLight, _ambientOcclusionSrv);
     DrawDirectionalLights(commandList, directionalLights, directionalLightCount);
+    DrawPointLights(commandList, pointLights, pointLightCount);
     DrawSpotLights(commandList, spotLights, spotLightCount);
 
     if (skyBox != nullptr) {
@@ -131,6 +135,7 @@ auto SsaoRenderer::AllocateDescriptorHeap(
     unsigned int skyBoxCount,
     unsigned int terrainCount,
     unsigned int directionalLightCount,
+    unsigned int pointLightCount,
     unsigned int spotLightCount,
     unsigned int nullDescriptorCount) -> void {
     auto const lightDescriptorCount = 1u;
@@ -146,7 +151,7 @@ auto SsaoRenderer::AllocateDescriptorHeap(
 
     _resourceManager->AllocDsvDescriptorHeap(ordinaryDsvCount + gBufferDsvSrvCount + shadowCastingLightCount);
 
-    auto const cbvCount = cameraCount + movableCount + materialCount + lightDescriptorCount + ambientLightCount + directionalLightCount + spotLightCount + ssaoCbvCount + terrainCount + shadowCastingLightCount;
+    auto const cbvCount = cameraCount + movableCount + materialCount + lightDescriptorCount + ambientLightCount + directionalLightCount + pointLightCount + spotLightCount + ssaoCbvCount + terrainCount + shadowCastingLightCount;
     auto const srvCount = textureCount + nullDescriptorCount + skyBoxCount + randomVectorTextureCount + gBufferRtvSrvCount + gBufferDsvSrvCount + ssaoRtvSrvCount + 2 * terrainCount + shadowCastingLightCount;
     _resourceManager->AllocCbvSrvDescriptorHeap(cbvCount + srvCount);
     _resourceManager->AllocRtvDescriptorHeap(gBufferRtvSrvCount + ssaoRtvSrvCount);
@@ -301,49 +306,6 @@ auto SsaoRenderer::CreateLightingPassPso() -> void {
     _lightingPassPso = _resourceManager->CreatePso(&psoDesc);
 }
 
-auto SsaoRenderer::CreateSpotLightPso() -> void {
-    // vertex attribute
-    auto const inputElementDescs = array<D3D12_INPUT_ELEMENT_DESC, 1> {
-        D3D12_INPUT_ELEMENT_DESC{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-    };
-    // rasterizer
-    CD3DX12_RASTERIZER_DESC rasterizerDesc(D3D12_DEFAULT); // draw back faces
-    // depth stencil
-    CD3DX12_DEPTH_STENCIL_DESC depthStencilDesc(D3D12_DEFAULT);
-    depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO; // turn off depth write
-    depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL; // do not render "floating in the air" portion of light volume
-    // blend
-    auto blendDesc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-    blendDesc.RenderTarget[0] = D3D12_RENDER_TARGET_BLEND_DESC{
-        TRUE,FALSE,
-        D3D12_BLEND_ONE, D3D12_BLEND_ONE, D3D12_BLEND_OP_ADD,
-        D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
-        D3D12_LOGIC_OP_NOOP,
-        D3D12_COLOR_WRITE_ENABLE_ALL,
-    };
-
-    // shader
-    auto vs = _resourceManager->CompileShader("d3d12RenderSystem/shaders/ssao_spotLight_v.hlsl", "vs_5_1");
-    auto ps = _resourceManager->CompileShader("d3d12RenderSystem/shaders/ssao_spotLight_p.hlsl", "ps_5_1");
-
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-    psoDesc.InputLayout = { inputElementDescs.data(), inputElementDescs.size() };
-    psoDesc.pRootSignature = _resourceManager->GetRootSignature();
-    psoDesc.VS = CD3DX12_SHADER_BYTECODE(vs.Get());
-    psoDesc.PS = CD3DX12_SHADER_BYTECODE(ps.Get());
-    psoDesc.RasterizerState = rasterizerDesc;
-    psoDesc.BlendState = blendDesc;
-    psoDesc.DepthStencilState = depthStencilDesc;
-    psoDesc.SampleMask = UINT_MAX;
-    psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-    psoDesc.NumRenderTargets = 1;
-    psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
-    psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-    psoDesc.SampleDesc.Count = 1;
-
-    _spotLightPso = _resourceManager->CreatePso(&psoDesc);
-}
-
 auto SsaoRenderer::CreateAmbientLightPso() -> void {
     // vertex attribute
     auto const inputElementDescs = array<D3D12_INPUT_ELEMENT_DESC, 1> {
@@ -432,6 +394,92 @@ auto SsaoRenderer::CreateDirectionalLightPso() -> void {
     _directionalLightPso = _resourceManager->CreatePso(&psoDesc);
 }
 
+auto SsaoRenderer::CreatePointLightPso() -> void {
+    // vertex attribute
+    auto const inputElementDescs = array<D3D12_INPUT_ELEMENT_DESC, 1> {
+        D3D12_INPUT_ELEMENT_DESC{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+    };
+    // rasterizer
+    CD3DX12_RASTERIZER_DESC rasterizerDesc(D3D12_DEFAULT); // draw back faces
+    // depth stencil
+    CD3DX12_DEPTH_STENCIL_DESC depthStencilDesc(D3D12_DEFAULT);
+    depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO; // turn off depth write
+    depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL; // do not render "floating in the air" portion of light volume
+    // blend
+    auto blendDesc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+    blendDesc.RenderTarget[0] = D3D12_RENDER_TARGET_BLEND_DESC{
+        TRUE,FALSE,
+        D3D12_BLEND_ONE, D3D12_BLEND_ONE, D3D12_BLEND_OP_ADD,
+        D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
+        D3D12_LOGIC_OP_NOOP,
+        D3D12_COLOR_WRITE_ENABLE_ALL,
+    };
+
+    // shader
+    auto vs = _resourceManager->CompileShader("d3d12RenderSystem/shaders/ssao_pointLight_v.hlsl", "vs_5_1");
+    auto ps = _resourceManager->CompileShader("d3d12RenderSystem/shaders/ssao_pointLight_p.hlsl", "ps_5_1");
+
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+    psoDesc.InputLayout = { inputElementDescs.data(), inputElementDescs.size() };
+    psoDesc.pRootSignature = _resourceManager->GetRootSignature();
+    psoDesc.VS = CD3DX12_SHADER_BYTECODE(vs.Get());
+    psoDesc.PS = CD3DX12_SHADER_BYTECODE(ps.Get());
+    psoDesc.RasterizerState = rasterizerDesc;
+    psoDesc.BlendState = blendDesc;
+    psoDesc.DepthStencilState = depthStencilDesc;
+    psoDesc.SampleMask = UINT_MAX;
+    psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+    psoDesc.NumRenderTargets = 1;
+    psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+    psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+    psoDesc.SampleDesc.Count = 1;
+
+    _pointLightPso = _resourceManager->CreatePso(&psoDesc);
+}
+
+auto SsaoRenderer::CreateSpotLightPso() -> void {
+    // vertex attribute
+    auto const inputElementDescs = array<D3D12_INPUT_ELEMENT_DESC, 1> {
+        D3D12_INPUT_ELEMENT_DESC{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+    };
+    // rasterizer
+    CD3DX12_RASTERIZER_DESC rasterizerDesc(D3D12_DEFAULT); // draw back faces
+                                                           // depth stencil
+    CD3DX12_DEPTH_STENCIL_DESC depthStencilDesc(D3D12_DEFAULT);
+    depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO; // turn off depth write
+    depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL; // do not render "floating in the air" portion of light volume
+                                                                      // blend
+    auto blendDesc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+    blendDesc.RenderTarget[0] = D3D12_RENDER_TARGET_BLEND_DESC{
+        TRUE,FALSE,
+        D3D12_BLEND_ONE, D3D12_BLEND_ONE, D3D12_BLEND_OP_ADD,
+        D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
+        D3D12_LOGIC_OP_NOOP,
+        D3D12_COLOR_WRITE_ENABLE_ALL,
+    };
+
+    // shader
+    auto vs = _resourceManager->CompileShader("d3d12RenderSystem/shaders/ssao_spotLight_v.hlsl", "vs_5_1");
+    auto ps = _resourceManager->CompileShader("d3d12RenderSystem/shaders/ssao_spotLight_p.hlsl", "ps_5_1");
+
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+    psoDesc.InputLayout = { inputElementDescs.data(), inputElementDescs.size() };
+    psoDesc.pRootSignature = _resourceManager->GetRootSignature();
+    psoDesc.VS = CD3DX12_SHADER_BYTECODE(vs.Get());
+    psoDesc.PS = CD3DX12_SHADER_BYTECODE(ps.Get());
+    psoDesc.RasterizerState = rasterizerDesc;
+    psoDesc.BlendState = blendDesc;
+    psoDesc.DepthStencilState = depthStencilDesc;
+    psoDesc.SampleMask = UINT_MAX;
+    psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+    psoDesc.NumRenderTargets = 1;
+    psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+    psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+    psoDesc.SampleDesc.Count = 1;
+
+    _spotLightPso = _resourceManager->CreatePso(&psoDesc);
+}
+
 auto SsaoRenderer::LoadScreenQuad() -> void {
     auto vertexData = array<core::Vector2f, 4>{ 
         core::Vector2f{ -1, -1 }, 
@@ -444,24 +492,9 @@ auto SsaoRenderer::LoadScreenQuad() -> void {
     _screenQuadIbv = _resourceManager->UploadIndexData(indexData.size() * sizeof(unsigned int), indexData.data());
 }
 
-auto SsaoRenderer::DrawSpotLights(ID3D12GraphicsCommandList * commandList, core::SpotLight ** spotLights, unsigned int spotLightCount) -> void {
-    commandList->SetPipelineState(_spotLightPso.Get());
-    for (auto i = 0; i < spotLightCount; ++i) {
-        auto spotLight = spotLights[i];
-        // transform
-        auto const& transformDescriptorInfo = _resourceManager->GetTransformDescriptorInfo(spotLight->core::Movable::GetRenderDataId());
-        commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Transform, transformDescriptorInfo._gpuHandle);
-        // spotLight
-        auto const& lightDescriptorInfo = _resourceManager->GetSpotLightDescriptorInfo(spotLight->GetRenderDataId());
-        commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Light, lightDescriptorInfo._gpuHandle);
-        // vertex
-        auto const& meshRenderData = _resourceManager->GetMeshDataInfo(spotLight->GetLightVolume()->GetRenderDataId());
-        // todo: only call the following 2 IASet* functions when necessary
-        commandList->IASetVertexBuffers(0, 1, &meshRenderData.vbv);
-        commandList->IASetIndexBuffer(&meshRenderData.ibv);
-        commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        commandList->DrawIndexedInstanced(meshRenderData.indexCount, 1, meshRenderData.indexOffset, meshRenderData.baseVertex, 0);
-    }
+auto SsaoRenderer::LoadPointLightVolume() -> void {
+    auto pointLightVolume = core::PointLight::GetLightVolume();
+    _resourceManager->LoadMeshes<core::VertexC3>(&pointLightVolume, 1);
 }
 
 auto SsaoRenderer::DrawAmbientLight(ID3D12GraphicsCommandList * commandList, core::AmbientLight * ambientLight, DescriptorInfo ambientOcclusionSrv) -> void {
@@ -496,6 +529,46 @@ auto SsaoRenderer::DrawDirectionalLights(ID3D12GraphicsCommandList * commandList
         commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Light, lightDescriptorInfo._gpuHandle);
         // vertex
         commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+    }
+}
+
+auto SsaoRenderer::DrawPointLights(ID3D12GraphicsCommandList * commandList, core::PointLight ** pointLights, unsigned int pointLightCount) -> void {
+    commandList->SetPipelineState(_pointLightPso.Get());
+    for (auto i = 0u; i < pointLightCount; ++i) {
+        auto pointLight = pointLights[i];
+        // transform
+        auto const& transformDescriptorInfo = _resourceManager->GetTransformDescriptorInfo(pointLight->core::Movable::GetRenderDataId());
+        commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Transform, transformDescriptorInfo._gpuHandle);
+        // pointLight
+        auto const& lightDescriptorInfo = _resourceManager->GetPointLightDescriptorInfo(pointLight->GetRenderDataId());
+        commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Light, lightDescriptorInfo._gpuHandle);
+        // vertex
+        auto const& meshRenderData = _resourceManager->GetMeshDataInfo(pointLight->GetLightVolume()->GetRenderDataId());
+
+        commandList->IASetVertexBuffers(0, 1, &meshRenderData.vbv);
+        commandList->IASetIndexBuffer(&meshRenderData.ibv);
+        commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        commandList->DrawIndexedInstanced(meshRenderData.indexCount, 1, meshRenderData.indexOffset, meshRenderData.baseVertex, 0);
+    }
+}
+
+auto SsaoRenderer::DrawSpotLights(ID3D12GraphicsCommandList * commandList, core::SpotLight ** spotLights, unsigned int spotLightCount) -> void {
+    commandList->SetPipelineState(_spotLightPso.Get());
+    for (auto i = 0u; i < spotLightCount; ++i) {
+        auto spotLight = spotLights[i];
+        // transform
+        auto const& transformDescriptorInfo = _resourceManager->GetTransformDescriptorInfo(spotLight->core::Movable::GetRenderDataId());
+        commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Transform, transformDescriptorInfo._gpuHandle);
+        // spotLight
+        auto const& lightDescriptorInfo = _resourceManager->GetSpotLightDescriptorInfo(spotLight->GetRenderDataId());
+        commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Light, lightDescriptorInfo._gpuHandle);
+        // vertex
+        auto const& meshRenderData = _resourceManager->GetMeshDataInfo(spotLight->GetLightVolume()->GetRenderDataId());
+        // todo: only call the following 2 IASet* functions when necessary
+        commandList->IASetVertexBuffers(0, 1, &meshRenderData.vbv);
+        commandList->IASetIndexBuffer(&meshRenderData.ibv);
+        commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        commandList->DrawIndexedInstanced(meshRenderData.indexCount, 1, meshRenderData.indexOffset, meshRenderData.baseVertex, 0);
     }
 }
 

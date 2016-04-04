@@ -3,8 +3,7 @@ struct PsInput {
     float4 position : SV_POSITION;
     noperspective float2 texCoord : PS_TEXCOORD;
     noperspective float3 viewDirection : PS_VIEW_DIRECTION;
-    float4 spotLightPosition : PS_SPOTLIGHT_POSITION;
-    float4 spotLightDirection : PS_SPOTLIGHT_DIRECTION;
+    float4 pointLightPosition : PS_POINTLIGHT_POSITION;
 };
 
 struct PsOutput {
@@ -20,10 +19,9 @@ cbuffer Camera : register(b0) {
     float3x4 _pad;
 };
 
-cbuffer SpotLight : register(b2) {
-    float4 spotLightColor;
-    float4 spotLightAttenuation;
-    float4 spotLightConeShape; // beamWidth, cutOffAngle, unused, unused
+cbuffer PointLight : register(b2) {
+    float4 pointLightColor;
+    float4 pointLightAttenuation;
 };
 
 cbuffer ShadowCastingLight : register(b5) {
@@ -86,15 +84,11 @@ PsOutput main(PsInput input) {
     float4 specularShininess = textures[specularMapIndex].Sample(staticSampler, input.texCoord);
     float3 normal = textures[normalMapIndex].Sample(staticSampler, input.texCoord).rgb;
     
-    float attenuation = Attenuation(spotLightAttenuation, length(input.spotLightPosition.xyz - worldPosition));
-    float3 lightDirection = normalize(worldPosition - input.spotLightPosition.xyz);
-    float angle = acos(dot(lightDirection, input.spotLightDirection.xyz));
-    float angleFalloff = 0;
-    if (angle < spotLightConeShape[1]) {
-        angleFalloff = angle > spotLightConeShape[0] ? (spotLightConeShape[1] - angle) / (spotLightConeShape[1] - spotLightConeShape[0]) : 1.0;
-    }
-    float3 diffuse = spotLightColor.rgb * diffuseEmissive.rgb * attenuation * angleFalloff * DiffuseCoefficient(normal, lightDirection);
-    float3 specular = spotLightColor.rgb * specularShininess.rgb * attenuation * angleFalloff * SpecularCoefficient(normal, lightDirection, viewDirection, specularShininess.a);
+    float attenuation = Attenuation(pointLightAttenuation, length(input.pointLightPosition.xyz - worldPosition));
+    float3 lightDirection = normalize(worldPosition - input.pointLightPosition.xyz);
+
+    float3 diffuse = pointLightColor.rgb * diffuseEmissive.rgb * attenuation * DiffuseCoefficient(normal, lightDirection);
+    float3 specular = pointLightColor.rgb * specularShininess.rgb * attenuation * SpecularCoefficient(normal, lightDirection, viewDirection, specularShininess.a);
 
     PsOutput ret;
     ret.color = float4( diffuse + specular, 1);

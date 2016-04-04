@@ -24,6 +24,7 @@ public:
         core::Viewpoint const * shadowCastingLightViewpoint,
         core::AmbientLight * ambientLight,
         core::DirectionalLight ** directionalLights, unsigned int directionalLightCount,
+        core::PointLight ** pointLights, unsigned int pointLightCount,
         core::SpotLight ** spotLights, unsigned int spotLightCount) -> void;
     virtual auto AllocateDescriptorHeap(
         unsigned int cameraCount,
@@ -34,6 +35,7 @@ public:
         unsigned int skyBoxCount,
         unsigned int terrainCount,
         unsigned int directionalLightCount,
+        unsigned int pointLightCount,
         unsigned int spotLightCount,
         unsigned int nullDescriptorCount) -> void;
     auto DrawTranslucent(core::Shape const*const* shapes, unsigned int shapeCount) -> void;

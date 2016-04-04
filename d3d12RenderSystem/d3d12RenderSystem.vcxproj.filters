@@ -105,5 +105,7 @@
     <FxCompile Include="shaders\ssao_ambientLight_v.hlsl" />
     <FxCompile Include="shaders\ssao_directionalLight_p.hlsl" />
     <FxCompile Include="shaders\ssao_directionalLight_v.hlsl" />
+    <FxCompile Include="shaders\ssao_pointLight_p.hlsl" />
+    <FxCompile Include="shaders\ssao_pointLight_v.hlsl" />
   </ItemGroup>
 </Project>

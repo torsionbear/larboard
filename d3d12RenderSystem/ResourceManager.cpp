@@ -104,7 +104,7 @@ auto ResourceManager::CreateRootSignature() -> ComPtr<ID3D12RootSignature> {
     rootParameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_VERTEX);
     rootParameters[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_PIXEL);
     rootParameters[4].InitAsDescriptorTable(1, &ranges[4], D3D12_SHADER_VISIBILITY_ALL);
-    rootParameters[5].InitAsDescriptorTable(1, &ranges[5], D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[5].InitAsDescriptorTable(1, &ranges[5], D3D12_SHADER_VISIBILITY_ALL);
     rootParameters[6].InitAsDescriptorTable(1, &ranges[6], D3D12_SHADER_VISIBILITY_ALL);
     rootParameters[7].InitAsDescriptorTable(1, &ranges[7], D3D12_SHADER_VISIBILITY_PIXEL);
     rootParameters[8].InitAsConstants(TextureIndex::count, CbvRegisterConvention::TextureIndex);
@@ -368,6 +368,29 @@ auto ResourceManager::LoadDirectionalLight(core::DirectionalLight ** directional
     }
 
     _uploadHeap.AllocateAndUploadDataBlock(_commandList.Get(), buffer, sizeof(DirectionalLightData) * directionalLightCount, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT, directionalLightData.data());
+    _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+}
+
+auto ResourceManager::LoadPointLight(core::PointLight ** pointLights, unsigned int pointLightCount) -> void {
+    // create resource
+    auto buffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(pointLightCount * sizeof(PointLightData)), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
+    // populate
+    auto pointLightData = vector<PointLightData>(pointLightCount);
+    for (auto i = 0u; i < pointLightCount; ++i) {
+        auto pointLight = pointLights[i];
+        pointLight->SetRenderDataId(_pointLightDescriptorInfos.size());
+        auto descriptorInfo = _cbvSrvHeap.GetDescriptorInfo(buffer);
+        D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = { buffer->GetGPUVirtualAddress() + i * sizeof(PointLightData), sizeof(PointLightData) };
+        _device->CreateConstantBufferView(&cbvDesc, descriptorInfo._cpuHandle);
+        _pointLightDescriptorInfos.push_back(descriptorInfo);
+
+        pointLightData[i] = PointLightData{
+            pointLight->GetColor(),
+            pointLight->GetAttenuation(),
+        };
+    }
+
+    _uploadHeap.AllocateAndUploadDataBlock(_commandList.Get(), buffer, sizeof(PointLightData) * pointLightCount, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT, pointLightData.data());
     _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 }
 

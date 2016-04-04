@@ -79,6 +79,7 @@ public:
     }
     auto RegisterPointLight(core::PointLight * pointLight) -> void {
         _pointLights.push_back(pointLight);
+        _movables.push_back(pointLight);
     }
     auto RegisterSpotLight(core::SpotLight * spotLight) -> void {
         _spotLights.push_back(spotLight);
@@ -95,6 +96,7 @@ public:
             _skyBox == nullptr ? 0 : 1,
             _terrain == nullptr ? 0 : 1,
             _directionalLights.size(),
+            _pointLights.size(),
             _spotLights.size(),
             SrvRegisterConvention::Count);
         _resourceManager->LoadBegin();
@@ -110,6 +112,7 @@ public:
             _spotLights.data(), _spotLights.size());
         _resourceManager->LoadAmbientLight(_ambientLights.front());
         _resourceManager->LoadDirectionalLight(_directionalLights.data(), _directionalLights.size());
+        _resourceManager->LoadPointLight(_pointLights.data(), _pointLights.size());
         _resourceManager->LoadSpotLight(_spotLights.data(), _spotLights.size());
         _resourceManager->LoadMeshes<core::VertexC3>(_lightVolumes.data(), _lightVolumes.size());
         _renderer->Prepare();
@@ -143,6 +146,7 @@ public:
             _directionalLights.front(),
             _ambientLights.front(),
             _directionalLights.data(), _directionalLights.size(),
+            _pointLights.data(), _pointLights.size(),
             _spotLights.data(), _spotLights.size());
         _renderer->DrawTranslucent(_translucentShapes.data(), _translucentShapes.size());
         _renderer->DrawEnd();
