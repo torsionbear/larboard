@@ -23,6 +23,11 @@ auto core::DirectionalLight::ComputeShadowMappingVolume(Camera * camera, Aabb sh
         auto p = static_cast<Point4f>(matrixInverse * vertex);
         lightSpaceShadowCasterAabb.Expand(p);
     }
+    // lightSpaceShadowCasterAabb has no lower bound
+    auto minVertex = lightSpaceShadowCasterAabb.GetMinVertex();
+    minVertex(2) = std::numeric_limits<Float32>::lowest();
+    lightSpaceShadowCasterAabb.SetMinVertex(minVertex);
+
     shadowCullingVolume.Intersect(lightSpaceShadowCasterAabb);
     SetViewVolume(shadowCullingVolume);
 }
