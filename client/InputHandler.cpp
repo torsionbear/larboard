@@ -137,6 +137,21 @@ auto InputHandler::operator()(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
         }
         case VK_SPACE:
             break;
+        case 0x46:  // F key
+        {
+            if (_scene->_directionalLights.empty()) {
+                break;
+            }
+            auto sunlight = _scene->_directionalLights.front().get();
+            auto sunSpeed = 0.1f;
+            _sunlightPhase += sunSpeed;
+            sunlight->Rotate(core::Vector4f{ 0.0f, 1.0f, 0.0f, 0.0f }, sunSpeed);
+            auto sunlightIntensityMultiplier = cos(_sunlightPhase);
+            sunlightIntensityMultiplier = sunlightIntensityMultiplier > 0.2 ? sunlightIntensityMultiplier : 0;
+            sunlight->SetColor(core::Vector3f{ 0.8f, 0.8f, 0.8f} * sunlightIntensityMultiplier);
+            _scene->_ambientLights.front()->SetColor(core::Vector4f{ 0.4f, 0.4f, 0.4f, 0 } * sunlightIntensityMultiplier);
+            break;
+        }
         case 0x49:	// I key
             break;
         case 0x4B:	// K key

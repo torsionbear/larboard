@@ -531,7 +531,7 @@ auto SsaoRenderer::DrawDirectionalLights(ID3D12GraphicsCommandList * commandList
         auto const& transformDescriptorInfo = _resourceManager->GetTransformDescriptorInfo(directionalLight->core::Movable::GetRenderDataId());
         commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Transform, transformDescriptorInfo._gpuHandle);
         // directionalLight
-        auto const& lightDescriptorInfo = _resourceManager->GetSpotLightDescriptorInfo(directionalLight->GetRenderDataId());
+        auto const& lightDescriptorInfo = _resourceManager->GetDirectionalLightDescriptorInfo(directionalLight->GetRenderDataId());
         commandList->SetGraphicsRootDescriptorTable(RootSignatureParameterIndex::Light, lightDescriptorInfo._gpuHandle);
         // vertex
         commandList->DrawIndexedInstanced(6, 1, 0, 0, 0);

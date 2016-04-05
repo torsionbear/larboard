@@ -361,23 +361,34 @@ auto ResourceManager::LoadAmbientLight(core::AmbientLight * ambientLight) -> voi
     _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
 }
 
-auto ResourceManager::LoadDirectionalLight(core::DirectionalLight ** directionalLights, unsigned int directionalLightCount) -> void {
-    // create resource
-    auto buffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(directionalLightCount * sizeof(DirectionalLightData)), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
-    // populate
+auto ResourceManager::LoadDirectionalLight(core::DirectionalLight ** directionalLights, unsigned int directionalLightCount, ID3D12Resource * buffer) -> void {
     auto directionalLightData = vector<DirectionalLightData>(directionalLightCount);
-    for (auto i = 0u; i < directionalLightCount; ++i) {
-        auto directionalLight = directionalLights[i];
-        directionalLight->SetRenderDataId(_directionalLightDescriptorInfos.size());
-        auto descriptorInfo = _cbvSrvHeap.GetDescriptorInfo(buffer);
-        D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = { buffer->GetGPUVirtualAddress() + i * sizeof(DirectionalLightData), sizeof(DirectionalLightData) };
-        _device->CreateConstantBufferView(&cbvDesc, descriptorInfo._cpuHandle);
-        _directionalLightDescriptorInfos.push_back(descriptorInfo);
+    if (buffer == nullptr) {
+        // create resource
+        buffer = CreateCommittedResource(&CD3DX12_RESOURCE_DESC::Buffer(directionalLightCount * sizeof(DirectionalLightData)), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_DEFAULT);
+        // populate
+        for (auto i = 0u; i < directionalLightCount; ++i) {
+            auto directionalLight = directionalLights[i];
+            directionalLight->SetRenderDataId(_directionalLightDescriptorInfos.size());
+            auto descriptorInfo = _cbvSrvHeap.GetDescriptorInfo(buffer);
+            D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = { buffer->GetGPUVirtualAddress() + i * sizeof(DirectionalLightData), sizeof(DirectionalLightData) };
+            _device->CreateConstantBufferView(&cbvDesc, descriptorInfo._cpuHandle);
+            _directionalLightDescriptorInfos.push_back(descriptorInfo);
 
-        directionalLightData[i] = DirectionalLightData{
-            directionalLight->GetColor(),
-            i == 0u, // todo: for now only first directional light casts shadow
-        };
+            directionalLightData[i] = DirectionalLightData{
+                directionalLight->GetColor(),
+                i == 0u, // todo: for now only first directional light casts shadow
+            };
+        }
+    } else {
+        _commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(buffer, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, D3D12_RESOURCE_STATE_COPY_DEST));
+        for (auto i = 0u; i < directionalLightCount; ++i) {
+            auto directionalLight = directionalLights[i];
+            directionalLightData[i] = DirectionalLightData{
+                directionalLight->GetColor(),
+                i == 0u, // todo: for now only first directional light casts shadow
+            };
+        }
     }
 
     _uploadHeap.AllocateAndUploadDataBlock(_commandList.Get(), buffer, sizeof(DirectionalLightData) * directionalLightCount, D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT, directionalLightData.data());

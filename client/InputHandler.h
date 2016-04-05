@@ -36,4 +36,6 @@ private:
     Status _status = none;
     core::Point4f pickPoint = core::Point4f{ 0, 0, 0, 1 };
     core::Float32 _moveSpeed = 5.0f;
+
+    core::Float32 _sunlightPhase = 0.0f;
 };

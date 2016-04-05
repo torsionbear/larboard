@@ -229,7 +229,7 @@ public:
         core::PointLight ** pointLights, unsigned int pointLightCount,
         core::SpotLight ** spotLights, unsigned int spotLightCount) -> void;
     auto LoadAmbientLight(core::AmbientLight * ambientLights) -> void;
-    auto LoadDirectionalLight(core::DirectionalLight ** directionalLights, unsigned int directionalLightCount) -> void;
+    auto LoadDirectionalLight(core::DirectionalLight ** directionalLights, unsigned int directionalLightCount, ID3D12Resource * buffer = nullptr) -> void;
     auto LoadPointLight(core::PointLight ** pointLights, unsigned int pointLightCount) -> void;
     auto LoadSpotLight(core::SpotLight ** spotLights, unsigned int spotLightCount) -> void;
     auto LoadShadowCastingLight(core::DirectionalLight ** directionalLights, unsigned int directionalLightCount) -> void;

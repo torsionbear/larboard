@@ -161,6 +161,9 @@ public:
         _resourceManager->LoadMovables(_movables.data(), _movables.size(), resource);
 
         if (!_directionalLights.empty()) {
+            auto resource = _resourceManager->GetDirectionalLightDescriptorInfo(_directionalLights.front()->GetRenderDataId())._resource;
+            _resourceManager->LoadDirectionalLight(_directionalLights.data(), _directionalLights.size(), resource);
+
             auto shadowCastingLight = _directionalLights.front();
             shadowCastingLight->ComputeShadowMappingVolume(_camera, _shadowCasterAabb);
             _resourceManager->UpdateViewpoint(shadowCastingLight);
