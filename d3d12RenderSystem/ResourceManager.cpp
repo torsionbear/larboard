@@ -519,7 +519,7 @@ auto ResourceManager::LoadDdsTexture(string const& filename) -> unsigned int {
     //auto uploadBuffer = _uploadBuffers.back().Get();
     auto uploadBuffer = static_cast<ID3D12Resource *>(nullptr);
     auto srvDesc = D3D12_SHADER_RESOURCE_VIEW_DESC{};
-    ThrowIfFailed(DirectX::CreateDDSTextureFromFile(_device.Get(), StringToWstring(filename).data(), &uploadBuffer, &srvDesc));
+    ThrowIfFailed(DirectX::CreateDDSTextureFromFile(_device.Get(), _commandList.Get(), StringToWstring(filename).data(), &uploadBuffer, &srvDesc, 0, nullptr, &_uploadHeap));
 
     _uploadBuffers.emplace_back();
     _uploadBuffers.back().Attach(uploadBuffer);

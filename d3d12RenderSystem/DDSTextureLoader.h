@@ -25,6 +25,7 @@
 #pragma once
 
 #include <d3d12.h>
+#include "UploadHeap.h"
 
 #ifdef _WIN32_WINNT
 #undef _WIN32_WINNT
@@ -68,18 +69,9 @@ namespace DirectX
 		_Outptr_ ID3D12Resource** texture,
 		_Outptr_opt_ D3D12_SHADER_RESOURCE_VIEW_DESC* textureView,
 		_In_ size_t maxsize = 0,
-		_Out_opt_ DDS_ALPHA_MODE* alphaMode = nullptr
+		_Out_opt_ DDS_ALPHA_MODE* alphaMode = nullptr,
+        d3d12RenderSystem::UploadHeap * uploadHeap = nullptr
 		);
-
-	HRESULT CreateDDSTextureFromMemory(_In_ ID3D12Device* d3dDevice,
-		_In_reads_bytes_(ddsDataSize) const uint8_t* ddsData,
-		_In_ size_t ddsDataSize,
-		_Outptr_ ID3D12Resource** texture,
-		_Outptr_opt_ D3D12_SHADER_RESOURCE_VIEW_DESC* textureView,
-		_In_ size_t maxsize = 0,
-		_Out_opt_ DDS_ALPHA_MODE* alphaMode = nullptr
-		);
-
 
 	HRESULT CreateDDSTextureFromFile(_In_ ID3D12Device* d3dDevice,
 		ID3D12GraphicsCommandList* d3dContext,
@@ -87,15 +79,8 @@ namespace DirectX
 		_Outptr_ ID3D12Resource** texture,
 		_Outptr_opt_ D3D12_SHADER_RESOURCE_VIEW_DESC* textureView,
 		_In_ size_t maxsize = 0,
-		_Out_opt_ DDS_ALPHA_MODE* alphaMode = nullptr
-		);
-
-	HRESULT CreateDDSTextureFromFile(_In_ ID3D12Device* d3dDevice,
-		_In_z_ const wchar_t* szFileName,
-		_Outptr_ ID3D12Resource** texture,
-		_Outptr_opt_ D3D12_SHADER_RESOURCE_VIEW_DESC* textureView,
-		_In_ size_t maxsize = 0,
-		_Out_opt_ DDS_ALPHA_MODE* alphaMode = nullptr
+		_Out_opt_ DDS_ALPHA_MODE* alphaMode = nullptr,
+        d3d12RenderSystem::UploadHeap * uploadHeap = nullptr
 		);
 
 	// Extended version
@@ -107,17 +92,8 @@ namespace DirectX
 		_In_ bool forceSRGB,
 		_Outptr_ ID3D12Resource** texture,
 		_Outptr_opt_ D3D12_SHADER_RESOURCE_VIEW_DESC* textureView,
-		_Out_opt_ DDS_ALPHA_MODE* alphaMode = nullptr
-		);
-
-	HRESULT CreateDDSTextureFromMemoryEx(_In_ ID3D12Device* d3dDevice,
-		_In_reads_bytes_(ddsDataSize) const uint8_t* ddsData,
-		_In_ size_t ddsDataSize,
-		_In_ size_t maxsize,
-		_In_ bool forceSRGB,
-		_Outptr_ ID3D12Resource** texture,
-		_Outptr_opt_ D3D12_SHADER_RESOURCE_VIEW_DESC* textureView,
-		_Out_opt_ DDS_ALPHA_MODE* alphaMode = nullptr
+		_Out_opt_ DDS_ALPHA_MODE* alphaMode = nullptr,
+        d3d12RenderSystem::UploadHeap * uploadHeap = nullptr
 		);
 
 	HRESULT CreateDDSTextureFromFileEx(_In_ ID3D12Device* d3dDevice,
@@ -127,15 +103,7 @@ namespace DirectX
 		_In_ bool forceSRGB,
 		_Outptr_ ID3D12Resource** texture,
 		_Outptr_opt_ D3D12_SHADER_RESOURCE_VIEW_DESC* textureView,
-		_Out_opt_ DDS_ALPHA_MODE* alphaMode = nullptr
-		);
-
-	HRESULT CreateDDSTextureFromFileEx(_In_ ID3D12Device* d3dDevice,
-		_In_z_ const wchar_t* szFileName,
-		_In_ size_t maxsize,
-		_In_ bool forceSRGB,
-		_Outptr_ ID3D12Resource** texture,
-		_Outptr_opt_ D3D12_SHADER_RESOURCE_VIEW_DESC* textureView,
-		_Out_opt_ DDS_ALPHA_MODE* alphaMode = nullptr
+		_Out_opt_ DDS_ALPHA_MODE* alphaMode = nullptr,
+        d3d12RenderSystem::UploadHeap * uploadHeap = nullptr
 		);
 }

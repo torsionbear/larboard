@@ -879,6 +879,7 @@ static HRESULT FillInitData(_In_ size_t width,
 
 //--------------------------------------------------------------------------------------
 static HRESULT CreateD3DResources(_In_ ID3D12Device* d3dDevice,
+    ID3D12GraphicsCommandList* d3dContext,
 	_In_ uint32_t resDim,
 	_In_ size_t width,
 	_In_ size_t height,
@@ -890,7 +891,8 @@ static HRESULT CreateD3DResources(_In_ ID3D12Device* d3dDevice,
 	_In_ bool isCubeMap,
 	_In_reads_opt_(mipCount*arraySize) D3D12_SUBRESOURCE_DATA* initData,
 	_Outptr_opt_ ID3D12Resource** texture,
-	_Outptr_ D3D12_SHADER_RESOURCE_VIEW_DESC* textureView)
+	_Outptr_ D3D12_SHADER_RESOURCE_VIEW_DESC* textureView,
+    d3d12RenderSystem::UploadHeap * uploadHeap)
 {
 	if (!d3dDevice)
 		return E_POINTER;
@@ -911,7 +913,7 @@ static HRESULT CreateD3DResources(_In_ ID3D12Device* d3dDevice,
 	desc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 
 	D3D12_HEAP_PROPERTIES heapProperties = {};
-	heapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+	heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
 	heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
 	heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
 
@@ -1092,13 +1094,13 @@ static HRESULT CreateD3DResources(_In_ ID3D12Device* d3dDevice,
 	const UINT subresourceCount = static_cast<UINT>(mipCount * arraySize);
 
 	//Copy initial data to texture
+    auto textureData = std::vector<D3D12_SUBRESOURCE_DATA>{};
 	for (UINT i = 0; i < subresourceCount; i++)
 	{
-		hr = tex->WriteToSubresource(i, nullptr, initData[i].pData, static_cast<UINT>(initData[i].RowPitch), static_cast<UINT>(initData[i].SlicePitch));
-
-		if (FAILED(hr))
-			break;
+        textureData.push_back({ initData[i].pData, static_cast<LONG_PTR>(initData[i].RowPitch), static_cast<LONG_PTR>(initData[i].SlicePitch) });
+        //hr = tex->WriteToSubresource(i, nullptr, initData[i].pData, static_cast<UINT>(initData[i].RowPitch), static_cast<UINT>(initData[i].SlicePitch));
 	}
+    uploadHeap->UploadSubresources(d3dContext, tex, 0, subresourceCount, textureData.data());
 
 	return hr;
 }
@@ -1113,7 +1115,8 @@ static HRESULT CreateTextureFromDDS(_In_ ID3D12Device* d3dDevice,
 	_In_ size_t maxsize,
 	_In_ bool forceSRGB,
 	_Outptr_ ID3D12Resource** texture,
-	_Outptr_opt_ D3D12_SHADER_RESOURCE_VIEW_DESC* textureView)
+	_Outptr_opt_ D3D12_SHADER_RESOURCE_VIEW_DESC* textureView,
+    d3d12RenderSystem::UploadHeap * uploadHeap)
 {
 	HRESULT hr = S_OK;
 
@@ -1316,6 +1319,7 @@ static HRESULT CreateTextureFromDDS(_In_ ID3D12Device* d3dDevice,
 		ID3D12Resource* tex = nullptr;
 		hr = CreateD3DResources(
 			d3dDevice, 
+            d3dContext,
 			resDim, 
 			width, 
 			height, 
@@ -1327,7 +1331,8 @@ static HRESULT CreateTextureFromDDS(_In_ ID3D12Device* d3dDevice,
 			isCubeMap, 
 			nullptr,
 			&tex, 
-			textureView);
+			textureView,
+            uploadHeap);
 
 		if (SUCCEEDED(hr))
 		{
@@ -1423,6 +1428,7 @@ static HRESULT CreateTextureFromDDS(_In_ ID3D12Device* d3dDevice,
 		{
 			hr = CreateD3DResources(
 				d3dDevice, 
+                d3dContext,
 				resDim, 
 				twidth, 
 				theight, 
@@ -1434,7 +1440,8 @@ static HRESULT CreateTextureFromDDS(_In_ ID3D12Device* d3dDevice,
 				isCubeMap, 
 				initData.get(),
 				texture, 
-				textureView);
+				textureView,
+                uploadHeap);
 
 			if (FAILED(hr) && !maxsize && (mipCount > 1))
 			{
@@ -1479,6 +1486,7 @@ static HRESULT CreateTextureFromDDS(_In_ ID3D12Device* d3dDevice,
 				{
 					hr = CreateD3DResources(
 						d3dDevice, 
+                        d3dContext,
 						resDim,
 						twidth,
 						theight, 
@@ -1490,7 +1498,8 @@ static HRESULT CreateTextureFromDDS(_In_ ID3D12Device* d3dDevice,
 						isCubeMap, 
 						initData.get(), 
 						texture, 
-						textureView);
+						textureView,
+                        uploadHeap);
 				}
 			}
 		}
@@ -1530,22 +1539,6 @@ static DDS_ALPHA_MODE GetAlphaMode(_In_ const DDS_HEADER* header)
 	return DDS_ALPHA_MODE_UNKNOWN;
 }
 
-
-//--------------------------------------------------------------------------------------
-_Use_decl_annotations_
-HRESULT DirectX::CreateDDSTextureFromMemory(ID3D12Device* d3dDevice,
-	const uint8_t* ddsData,
-	size_t ddsDataSize,
-	ID3D12Resource** texture,
-	D3D12_SHADER_RESOURCE_VIEW_DESC* textureView,
-	size_t maxsize,
-	DDS_ALPHA_MODE* alphaMode)
-{
-	return CreateDDSTextureFromMemoryEx(d3dDevice, nullptr, ddsData, ddsDataSize, maxsize,
-		false,
-		texture, textureView, alphaMode);
-}
-
 _Use_decl_annotations_
 HRESULT DirectX::CreateDDSTextureFromMemory(ID3D12Device* d3dDevice,
 	ID3D12GraphicsCommandList* d3dContext,
@@ -1554,26 +1547,12 @@ HRESULT DirectX::CreateDDSTextureFromMemory(ID3D12Device* d3dDevice,
 	ID3D12Resource** texture,
 	D3D12_SHADER_RESOURCE_VIEW_DESC* textureView,
 	size_t maxsize,
-	DDS_ALPHA_MODE* alphaMode)
+	DDS_ALPHA_MODE* alphaMode,
+    d3d12RenderSystem::UploadHeap * uploadHeap)
 {
 	return CreateDDSTextureFromMemoryEx(d3dDevice, d3dContext, ddsData, ddsDataSize, maxsize,
 		false,
-		texture, textureView, alphaMode);
-}
-
-_Use_decl_annotations_
-HRESULT DirectX::CreateDDSTextureFromMemoryEx(ID3D12Device* d3dDevice,
-	const uint8_t* ddsData,
-	size_t ddsDataSize,
-	size_t maxsize,
-	bool forceSRGB,
-	ID3D12Resource** texture,
-	D3D12_SHADER_RESOURCE_VIEW_DESC* textureView,
-	DDS_ALPHA_MODE* alphaMode)
-{
-	return CreateDDSTextureFromMemoryEx(d3dDevice, nullptr, ddsData, ddsDataSize, maxsize,
-		forceSRGB,
-		texture, textureView, alphaMode);
+		texture, textureView, alphaMode, uploadHeap);
 }
 
 _Use_decl_annotations_
@@ -1585,7 +1564,8 @@ HRESULT DirectX::CreateDDSTextureFromMemoryEx(ID3D12Device* d3dDevice,
 	bool forceSRGB,
 	ID3D12Resource** texture,
 	D3D12_SHADER_RESOURCE_VIEW_DESC* textureView,
-	DDS_ALPHA_MODE* alphaMode)
+	DDS_ALPHA_MODE* alphaMode,
+    d3d12RenderSystem::UploadHeap * uploadHeap)
 {
 	if (texture)
 	{
@@ -1643,7 +1623,7 @@ HRESULT DirectX::CreateDDSTextureFromMemoryEx(ID3D12Device* d3dDevice,
 	HRESULT hr = CreateTextureFromDDS(d3dDevice, d3dContext, header,
 		ddsData + offset, ddsDataSize - offset, maxsize,
 		forceSRGB,
-		texture, textureView);
+		texture, textureView, uploadHeap);
 	if (SUCCEEDED(hr))
 	{
 		if (texture != 0 && *texture != 0)
@@ -1658,20 +1638,6 @@ HRESULT DirectX::CreateDDSTextureFromMemoryEx(ID3D12Device* d3dDevice,
 	return hr;
 }
 
-//--------------------------------------------------------------------------------------
-_Use_decl_annotations_
-HRESULT DirectX::CreateDDSTextureFromFile(ID3D12Device* d3dDevice,
-	const wchar_t* fileName,
-	ID3D12Resource** texture,
-	D3D12_SHADER_RESOURCE_VIEW_DESC* textureView,
-	size_t maxsize,
-	DDS_ALPHA_MODE* alphaMode)
-{
-	return CreateDDSTextureFromFileEx(d3dDevice, nullptr, fileName, maxsize,
-		false,
-		texture, textureView, alphaMode);
-}
-
 _Use_decl_annotations_
 HRESULT DirectX::CreateDDSTextureFromFile(ID3D12Device* d3dDevice,
 	ID3D12GraphicsCommandList* d3dContext,
@@ -1679,25 +1645,12 @@ HRESULT DirectX::CreateDDSTextureFromFile(ID3D12Device* d3dDevice,
 	ID3D12Resource** texture,
 	D3D12_SHADER_RESOURCE_VIEW_DESC* textureView,
 	size_t maxsize,
-	DDS_ALPHA_MODE* alphaMode)
+	DDS_ALPHA_MODE* alphaMode,
+    d3d12RenderSystem::UploadHeap * uploadHeap)
 {
 	return CreateDDSTextureFromFileEx(d3dDevice, d3dContext, fileName, maxsize,
 		false,
-		texture, textureView, alphaMode);
-}
-
-_Use_decl_annotations_
-HRESULT DirectX::CreateDDSTextureFromFileEx(ID3D12Device* d3dDevice,
-	const wchar_t* fileName,
-	size_t maxsize,
-	bool forceSRGB,
-	ID3D12Resource** texture,
-	D3D12_SHADER_RESOURCE_VIEW_DESC* textureView,
-	DDS_ALPHA_MODE* alphaMode)
-{
-	return CreateDDSTextureFromFileEx(d3dDevice, nullptr, fileName, maxsize,
-		forceSRGB,
-		texture, textureView, alphaMode);
+		texture, textureView, alphaMode, uploadHeap);
 }
 
 _Use_decl_annotations_
@@ -1708,7 +1661,8 @@ HRESULT DirectX::CreateDDSTextureFromFileEx(ID3D12Device* d3dDevice,
 	bool forceSRGB,
 	ID3D12Resource** texture,
 	D3D12_SHADER_RESOURCE_VIEW_DESC* textureView,
-	DDS_ALPHA_MODE* alphaMode)
+	DDS_ALPHA_MODE* alphaMode,
+    d3d12RenderSystem::UploadHeap * uploadHeap)
 {
 	if (texture)
 	{
@@ -1742,7 +1696,7 @@ HRESULT DirectX::CreateDDSTextureFromFileEx(ID3D12Device* d3dDevice,
 
 	hr = CreateTextureFromDDS(d3dDevice, d3dContext, header,
 		bitData, bitSize, maxsize, forceSRGB,
-		texture, textureView);
+		texture, textureView, uploadHeap);
 
 	if (SUCCEEDED(hr))
 	{
