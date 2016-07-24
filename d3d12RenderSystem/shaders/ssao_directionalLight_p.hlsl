@@ -76,7 +76,7 @@ PsOutput main(PsInput input) {
 
     // shadow
     if (isShadowCastingLight) {
-        float bias = 0.001;
+        float bias = 0.0002;
         float4 lightSpacePosition = mul(lightViewTransform, float4(worldPosition, 1));
         float4 lightSpaceNdcPosition = mul(lightProjectTransform, lightSpacePosition);
         float2 texCoord = float2((lightSpaceNdcPosition.x + 1) / 2, 1 - (lightSpaceNdcPosition.y + 1) / 2);
