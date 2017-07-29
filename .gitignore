@@ -5,9 +5,11 @@ boost_1_57_0
 glew-1.11.0
 gtest-1.7.0
 zlib128-dll
+media
+
 *.sdf
 *.opensdf
 *.opendb
 *.vspx
 *.psess
-media
+*.db
